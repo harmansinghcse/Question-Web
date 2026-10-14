@@ -1,0 +1,61 @@
+
+# Dependencies
+node_modules/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Build outputs
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# React Native / Expo
+.expo/
+.expo-shared/
+web-build/
+expo-env.d.ts
+*.jks
+*.keystore
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+*.rej
+
+# Android generated files
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+
+# iOS generated files
+ios/Pods/
+ios/build/
+ios/DerivedData/
+*.xcuserstate
+
+# NestJS
+backend/dist/
+backend/coverage/
+
+# Testing
+.nyc_output/
