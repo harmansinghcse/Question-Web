@@ -1,65 +1,49 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
 
-import '@/global.css';
+export type ThemeMode = 'light' | 'dark';
 
-import { Platform } from 'react-native';
+export type AppTheme = {
+  mode: ThemeMode;
+  background: string;
+  surface: string;
+  surfaceAlt: string;
+  text: string;
+  muted: string;
+  border: string;
+  accent: string;
+  accentSoft: string;
+  success: string;
+  warning: string;
+  danger: string;
+};
 
-export const Colors = {
-  light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
-  },
+export const themes: Record<ThemeMode, AppTheme> = {
   dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
+    mode: 'dark',
+    background: '#10101C',
+    surface: '#1C1B2B',
+    surfaceAlt: '#26243A',
+    text: '#F7F4FF',
+    muted: '#A6A1BE',
+    border: '#302D45',
+    accent: '#8B68F5',
+    accentSoft: '#332852',
+    success: '#48C9A0',
+    warning: '#F1B85B',
+    danger: '#F078A0',
   },
-} as const;
 
-export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
-
-export const Fonts = Platform.select({
-  ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: 'ui-monospace',
+  light: {
+    mode: 'light',
+    background: '#F5F2FF',
+    surface: '#FFFFFF',
+    surfaceAlt: '#EEE9FC',
+    text: '#211B38',
+    muted: '#77718E',
+    border: '#E5DDF8',
+    accent: '#7654E8',
+    accentSoft: '#EAE3FF',
+    success: '#168D6C',
+    warning: '#B87516',
+    danger: '#D74778',
   },
-  default: {
-    sans: 'normal',
-    serif: 'serif',
-    rounded: 'normal',
-    mono: 'monospace',
-  },
-  web: {
-    sans: 'var(--font-display)',
-    serif: 'var(--font-serif)',
-    rounded: 'var(--font-rounded)',
-    mono: 'var(--font-mono)',
-  },
-});
-
-export const Spacing = {
-  half: 2,
-  one: 4,
-  two: 8,
-  three: 16,
-  four: 24,
-  five: 32,
-  six: 64,
-} as const;
-
-export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
-export const MaxContentWidth = 800;
+};
