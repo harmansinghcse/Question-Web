@@ -38,14 +38,21 @@ import * as path from 'path';
         synchronize: false,
         retryAttempts: 5,
         retryDelay: 3000,
-        connectTimeout: 10000,
+        connectTimeout: 20000,
+
+        extra: {
+          connectionLimit: 10,
+          waitForConnections: true,
+          enableKeepAlive: true,
+          keepAliveInitialDelay: 10000,
+          maxIdle: 2,
+          idleTimeout: 30000,
+        },
       }),
     }),
 
     SubjectsModule,
-
     ChaptersModule,
-
     TopicsModule,
   ],
   controllers: [AppController],

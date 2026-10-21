@@ -1,8 +1,10 @@
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL?.replace(/\/+$/, "");
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL?.replace(/\/+$/, '');
+/** Max time to wait for the backend before giving up. */
+const TIMEOUT_MS = 20000;
 
 if (!API_BASE_URL) {
-    console.warn('[api] EXPO_PUBLIC_API_URL is not configured');
+    console.warn("[api] EXPO_PUBLIC_API_URL is not configured");
 }
 
 /** Pull a human-readable message out of a NestJS error body. */
@@ -11,8 +13,8 @@ function extractErrorMessage(body: string, status: number): string {
         try {
             const parsed = JSON.parse(body) as { message?: unknown };
             const msg = parsed?.message;
-            if (Array.isArray(msg)) return msg.join(', ');
-            if (typeof msg === 'string' && msg.trim()) return msg;
+            if (Array.isArray(msg)) return msg.join(", ");
+            if (typeof msg === "string" && msg.trim()) return msg;
         } catch {
             // Not JSON — fall through to raw text if it's short enough.
             if (body.length <= 200) return body;
@@ -27,15 +29,19 @@ async function request<T>(
 ): Promise<T> {
     if (!API_BASE_URL) {
         throw new Error(
-            'Backend API URL is not configured. Set EXPO_PUBLIC_API_URL in your .env file.',
+            "Backend API URL is not configured. Set EXPO_PUBLIC_API_URL in your .env file.",
         );
     }
 
     const url = `${API_BASE_URL}${endpoint}`;
 
-    // Abort after 15s so an unreachable host doesn't spin forever.
+    // Abort after TIMEOUT_MS so an unreachable host doesn't spin forever.
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
+    let timedOut = false;
+    const timeout = setTimeout(() => {
+        timedOut = true;
+        controller.abort();
+    }, TIMEOUT_MS);
 
     let response: Response;
 
@@ -44,18 +50,27 @@ async function request<T>(
             ...options,
             signal: options.signal ?? controller.signal,
             headers: {
-                Accept: 'application/json',
-                'Content-Type': 'application/json',
+                Accept: "application/json",
+                "Content-Type": "application/json",
                 ...options.headers,
             },
         });
     } catch (err: unknown) {
-        const aborted = err instanceof Error && err.name === 'AbortError';
-        const message = aborted
-            ? `Request timed out — is the backend reachable at ${API_BASE_URL}?`
-            : err instanceof Error
-              ? err.message
-              : 'Network request failed';
+        const raw = err instanceof Error ? err.message : "";
+        // Expo SDK 57 reports aborts as "Fetch request has been canceled"
+        // instead of an error named AbortError, so check both.
+        const cancelled =
+            (err instanceof Error && err.name === "AbortError") ||
+            /cancel|abort/i.test(raw);
+
+        let message: string;
+        if (cancelled && timedOut) {
+            message = `No response after ${TIMEOUT_MS / 1000}s. Cannot reach ${url}`;
+        } else if (cancelled) {
+            message = "Request was cancelled";
+        } else {
+            message = raw || "Network request failed";
+        }
 
         throw new Error(`Network error: ${message}`);
     } finally {
@@ -63,9 +78,9 @@ async function request<T>(
     }
 
     if (!response.ok) {
-        const body = await response.text().catch(() => '');
+        const body = await response.text().catch(() => "");
 
-        console.error('[API ERROR]', {
+        console.error("[API ERROR]", {
             url,
             status: response.status,
             body,
@@ -123,9 +138,7 @@ export interface Question {
 export const api = {
     getSubjects: (search?: string): Promise<Subject[]> =>
         request<Subject[]>(
-            `/subjects${
-                search ? `?search=${encodeURIComponent(search)}` : ''
-            }`,
+            `/subjects${search ? `?search=${encodeURIComponent(search)}` : ""}`,
         ),
 
     getSubject: (id: number): Promise<Subject> =>
@@ -140,6 +153,5 @@ export const api = {
     getTopics: (chapterId: number): Promise<Topic[]> =>
         request<Topic[]>(`/topics?chapterId=${chapterId}`),
 
-    getTopic: (id: number): Promise<Topic> =>
-        request<Topic>(`/topics/${id}`),
+    getTopic: (id: number): Promise<Topic> => request<Topic>(`/topics/${id}`),
 };
