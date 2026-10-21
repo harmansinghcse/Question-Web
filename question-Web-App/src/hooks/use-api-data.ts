@@ -1,12 +1,3 @@
-/**
- * useApiData — a lightweight hook for on-demand async data fetching.
- *
- * Features:
- * - Loading, success, error, and empty states
- * - Stale-response prevention (ignores responses for abandoned requests)
- * - Manual retry via the returned `refresh` function
- * - Re-fetches automatically when `fetcher` identity changes or `enabled` toggles
- */
 
 import type React from 'react';
 import { useCallback, useEffect, useReducer } from 'react';
@@ -23,69 +14,74 @@ type Action<T> =
     | { type: 'SUCCESS'; data: T }
     | { type: 'ERROR'; message: string };
 
-function reducer<T>(state: FetchState<T>, action: Action<T>): FetchState<T> {
+function reducer<T>(
+    state: FetchState<T>,
+    action: Action<T>,
+): FetchState<T> {
     switch (action.type) {
-        case 'IDLE':    return { status: 'idle' };
-        case 'LOADING': return { status: 'loading' };
-        case 'SUCCESS': return { status: 'success', data: action.data };
-        case 'ERROR':   return { status: 'error', message: action.message };
-        default:        return state;
+        case 'IDLE':
+            return { status: 'idle' };
+        case 'LOADING':
+            return { status: 'loading' };
+        case 'SUCCESS':
+            return { status: 'success', data: action.data };
+        case 'ERROR':
+            return { status: 'error', message: action.message };
+        default:
+            return state;
     }
 }
 
-/**
- * @param fetcher  Async function returning the data. Wrap in `useCallback` so
- *                 the hook only re-fetches when the function identity changes.
- * @param enabled  Set to false to skip fetching until a required param is
- *                 available. Defaults to true.
- */
 export function useApiData<T>(
     fetcher: () => Promise<T>,
     enabled = true,
 ): FetchState<T> & { refresh: () => void } {
-    // useReducer means all state transitions happen after the async resolution,
-    // never synchronously inside an effect body. This satisfies react-hooks/set-state-in-effect.
     const [state, dispatch] = useReducer(
         reducer as React.Reducer<FetchState<T>, Action<T>>,
         { status: 'idle' },
     );
 
-    /**
-     * run() kicks off a fetch and returns a cleanup that marks the in-flight
-     * request as stale, preventing stale responses from overwriting newer state.
-     */
     const run = useCallback(() => {
-        dispatch({ type: 'LOADING' });
+        if (!enabled) {
+            dispatch({ type: 'IDLE' });
+            return;
+        }
 
         let active = true;
 
+        dispatch({ type: 'LOADING' });
+
         fetcher()
             .then((data) => {
-                if (!active) return;
-                dispatch({ type: 'SUCCESS', data });
+                if (active) {
+                    dispatch({ type: 'SUCCESS', data });
+                }
             })
             .catch((err: unknown) => {
                 if (!active) return;
+
                 const message =
                     err instanceof Error
                         ? err.message
                         : 'An unexpected error occurred';
-                console.error('[useApiData] fetch error:', message);
+
+                console.error('[useApiData] fetch error:', err);
                 dispatch({ type: 'ERROR', message });
             });
 
         return () => {
             active = false;
         };
-    }, [fetcher]);
+    }, [fetcher, enabled]);
 
     useEffect(() => {
-        if (!enabled) {
-            dispatch({ type: 'IDLE' });
-            return;
-        }
         return run();
-    }, [run, enabled]);
+    }, [run]);
 
-    return { ...state, refresh: run };
+    const refresh = useCallback(() => {
+        // Retry the request without waiting for a dependency change.
+        run();
+    }, [run]);
+
+    return { ...state, refresh };
 }

@@ -1,70 +1,89 @@
-/**
- * Centralised API client for the Question Web NestJS backend.
- *
- * Base URL is read from EXPO_PUBLIC_API_URL (must include the "/api" prefix).
- *
- * Examples:
- *   Web / iOS simulator:   http://localhost:3000/api
- *   Android emulator:      http://10.0.2.2:3000/api
- *   Physical device:       http://<COMPUTER_LAN_IP>:3000/api
- *
- * Credentials, Aiven connection strings, and CA certificates are NEVER
- * included here — they live only in the backend's environment.
- */
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL?.replace(/\/+$/, '');
 
 if (!API_BASE_URL) {
     console.warn('[api] EXPO_PUBLIC_API_URL is not configured');
 }
 
-// ─── Generic request helper ───────────────────────────────────────────────────
+/** Pull a human-readable message out of a NestJS error body. */
+function extractErrorMessage(body: string, status: number): string {
+    if (body) {
+        try {
+            const parsed = JSON.parse(body) as { message?: unknown };
+            const msg = parsed?.message;
+            if (Array.isArray(msg)) return msg.join(', ');
+            if (typeof msg === 'string' && msg.trim()) return msg;
+        } catch {
+            // Not JSON — fall through to raw text if it's short enough.
+            if (body.length <= 200) return body;
+        }
+    }
+    return `Server error (HTTP ${status})`;
+}
 
 async function request<T>(
     endpoint: string,
     options: RequestInit = {},
 ): Promise<T> {
     if (!API_BASE_URL) {
-        throw new Error('Backend API URL is not configured. Set EXPO_PUBLIC_API_URL in your .env file.');
+        throw new Error(
+            'Backend API URL is not configured. Set EXPO_PUBLIC_API_URL in your .env file.',
+        );
     }
+
+    const url = `${API_BASE_URL}${endpoint}`;
+
+    // Abort after 15s so an unreachable host doesn't spin forever.
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
 
     let response: Response;
 
     try {
-        response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        response = await fetch(url, {
             ...options,
+            signal: options.signal ?? controller.signal,
             headers: {
                 Accept: 'application/json',
                 'Content-Type': 'application/json',
                 ...options.headers,
             },
         });
-    } catch (networkError: unknown) {
-        const message =
-            networkError instanceof Error
-                ? networkError.message
-                : 'Network request failed';
+    } catch (err: unknown) {
+        const aborted = err instanceof Error && err.name === 'AbortError';
+        const message = aborted
+            ? `Request timed out — is the backend reachable at ${API_BASE_URL}?`
+            : err instanceof Error
+              ? err.message
+              : 'Network request failed';
+
         throw new Error(`Network error: ${message}`);
+    } finally {
+        clearTimeout(timeout);
     }
 
     if (!response.ok) {
-        let errorMessage: string;
-        try {
-            errorMessage = await response.text();
-        } catch {
-            errorMessage = `HTTP ${response.status}`;
-        }
-        throw new Error(errorMessage || `API error: ${response.status}`);
+        const body = await response.text().catch(() => '');
+
+        console.error('[API ERROR]', {
+            url,
+            status: response.status,
+            body,
+        });
+
+        throw new Error(extractErrorMessage(body, response.status));
+    }
+
+    if (response.status === 204) {
+        return undefined as T;
     }
 
     try {
-        return response.json() as Promise<T>;
+        return (await response.json()) as T;
     } catch {
-        throw new Error('Server returned an invalid JSON response');
+        throw new Error(`Server returned invalid JSON for ${endpoint}`);
     }
 }
-
-// ─── Response types (matching verified backend entity shapes) ─────────────────
 
 export interface Subject {
     subjectKey: number;
@@ -89,12 +108,10 @@ export interface Topic {
 }
 
 /**
- * Questions API is NOT yet implemented on the backend.
- * This interface is defined for future integration only.
- * Do not fabricate data using this type.
+ * Reserved for the future questions endpoint.
+ * The backend questions API is not implemented yet.
  */
 export interface Question {
-    /** Will be assigned by the backend when the endpoint is implemented. */
     questionId: number;
     questionText: string;
     topicId: number;
@@ -103,34 +120,26 @@ export interface Question {
     year?: number;
 }
 
-// ─── API methods (only for verified endpoints) ────────────────────────────────
-
 export const api = {
-    // Subjects
     getSubjects: (search?: string): Promise<Subject[]> =>
         request<Subject[]>(
-            `/subjects${search ? `?search=${encodeURIComponent(search)}` : ''}`,
+            `/subjects${
+                search ? `?search=${encodeURIComponent(search)}` : ''
+            }`,
         ),
 
     getSubject: (id: number): Promise<Subject> =>
         request<Subject>(`/subjects/${id}`),
 
-    // Chapters — must filter by subjectKey on the backend
     getChapters: (subjectKey: number): Promise<Chapter[]> =>
         request<Chapter[]>(`/chapters?subjectKey=${subjectKey}`),
 
     getChapter: (id: number): Promise<Chapter> =>
         request<Chapter>(`/chapters/${id}`),
 
-    // Topics — must filter by chapterId on the backend
     getTopics: (chapterId: number): Promise<Topic[]> =>
         request<Topic[]>(`/topics?chapterId=${chapterId}`),
 
     getTopic: (id: number): Promise<Topic> =>
         request<Topic>(`/topics/${id}`),
-
-    // Questions — NOT YET IMPLEMENTED on the backend.
-    // Calling this will throw at runtime until the endpoint exists.
-    // getQuestions: (topicId: number): Promise<Question[]> =>
-    //     request<Question[]>(`/questions?topicId=${topicId}`),
 };
