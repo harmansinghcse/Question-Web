@@ -1,6 +1,8 @@
 
+import { useCallback, useState } from 'react';
 import { useRouter } from 'expo-router';
 import {
+  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -9,23 +11,52 @@ import {
 } from 'react-native';
 
 import { useAppTheme } from '../providers/ThemeProvider';
-import { subjects } from '../data/subjects';
-import { questions } from '../data/questions';
+import { api, type Subject } from '../services/api';
+import { useApiData } from '../hooks/use-api-data';
+
+// Palette for subject cards — cycles when there are more subjects than colours.
+const SUBJECT_COLOURS = [
+  '#6387F5',
+  '#B17AE8',
+  '#24A681',
+  '#E89B36',
+  '#7654E8',
+  '#E8547A',
+  '#36A6C6',
+];
+
+// Upcoming exams are UI / calendar data — not yet in the database.
+// TODO(BACKEND): Replace with aggregated calendar API when available.
+const STATIC_EXAMS = [
+  { day: '15', month: 'NOV', title: 'Mid Sem - CSE', remaining: '3 days left', level: 'Important' },
+  { day: '28', month: 'NOV', title: 'DBMS', remaining: '16 days left', level: 'Medium' },
+  { day: '12', month: 'DEC', title: 'OOP', remaining: '30 days left', level: 'Low' },
+] as const;
+
+function subjectIcon(subjectId: string): string {
+  const map: Record<string, string> = {
+    DBMS: '▤', OOP: '</>',  DAA: '⌘', CO: '▦', DM: 'Σ',
+    OS: '⚙', CN: '⬡', DS: '◈', SE: '⚒', AI: '✦',
+  };
+  const key = subjectId.trim().toUpperCase();
+  return map[key] ?? '◉';
+}
 
 export default function HomeScreen() {
   const router = useRouter();
   const { theme, mode, toggleTheme, ready } = useAppTheme();
   const s = makeStyles(theme);
 
+  // Stable fetcher reference — no dependency on anything that changes.
+  const fetchSubjects = useCallback(() => api.getSubjects(), []);
+  const subjectsState = useApiData<Subject[]>(fetchSubjects, ready);
+
   if (!ready) {
     return <View style={[s.screen, { flex: 1 }]} />;
   }
 
-  const exams = [
-    { day: '15', month: 'NOV', title: 'Mid Sem - CSE', remaining: '3 days left', level: 'Important' },
-    { day: '28', month: 'NOV', title: 'DBMS', remaining: '16 days left', level: 'Medium' },
-    { day: '12', month: 'DEC', title: 'OOP', remaining: '30 days left', level: 'Low' },
-  ];
+  const subjects =
+    subjectsState.status === 'success' ? subjectsState.data : [];
 
   return (
     <View style={s.screen}>
@@ -56,6 +87,7 @@ export default function HomeScreen() {
         contentContainerStyle={s.content}
         showsVerticalScrollIndicator={false}
       >
+        {/* ── Hero ─────────────────────────────────────────────────────── */}
         <View style={s.hero}>
           <View style={s.heroCopy}>
             <Text style={s.eyebrow}>YOUR LEARNING SPACE</Text>
@@ -83,6 +115,7 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        {/* ── Your Subjects ─────────────────────────────────────────────── */}
         <View style={s.sectionHeader}>
           <Text style={s.sectionTitle}>✿ Your Subjects</Text>
           <Pressable onPress={() => router.push('/syllabus')}>
@@ -90,54 +123,67 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={s.subjectList}
-        >
-          {subjects.map((subject) => {
-            const percent = Math.round(
-              (subject.completed / subject.total) * 100,
-            );
+        {subjectsState.status === 'loading' && (
+          <View style={s.loadingRow}>
+            <ActivityIndicator color={theme.accent} />
+            <Text style={s.loadingText}>Loading subjects…</Text>
+          </View>
+        )}
 
-            return (
-              <Pressable
-                key={subject.id}
-                onPress={() => router.push('/syllabus')}
-                style={s.subjectCard}
-              >
-                <View style={s.subjectIcon}>
-                  <Text style={[s.subjectIconText, { color: subject.color }]}>
-                    {subject.icon}
+        {subjectsState.status === 'error' && (
+          <View style={s.inlineError}>
+            <Text style={s.inlineErrorText}>
+              Could not load subjects.
+            </Text>
+            <Pressable onPress={subjectsState.refresh} style={s.retrySmall}>
+              <Text style={s.retrySmallText}>Retry</Text>
+            </Pressable>
+          </View>
+        )}
+
+        {subjectsState.status === 'success' && subjects.length === 0 && (
+          <Text style={s.emptyNote}>No subjects found in the database.</Text>
+        )}
+
+        {subjects.length > 0 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={s.subjectList}
+          >
+            {subjects.map((subject, idx) => {
+              const colour = SUBJECT_COLOURS[idx % SUBJECT_COLOURS.length];
+              return (
+                <Pressable
+                  key={subject.subjectKey}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/syllabus',
+                      params: { subjectKey: subject.subjectKey },
+                    } as never)
+                  }
+                  style={s.subjectCard}
+                >
+                  <View style={s.subjectIcon}>
+                    <Text style={[s.subjectIconText, { color: colour }]}>
+                      {subjectIcon(subject.subjectId)}
+                    </Text>
+                  </View>
+
+                  <Text numberOfLines={1} style={s.subjectName}>
+                    {subject.subjectName ?? subject.subjectId}
                   </Text>
-                </View>
 
-                <Text numberOfLines={1} style={s.subjectName}>
-                  {subject.name}
-                </Text>
+                  <Text style={s.subjectMeta}>
+                    Sem {subject.semester} · {subject.credits} cr
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        )}
 
-                <Text style={s.subjectPercent}>{percent}%</Text>
-
-                <View style={s.progressTrack}>
-                  <View
-                    style={[
-                      s.progressFill,
-                      {
-                        width: `${percent}%`,
-                        backgroundColor: subject.color,
-                      },
-                    ]}
-                  />
-                </View>
-
-                <Text style={s.subjectCount}>
-                  {subject.completed} / {subject.total} topics
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-
+        {/* ── Find Questions ───────────────────────────────────────────── */}
         <View style={s.sectionHeader}>
           <Text style={s.sectionTitle}>Find Your Next Question</Text>
         </View>
@@ -166,6 +212,7 @@ export default function HomeScreen() {
           )}
         </View>
 
+        {/* ── Recommended Questions ─────────────────────────────────────── */}
         <View style={s.sectionHeader}>
           <Text style={s.sectionTitle}>Recommended for You</Text>
           <Pressable onPress={() => router.push('/question-bank')}>
@@ -173,50 +220,27 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        {questions.slice(0, 3).map((question) => (
-          <View key={question.id} style={s.questionCard}>
-            <View style={s.questionTop}>
-              <Text style={s.questionSubject}>{question.subject}</Text>
-              <Text
-                style={[
-                  s.priority,
-                  question.priority === 'High'
-                    ? s.high
-                    : question.priority === 'Medium'
-                      ? s.medium
-                      : s.low,
-                ]}
-              >
-                {question.priority} Priority
-              </Text>
-            </View>
-
-            <Text style={s.questionTitle}>{question.title}</Text>
-
-            <Text style={s.questionMeta}>
-              ◇ {question.chapter}  ·  {question.year ?? 'Book'}  ·  {question.marks} Marks
+        {/* Questions API is not yet implemented on the backend.
+            Showing an informational placeholder instead of fabricated data. */}
+        <View style={s.pendingCard}>
+          <Text style={s.pendingIcon}>📋</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={s.pendingTitle}>Questions coming soon</Text>
+            <Text style={s.pendingText}>
+              The Questions API is not yet available. Visit the Question Bank
+              screen to explore the question browser once the backend is ready.
             </Text>
-
-            <Pressable
-              onPress={() =>
-                router.push({
-                  pathname: '/question-bank/[id]',
-                  params: { id: question.id },
-                })
-              }
-              style={s.viewButton}
-            >
-              <Text style={s.viewButtonText}>View →</Text>
-            </Pressable>
           </View>
-        ))}
-
-        <View style={s.sectionHeader}>
-          <Text style={s.sectionTitle}>Upcoming Exams</Text>
-          <Text style={s.link}>View All</Text>
         </View>
 
-        {exams.map((exam) => (
+        {/* ── Upcoming Exams ────────────────────────────────────────────── */}
+        <View style={s.sectionHeader}>
+          <Text style={s.sectionTitle}>Upcoming Exams</Text>
+          {/* TODO(BACKEND): Link to a calendar/exam API when implemented. */}
+          <Text style={s.mutedNote}>Demo</Text>
+        </View>
+
+        {STATIC_EXAMS.map((exam) => (
           <View key={exam.title} style={s.examCard}>
             <View style={s.examDate}>
               <Text style={s.examDay}>{exam.day}</Text>
@@ -230,30 +254,13 @@ export default function HomeScreen() {
           </View>
         ))}
 
-        <View style={s.statsCard}>
-          <Text style={s.sectionTitle}>Quick Stats</Text>
-          <View style={s.statsGrid}>
-            {[
-              ['842', 'Total Questions'],
-              ['512', 'Previous Papers'],
-              ['330', 'From Books'],
-              ['214', 'High Priority'],
-            ].map(([value, label]) => (
-              <View key={label} style={s.statItem}>
-                <Text style={s.statValue}>{value}</Text>
-                <Text style={s.statLabel}>{label}</Text>
-              </View>
-            ))}
-          </View>
-          {/* TODO(BACKEND): Replace demo statistics with aggregated API data. */}
-        </View>
-
+        {/* ── Footer ───────────────────────────────────────────────────── */}
         <View style={s.footer}>
           <Text style={s.footerMascot}>🕷️</Text>
           <View style={{ flex: 1 }}>
-            <Text style={s.footerTitle}>Progress looks good!</Text>
+            <Text style={s.footerTitle}>Keep it up!</Text>
             <Text style={s.footerText}>
-              Keep going, one question at a time.
+              One question at a time.
             </Text>
           </View>
         </View>
@@ -357,6 +364,31 @@ function makeStyles(t: import('../constants/theme').AppTheme) {
     },
     sectionTitle: { color: t.text, fontSize: 16, fontWeight: '900' },
     link: { color: t.accent, fontSize: 11, fontWeight: '800' },
+    mutedNote: { color: t.muted, fontSize: 10 },
+    // Loading / error inline states
+    loadingRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
+    loadingText: { color: t.muted, fontSize: 12 },
+    inlineError: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      backgroundColor: t.surface,
+      borderWidth: 1,
+      borderColor: t.danger,
+      borderRadius: 13,
+      padding: 14,
+      marginBottom: 8,
+    },
+    inlineErrorText: { color: t.danger, fontSize: 12, flex: 1 },
+    retrySmall: {
+      backgroundColor: t.accent,
+      borderRadius: 9,
+      paddingHorizontal: 12,
+      paddingVertical: 7,
+    },
+    retrySmallText: { color: '#FFFFFF', fontSize: 11, fontWeight: '800' },
+    emptyNote: { color: t.muted, fontSize: 12, marginBottom: 8 },
+    // Subject cards
     subjectList: { paddingRight: 6 },
     subjectCard: {
       width: 140,
@@ -378,10 +410,8 @@ function makeStyles(t: import('../constants/theme').AppTheme) {
     },
     subjectIconText: { fontSize: 18, fontWeight: '900' },
     subjectName: { color: t.text, fontSize: 12, fontWeight: '800' },
-    subjectPercent: { color: t.muted, fontSize: 10, marginTop: 7, marginBottom: 7 },
-    progressTrack: { height: 5, backgroundColor: t.surfaceAlt, borderRadius: 5, overflow: 'hidden' },
-    progressFill: { height: 5, borderRadius: 5 },
-    subjectCount: { color: t.muted, fontSize: 9, marginTop: 8 },
+    subjectMeta: { color: t.muted, fontSize: 9, marginTop: 8 },
+    // Search
     searchBox: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -397,24 +427,22 @@ function makeStyles(t: import('../constants/theme').AppTheme) {
     quickFilters: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: 12 },
     quickFilter: { backgroundColor: t.surfaceAlt, paddingHorizontal: 10, paddingVertical: 9, borderRadius: 11 },
     quickFilterText: { color: t.text, fontSize: 10, fontWeight: '700' },
-    questionCard: {
+    // Pending / no-data card
+    pendingCard: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 12,
       backgroundColor: t.surface,
       borderWidth: 1,
       borderColor: t.border,
       borderRadius: 16,
-      padding: 14,
+      padding: 16,
       marginBottom: 10,
     },
-    questionTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    questionSubject: { color: t.accent, fontSize: 11, fontWeight: '900' },
-    priority: { fontSize: 10, fontWeight: '800' },
-    high: { color: t.danger },
-    medium: { color: t.warning },
-    low: { color: t.success },
-    questionTitle: { color: t.text, fontSize: 13, fontWeight: '800', lineHeight: 20, marginTop: 11 },
-    questionMeta: { color: t.muted, fontSize: 10, lineHeight: 17, marginTop: 7 },
-    viewButton: { alignSelf: 'flex-end', backgroundColor: t.accent, paddingHorizontal: 14, paddingVertical: 9, borderRadius: 9, marginTop: 10 },
-    viewButtonText: { color: '#FFFFFF', fontSize: 10, fontWeight: '900' },
+    pendingIcon: { fontSize: 28 },
+    pendingTitle: { color: t.text, fontSize: 13, fontWeight: '800' },
+    pendingText: { color: t.muted, fontSize: 11, lineHeight: 18, marginTop: 5 },
+    // Exam cards
     examCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: t.surface, borderWidth: 1, borderColor: t.border, borderRadius: 15, padding: 12, marginBottom: 9 },
     examDate: { width: 45, height: 48, borderRadius: 12, backgroundColor: t.accentSoft, alignItems: 'center', justifyContent: 'center' },
     examDay: { color: t.accent, fontWeight: '900', fontSize: 17 },
@@ -422,15 +450,12 @@ function makeStyles(t: import('../constants/theme').AppTheme) {
     examTitle: { color: t.text, fontSize: 12, fontWeight: '800' },
     examRemaining: { color: t.muted, fontSize: 10, marginTop: 5 },
     examLevel: { color: t.accent, fontSize: 9, fontWeight: '800' },
-    statsCard: { backgroundColor: t.surface, borderWidth: 1, borderColor: t.border, borderRadius: 18, padding: 15, marginTop: 12 },
-    statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 13 },
-    statItem: { width: '47%', flexGrow: 1, backgroundColor: t.surfaceAlt, padding: 13, borderRadius: 13 },
-    statValue: { color: t.text, fontSize: 22, fontWeight: '900' },
-    statLabel: { color: t.muted, fontSize: 10, marginTop: 5 },
+    // Footer
     footer: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: t.surfaceAlt, padding: 16, borderRadius: 17, marginTop: 18 },
     footerMascot: { fontSize: 35 },
     footerTitle: { color: t.text, fontSize: 13, fontWeight: '900' },
     footerText: { color: t.muted, fontSize: 11, marginTop: 5 },
+    // Bottom navigation
     bottomBar: {
       flexDirection: 'row',
       justifyContent: 'space-around',

@@ -1,5 +1,17 @@
 
-import { useMemo, useState } from 'react';
+/**
+ * Question Bank screen.
+ *
+ * Backend status:
+ *   - Subjects: fetched live from GET /api/subjects.
+ *   - Questions: NOT YET IMPLEMENTED on the backend.
+ *     The screen displays an honest empty/pending state rather than fake data.
+ *
+ * TODO(BACKEND): Once GET /api/questions is implemented, import `api.getQuestions`
+ * and replace the pendingQuestions block below with live filtering.
+ */
+
+import { useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -8,58 +20,37 @@ import {
   ScrollView,
   StyleSheet,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
-import { questions } from '../../data/questions';
 import { useAppTheme } from '../../providers/ThemeProvider';
-import { AppTheme } from '@/constants/theme';
-
-const subjects = ['All', 'DBMS', 'OOP', 'DAA', 'OS'];
-const priorities = ['All', 'High', 'Medium', 'Low'] as const;
+import { api, type Subject } from '../../services/api';
+import { useApiData } from '../../hooks/use-api-data';
+import type { AppTheme } from '../../constants/theme';
 
 export default function QuestionBankScreen() {
   const { theme } = useAppTheme();
-
-  const [search, setSearch] = useState('');
-  const [subject, setSubject] = useState('All');
-  const [priority, setPriority] =
-    useState<(typeof priorities)[number]>('All');
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-
   const styles = useMemo(() => makeStyles(theme), [theme]);
 
-  const filteredQuestions = useMemo(() => {
-    const term = search.trim().toLowerCase();
+  const [search, setSearch] = useState('');
 
-    return questions.filter((question) => {
-      const matchesSearch =
-        !term ||
-        question.title.toLowerCase().includes(term) ||
-        question.chapter.toLowerCase().includes(term) ||
-        question.subject.toLowerCase().includes(term);
+  // Live subject list for the filter chips
+  const fetchSubjects = useCallback(() => api.getSubjects(), []);
+  const subjectsState = useApiData<Subject[]>(fetchSubjects);
 
-      const matchesSubject =
-        subject === 'All' || question.subject === subject;
+  const subjects: Subject[] =
+    subjectsState.status === 'success' ? subjectsState.data : [];
 
-      const matchesPriority =
-        priority === 'All' || question.priority === priority;
+  const [selectedSubjectKey, setSelectedSubjectKey] = useState<number | null>(null);
 
-      return matchesSearch && matchesSubject && matchesPriority;
-    });
-  }, [search, subject, priority]);
-
-  function toggleSelection(id: string) {
-    setSelectedIds((current) =>
-      current.includes(id)
-        ? current.filter((item) => item !== id)
-        : [...current, id]
-    );
+  function handleSubjectChip(key: number | null) {
+    setSelectedSubjectKey((prev) => (prev === key ? null : key));
   }
 
   return (
     <View style={styles.screen}>
       <StatusBar
-        barStyle={theme.background === 'light' ? 'dark-content' : 'light-content'}
+        barStyle={theme.mode === 'light' ? 'dark-content' : 'light-content'}
       />
 
       <ScrollView
@@ -67,10 +58,13 @@ export default function QuestionBankScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
+        {/* ── Header ──────────────────────────────────────────────────── */}
         <View style={styles.header}>
           <Pressable
             onPress={() => router.back()}
             style={styles.backButton}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
           >
             <Text style={styles.backText}>‹</Text>
           </Pressable>
@@ -84,12 +78,14 @@ export default function QuestionBankScreen() {
           </View>
         </View>
 
+        {/* ── Summary card ────────────────────────────────────────────── */}
         <View style={styles.summaryCard}>
           <View>
             <Text style={styles.summaryLabel}>AVAILABLE QUESTIONS</Text>
-            <Text style={styles.summaryNumber}>{questions.length}</Text>
+            {/* TODO(BACKEND): Show real count once Questions API is live. */}
+            <Text style={styles.summaryNumber}>—</Text>
             <Text style={styles.summaryHint}>
-              Across your subjects
+              Questions API not yet available
             </Text>
           </View>
 
@@ -98,6 +94,7 @@ export default function QuestionBankScreen() {
           </View>
         </View>
 
+        {/* ── Search box ──────────────────────────────────────────────── */}
         <View style={styles.searchBox}>
           <Text style={styles.searchIcon}>⌕</Text>
           <TextInput
@@ -108,6 +105,7 @@ export default function QuestionBankScreen() {
             style={styles.searchInput}
             returnKeyType="search"
             accessibilityLabel="Search questions"
+            editable={false} // enabled once Questions API is live
           />
           {search.length > 0 && (
             <Pressable onPress={() => setSearch('')}>
@@ -116,201 +114,105 @@ export default function QuestionBankScreen() {
           )}
         </View>
 
+        {/* ── Subject filter chips ─────────────────────────────────────── */}
         <Text style={styles.sectionTitle}>SUBJECT</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.chipRow}
-        >
-          {subjects.map((item) => {
-            const active = subject === item;
 
-            return (
-              <Pressable
-                key={item}
-                onPress={() => setSubject(item)}
-                style={[styles.chip, active && styles.activeChip]}
-              >
-                <Text
-                  style={[
-                    styles.chipText,
-                    active && styles.activeChipText,
-                  ]}
-                >
-                  {item}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
+        {subjectsState.status === 'loading' && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+            <ActivityIndicator size="small" color={theme.accent} />
+            <Text style={{ color: theme.muted, fontSize: 12 }}>Loading subjects…</Text>
+          </View>
+        )}
 
-        <Text style={styles.sectionTitle}>PRIORITY</Text>
-        <View style={styles.priorityRow}>
-          {priorities.map((item) => {
-            const active = priority === item;
+        {subjectsState.status === 'error' && (
+          <View style={styles.errorBanner}>
+            <Text style={styles.errorBannerText}>
+              ⚠ Could not load subjects — {subjectsState.message}
+            </Text>
+            <Pressable onPress={subjectsState.refresh} style={styles.errorRetry}>
+              <Text style={styles.errorRetryText}>Retry</Text>
+            </Pressable>
+          </View>
+        )}
 
-            return (
-              <Pressable
-                key={item}
-                onPress={() => setPriority(item)}
+        {subjectsState.status === 'success' && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chipRow}
+          >
+            {/* "All" chip */}
+            <Pressable
+              key="all"
+              onPress={() => handleSubjectChip(null)}
+              style={[
+                styles.chip,
+                selectedSubjectKey === null && styles.activeChip,
+              ]}
+              accessibilityRole="button"
+              accessibilityState={{ selected: selectedSubjectKey === null }}
+            >
+              <Text
                 style={[
-                  styles.priorityChip,
-                  active && styles.activeChip,
+                  styles.chipText,
+                  selectedSubjectKey === null && styles.activeChipText,
                 ]}
               >
-                <Text
-                  style={[
-                    styles.chipText,
-                    active && styles.activeChipText,
-                  ]}
-                >
-                  {item}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
+                All
+              </Text>
+            </Pressable>
 
+            {subjects.map((s) => {
+              const active = selectedSubjectKey === s.subjectKey;
+              return (
+                <Pressable
+                  key={s.subjectKey}
+                  onPress={() => handleSubjectChip(s.subjectKey)}
+                  style={[styles.chip, active && styles.activeChip]}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                >
+                  <Text
+                    style={[styles.chipText, active && styles.activeChipText]}
+                  >
+                    {s.subjectName ?? s.subjectId}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        )}
+
+        {/* ── Results area ─────────────────────────────────────────────── */}
         <View style={styles.resultsHeader}>
           <View>
-            <Text style={styles.resultsTitle}>Explore questions</Text>
+            <Text style={styles.resultsTitle}>Questions</Text>
             <Text style={styles.resultsSubtitle}>
-              {filteredQuestions.length} result
-              {filteredQuestions.length === 1 ? '' : 's'} found
-            </Text>
-          </View>
-
-          <View style={styles.selectedBadge}>
-            <Text style={styles.selectedBadgeText}>
-              {selectedIds.length} selected
+              0 results found
             </Text>
           </View>
         </View>
 
-        {filteredQuestions.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyTitle}>No questions found</Text>
-            <Text style={styles.emptyText}>
-              Try another search or change your filters.
-            </Text>
-            <Pressable
-              onPress={() => {
-                setSearch('');
-                setSubject('All');
-                setPriority('All');
-              }}
-              style={styles.resetButton}
-            >
-              <Text style={styles.resetText}>Reset filters</Text>
-            </Pressable>
-          </View>
-        ) : (
-          filteredQuestions.map((question) => {
-            const selected = selectedIds.includes(question.id);
-
-            return (
-              <View key={question.id} style={styles.questionCard}>
-                <View style={styles.cardTopRow}>
-                  <View style={styles.subjectBadge}>
-                    <Text style={styles.subjectBadgeText}>
-                      {question.subject}
-                    </Text>
-                  </View>
-
-                  <Pressable
-                    onPress={() => toggleSelection(question.id)}
-                    accessibilityRole="checkbox"
-                    accessibilityState={{ checked: selected }}
-                    accessibilityLabel={`Select ${question.title}`}
-                    style={[
-                      styles.selectButton,
-                      selected && styles.selectedButton,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.selectButtonText,
-                        selected && styles.selectedButtonText,
-                      ]}
-                    >
-                      {selected ? '✓' : '+'}
-                    </Text>
-                  </Pressable>
-                </View>
-
-                <Pressable
-                  onPress={() =>
-                    router.push({
-                      pathname: '/question-bank/[id]',
-                      params: { id: question.id },
-                    })
-                  }
-                >
-                  <Text style={styles.questionTitle}>
-                    {question.title}
-                  </Text>
-
-                  <Text style={styles.chapterText}>
-                    Chapter: {question.chapter}
-                  </Text>
-
-                  <View style={styles.cardFooter}>
-                    <Text style={styles.metaText}>
-                      {question.marks} marks
-                    </Text>
-                    <Text style={styles.metaDot}>•</Text>
-                    <Text style={styles.metaText}>
-                      {question.source}
-                      {question.year ? ` · ${question.year}` : ''}
-                    </Text>
-                  </View>
-
-                  <View style={styles.cardBottomRow}>
-                    <View
-                      style={[
-                        styles.priorityBadge,
-                        question.priority === 'High' &&
-                          styles.highPriority,
-                        question.priority === 'Medium' &&
-                          styles.mediumPriority,
-                        question.priority === 'Low' &&
-                          styles.lowPriority,
-                      ]}
-                    >
-                      <Text style={styles.priorityText}>
-                        {question.priority} priority
-                      </Text>
-                    </View>
-
-                    <Text style={styles.viewDetails}>
-                      View details ›
-                    </Text>
-                  </View>
-                </Pressable>
-              </View>
-            );
-          })
-        )}
-
-        {selectedIds.length > 0 && (
-          <View style={styles.selectionPanel}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.selectionTitle}>
-                {selectedIds.length} questions selected
-              </Text>
-              <Text style={styles.selectionSubtitle}>
-                Ready for your study session
-              </Text>
-            </View>
-
-            <Pressable
-              onPress={() => setSelectedIds([])}
-              style={styles.clearSelectionButton}
-            >
-              <Text style={styles.clearSelectionText}>Clear</Text>
-            </Pressable>
-          </View>
-        )}
+        {/* ── Pending state — Questions API not yet implemented ─────────── */}
+        <View style={styles.pendingState}>
+          <Text style={styles.pendingIcon}>📋</Text>
+          <Text style={styles.pendingTitle}>Questions coming soon</Text>
+          <Text style={styles.pendingText}>
+            The Questions API is not yet implemented on the backend. Once it is
+            ready, questions will appear here automatically — no further
+            changes to this screen are needed.
+          </Text>
+          <Text style={styles.pendingHint}>
+            You can still browse subjects and chapters in the Syllabus screen.
+          </Text>
+          <Pressable
+            onPress={() => router.push('/syllabus')}
+            style={styles.pendingButton}
+            accessibilityRole="button"
+          >
+            <Text style={styles.pendingButtonText}>Open Syllabus →</Text>
+          </Pressable>
+        </View>
       </ScrollView>
     </View>
   );
@@ -388,7 +290,7 @@ function makeStyles(theme: AppTheme) {
       letterSpacing: 1,
     },
     summaryNumber: {
-      color: colors.text,
+      color: colors.muted,
       fontSize: 34,
       fontWeight: '900',
       marginTop: 6,
@@ -422,6 +324,7 @@ function makeStyles(theme: AppTheme) {
       paddingHorizontal: 14,
       marginBottom: 24,
       gap: 10,
+      opacity: 0.7, // dimmed while Questions API is not yet available
     },
     searchIcon: {
       color: colors.muted,
@@ -469,20 +372,6 @@ function makeStyles(theme: AppTheme) {
     activeChipText: {
       color: '#FFFFFF',
     },
-    priorityRow: {
-      flexDirection: 'row',
-      gap: 8,
-      marginBottom: 28,
-    },
-    priorityChip: {
-      flex: 1,
-      alignItems: 'center',
-      paddingVertical: 10,
-      borderRadius: 12,
-      backgroundColor: colors.surface,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
     resultsHeader: {
       flexDirection: 'row',
       justifyContent: 'space-between',
@@ -499,186 +388,76 @@ function makeStyles(theme: AppTheme) {
       fontSize: 12,
       marginTop: 5,
     },
-    selectedBadge: {
-      backgroundColor: colors.surface,
-      borderWidth: 1,
-      borderColor: colors.border,
-      paddingHorizontal: 10,
-      paddingVertical: 7,
-      borderRadius: 10,
-    },
-    selectedBadgeText: {
-      color: colors.accent,
-      fontSize: 11,
-      fontWeight: '800',
-    },
-    questionCard: {
-      backgroundColor: colors.surface,
-      borderRadius: 20,
-      borderWidth: 1,
-      borderColor: colors.border,
-      padding: 17,
-      marginBottom: 13,
-    },
-    cardTopRow: {
+    // Error banner
+    errorBanner: {
       flexDirection: 'row',
-      justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: 13,
+      gap: 10,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.danger,
+      borderRadius: 13,
+      padding: 13,
+      marginBottom: 16,
     },
-    subjectBadge: {
-      backgroundColor: colors.background,
-      paddingHorizontal: 10,
-      paddingVertical: 6,
+    errorBannerText: {
+      color: colors.danger,
+      fontSize: 11,
+      flex: 1,
+    },
+    errorRetry: {
+      backgroundColor: colors.accent,
       borderRadius: 9,
-    },
-    subjectBadgeText: {
-      color: colors.accent,
-      fontSize: 11,
-      fontWeight: '900',
-    },
-    selectButton: {
-      width: 30,
-      height: 30,
-      borderRadius: 10,
-      borderWidth: 1,
-      borderColor: colors.border,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    selectedButton: {
-      backgroundColor: colors.accent,
-      borderColor: colors.accent,
-    },
-    selectButtonText: {
-      color: colors.text,
-      fontSize: 20,
-      fontWeight: '700',
-      lineHeight: 22,
-    },
-    selectedButtonText: {
-      color: '#FFFFFF',
-    },
-    questionTitle: {
-      color: colors.text,
-      fontSize: 15,
-      fontWeight: '800',
-      lineHeight: 23,
-    },
-    chapterText: {
-      color: colors.muted,
-      fontSize: 11,
-      marginTop: 9,
-    },
-    cardFooter: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      flexWrap: 'wrap',
-      gap: 7,
-      marginTop: 14,
-    },
-    metaText: {
-      color: colors.muted,
-      fontSize: 10,
-    },
-    metaDot: {
-      color: colors.muted,
-      fontSize: 10,
-    },
-    cardBottomRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: 8,
-      marginTop: 14,
-    },
-    priorityBadge: {
-      paddingHorizontal: 9,
+      paddingHorizontal: 10,
       paddingVertical: 6,
-      borderRadius: 8,
     },
-    highPriority: {
-      backgroundColor: '#FCE7E7',
-    },
-    mediumPriority: {
-      backgroundColor: '#FFF1D6',
-    },
-    lowPriority: {
-      backgroundColor: '#DDF6E9',
-    },
-    priorityText: {
-      color: '#493C50',
-      fontSize: 10,
+    errorRetryText: {
+      color: '#FFFFFF',
+      fontSize: 11,
       fontWeight: '800',
     },
-    viewDetails: {
+    // Pending / not-yet-implemented state
+    pendingState: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 22,
+      padding: 28,
+      alignItems: 'center',
+    },
+    pendingIcon: {
+      fontSize: 44,
+      marginBottom: 14,
+    },
+    pendingTitle: {
+      color: colors.text,
+      fontSize: 18,
+      fontWeight: '900',
+      marginBottom: 10,
+    },
+    pendingText: {
+      color: colors.muted,
+      fontSize: 13,
+      textAlign: 'center',
+      lineHeight: 20,
+    },
+    pendingHint: {
       color: colors.accent,
       fontSize: 11,
-      fontWeight: '800',
-    },
-    emptyState: {
-      backgroundColor: colors.surface,
-      borderRadius: 20,
-      padding: 24,
-      alignItems: 'center',
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    emptyTitle: {
-      color: colors.text,
-      fontSize: 17,
-      fontWeight: '900',
-    },
-    emptyText: {
-      color: colors.muted,
-      fontSize: 12,
       textAlign: 'center',
-      marginTop: 8,
+      marginTop: 12,
     },
-    resetButton: {
+    pendingButton: {
       backgroundColor: colors.accent,
-      paddingHorizontal: 16,
-      paddingVertical: 10,
-      borderRadius: 12,
-      marginTop: 16,
+      borderRadius: 13,
+      paddingHorizontal: 20,
+      paddingVertical: 12,
+      marginTop: 20,
     },
-    resetText: {
+    pendingButtonText: {
       color: '#FFFFFF',
-      fontSize: 12,
       fontWeight: '800',
-    },
-    selectionPanel: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
-      backgroundColor: colors.surface,
-      borderWidth: 1,
-      borderColor: colors.accent,
-      borderRadius: 18,
-      padding: 16,
-      marginTop: 8,
-    },
-    selectionTitle: {
-      color: colors.text,
       fontSize: 13,
-      fontWeight: '900',
-    },
-    selectionSubtitle: {
-      color: colors.muted,
-      fontSize: 11,
-      marginTop: 4,
-    },
-    clearSelectionButton: {
-      borderRadius: 10,
-      borderWidth: 1,
-      borderColor: colors.border,
-      paddingHorizontal: 13,
-      paddingVertical: 9,
-    },
-    clearSelectionText: {
-      color: colors.text,
-      fontSize: 11,
-      fontWeight: '800',
     },
   });
 }
