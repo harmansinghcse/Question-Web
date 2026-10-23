@@ -6,6 +6,10 @@ import { AppService } from './app.service';
 import { SubjectsModule } from './subjects/subjects.module';
 import { ChaptersModule } from './chapters/chapters.module';
 import { TopicsModule } from './topics/topics.module';
+import { DashboardModule } from './dashboard/dashboard.module';
+import { DepartmentsModule } from './departments/departments.module';
+import { QuestionsModule } from './questions/questions.module';
+import { SourcesModule } from './sources/sources.module';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -54,6 +58,10 @@ import * as path from 'path';
     SubjectsModule,
     ChaptersModule,
     TopicsModule,
+    DashboardModule,
+    DepartmentsModule,
+    QuestionsModule,
+    SourcesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

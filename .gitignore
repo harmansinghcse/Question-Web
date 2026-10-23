@@ -62,3 +62,39 @@ backend/coverage/
 
 # certs
 ca.pem
+
+
+# Dependencies
+node_modules/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Build outputs
+dist/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Testing and coverage
+coverage/
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# TypeScript
+*.tsbuildinfo
+
+# Vite
+frontend/.vite/
+
+# NestJS
+backend/dist/
+backend/coverage/
