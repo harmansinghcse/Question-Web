@@ -19,11 +19,84 @@ export interface CreatedQuestion {
   topicIds: number[];
 }
 
+export interface QuestionTopicItem {
+  topicId: number;
+  topicName: string;
+  chapterId: number;
+}
+
+export interface QuestionWithTopics {
+  quesId: number;
+  quesText: string;
+  quesType: string;
+  sourceId: number;
+  topics: QuestionTopicItem[];
+}
+
 @Injectable()
 export class QuestionsService {
   private readonly logger = new Logger(QuestionsService.name);
 
   constructor(private readonly dataSource: DataSource) {}
+
+  /**
+   * Retrieves all questions along with their associated topics.
+   */
+  async findAll(): Promise<QuestionWithTopics[]> {
+    try {
+      const questions = await this.dataSource.manager.find(Question, {
+        order: { quesId: 'DESC' },
+      });
+
+      if (questions.length === 0) {
+        return [];
+      }
+
+      const questionTopics = await this.dataSource.manager.find(QuestionTopic);
+      const allTopicIds = Array.from(
+        new Set(questionTopics.map((qt) => qt.topicId)),
+      );
+
+      const topics =
+        allTopicIds.length > 0
+          ? await this.dataSource.manager.find(Topic, {
+              where: { topicId: In(allTopicIds) },
+            })
+          : [];
+
+      const topicMap = new Map<number, Topic>(
+        topics.map((t) => [t.topicId, t]),
+      );
+
+      const topicsByQuestion = new Map<number, QuestionTopicItem[]>();
+      for (const qt of questionTopics) {
+        const t = topicMap.get(qt.topicId);
+        if (t) {
+          const list = topicsByQuestion.get(qt.quesId) ?? [];
+          list.push({
+            topicId: t.topicId,
+            topicName: t.topicName,
+            chapterId: t.chapterId,
+          });
+          topicsByQuestion.set(qt.quesId, list);
+        }
+      }
+
+      return questions.map((q) => ({
+        quesId: q.quesId,
+        quesText: q.quesText,
+        quesType: q.quesType,
+        sourceId: q.sourceId,
+        topics: topicsByQuestion.get(q.quesId) ?? [],
+      }));
+    } catch (error: unknown) {
+      this.logger.error(
+        'Failed to fetch questions',
+        error instanceof Error ? error.stack : String(error),
+      );
+      throw new InternalServerErrorException('Failed to fetch questions');
+    }
+  }
 
   /**
    * Creates a Question and its QuestionTopic rows in ONE transaction.
