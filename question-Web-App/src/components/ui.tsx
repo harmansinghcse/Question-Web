@@ -577,8 +577,11 @@ export function QuestionCard({
     };
 
     return (
-        <View
-            style={{
+        <Pressable
+            onPress={openDetail}
+            accessibilityRole="button"
+            accessibilityLabel={`Question #${question.quesId}: ${question.quesText.slice(0, 50)}`}
+            style={({ pressed }) => ({
                 backgroundColor: theme.surface,
                 borderWidth: 1,
                 borderColor: theme.border,
@@ -587,7 +590,8 @@ export function QuestionCard({
                 borderRadius: 12,
                 padding: 16,
                 gap: 12,
-            }}
+                opacity: pressed ? 0.92 : 1,
+            })}
         >
             {/* Top metadata row */}
             <View
@@ -743,7 +747,7 @@ export function QuestionCard({
                     />
                 </Pressable>
             </View>
-        </View>
+        </Pressable>
     );
 }
 

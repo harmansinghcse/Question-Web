@@ -1,4 +1,4 @@
-import { useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { fetchApi } from "../services/api";
 import SearchableSelect, { type ComboOption } from "./SearchableSelect";
 import {
@@ -84,16 +84,16 @@ const ALLOWED_IMAGE_TYPES = [
 ];
 
 /**
- * Uploads a file securely to Cloudinary using signed parameters from the backend.
- * The backend secret is never exposed.
+ * Uploads a file securely to Cloudinary with automatic retries on transient errors.
  */
-async function uploadToCloudinary(
+async function uploadToCloudinaryWithRetry(
     file: File,
     onProgress?: (text: string) => void,
+    maxRetries = 2,
 ): Promise<string> {
     if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
         throw new Error(
-            `"${file.name}" is not a supported format. Please upload JPG, PNG, WEBP, or GIF.`,
+            `"${file.name}" has an unsupported format (${file.type || "unknown"}). Allowed: JPG, PNG, WEBP, GIF.`,
         );
     }
     if (file.size > MAX_IMAGE_SIZE_BYTES) {
@@ -103,45 +103,67 @@ async function uploadToCloudinary(
         );
     }
 
-    onProgress?.(`Signing upload for ${file.name}…`);
-    const sig = await fetchApi<UploadSignature>(
-        "/api/questions/upload-signature",
-    );
+    let lastError: unknown = null;
 
-    onProgress?.(`Uploading ${file.name} to Cloudinary…`);
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("api_key", sig.apiKey);
-    formData.append("timestamp", String(sig.timestamp));
-    formData.append("signature", sig.signature);
-    formData.append("folder", sig.folder);
+    for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
+        try {
+            onProgress?.(
+                attempt > 1
+                    ? `Retrying upload for ${file.name} (attempt ${attempt} of ${maxRetries + 1})…`
+                    : `Requesting signed upload for ${file.name}…`,
+            );
 
-    const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${sig.cloudName}/image/upload`,
-        {
-            method: "POST",
-            body: formData,
-        },
-    );
+            const sig = await fetchApi<UploadSignature>(
+                "/api/questions/upload-signature",
+            );
 
-    if (!response.ok) {
-        const errJson = (await response.json().catch(() => null)) as {
-            error?: { message?: string };
-        } | null;
-        throw new Error(
-            errJson?.error?.message ||
-                `Cloudinary upload failed for "${file.name}" (${response.statusText}).`,
-        );
+            onProgress?.(`Uploading ${file.name} to Cloudinary…`);
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("api_key", sig.apiKey);
+            formData.append("timestamp", String(sig.timestamp));
+            formData.append("signature", sig.signature);
+            formData.append("folder", sig.folder);
+
+            const response = await fetch(
+                `https://api.cloudinary.com/v1_1/${sig.cloudName}/image/upload`,
+                {
+                    method: "POST",
+                    body: formData,
+                },
+            );
+
+            if (!response.ok) {
+                const errJson = (await response.json().catch(() => null)) as {
+                    error?: { message?: string };
+                } | null;
+                throw new Error(
+                    errJson?.error?.message ||
+                        `Cloudinary upload error (${response.status} ${response.statusText}).`,
+                );
+            }
+
+            const json = (await response.json()) as { secure_url?: string };
+            if (!json.secure_url) {
+                throw new Error(
+                    `Upload completed, but no secure HTTPS URL returned for "${file.name}".`,
+                );
+            }
+
+            return json.secure_url;
+        } catch (err) {
+            lastError = err;
+            if (attempt <= maxRetries) {
+                await new Promise((resolve) =>
+                    setTimeout(resolve, 1000 * attempt),
+                );
+            }
+        }
     }
 
-    const json = (await response.json()) as { secure_url?: string };
-    if (!json.secure_url) {
-        throw new Error(
-            `Upload completed, but no secure HTTPS URL was returned for "${file.name}".`,
-        );
-    }
-
-    return json.secure_url;
+    throw lastError instanceof Error
+        ? lastError
+        : new Error(`Failed to upload ${file.name}`);
 }
 
 const inputClass = (invalid: boolean) =>
@@ -216,6 +238,10 @@ export default function AddQuestionForm() {
     const [jsonImportProgress, setJsonImportProgress] = useState<string | null>(
         null,
     );
+    // Cache topics per chapter for JSON inline correction
+    const [chapterTopicsCache, setChapterTopicsCache] = useState<
+        Record<string, TopicOption[]>
+    >({});
 
     // Global form saving & notice
     const [saving, setSaving] = useState(false);
@@ -263,6 +289,28 @@ export default function AddQuestionForm() {
         () => [...chapters.data].sort((a, b) => a.chapterNo - b.chapterNo),
         [chapters.data],
     );
+
+    // Fetch topics helper for chapters (used in JSON matching and correction)
+    const loadTopicsForChapter = async (cId: string): Promise<TopicOption[]> => {
+        if (!cId) return [];
+        if (chapterTopicsCache[cId]) return chapterTopicsCache[cId];
+        try {
+            const list = await fetchApi<TopicOption[]>(
+                `/api/topics?chapterId=${cId}`,
+            );
+            setChapterTopicsCache((prev) => ({ ...prev, [cId]: list }));
+            return list;
+        } catch {
+            return [];
+        }
+    };
+
+    // Preload topics for selected manual chapter
+    useEffect(() => {
+        if (chapterId) {
+            loadTopicsForChapter(chapterId);
+        }
+    }, [chapterId]);
 
     // Validation for Manual Entry
     const errors: Errors = {};
@@ -325,7 +373,7 @@ export default function AddQuestionForm() {
         setJsonParseError(null);
     };
 
-    // Manual images management
+    // Manual images management & reordering
     const handleAddManualImages = (files: FileList | null) => {
         if (!files || files.length === 0) return;
         const newAttachments: ImageAttachment[] = [];
@@ -363,6 +411,18 @@ export default function AddQuestionForm() {
         });
     };
 
+    const handleMoveManualImage = (index: number, direction: -1 | 1) => {
+        setManualImages((prev) => {
+            const targetIdx = index + direction;
+            if (targetIdx < 0 || targetIdx >= prev.length) return prev;
+            const updated = [...prev];
+            const temp = updated[index];
+            updated[index] = updated[targetIdx];
+            updated[targetIdx] = temp;
+            return updated;
+        });
+    };
+
     // Manual Entry Submit
     const handleManualSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -382,7 +442,10 @@ export default function AddQuestionForm() {
                 setProgressStatus(
                     `Uploading image ${i + 1} of ${manualImages.length}…`,
                 );
-                const url = await uploadToCloudinary(img.file);
+                const url = await uploadToCloudinaryWithRetry(
+                    img.file,
+                    (txt) => setProgressStatus(txt),
+                );
                 uploadedUrls.push(url);
             }
 
@@ -435,8 +498,8 @@ export default function AddQuestionForm() {
         }
     };
 
-    // JSON Import parsing
-    const handleParseJson = () => {
+    // JSON Import parsing and auto-matching
+    const handleParseJson = async () => {
         setJsonParseError(null);
         setNotice(null);
         if (!jsonRaw.trim()) {
@@ -452,7 +515,10 @@ export default function AddQuestionForm() {
                 );
             }
 
-            const items: JsonImportItem[] = parsed.map((item, idx) => {
+            const items: JsonImportItem[] = [];
+
+            for (let idx = 0; idx < parsed.length; idx++) {
+                const item = parsed[idx];
                 const qText = String(item.questionText ?? "").trim();
                 const chName = String(item.chapter ?? "").trim();
                 const tNames: string[] = Array.isArray(item.topics)
@@ -472,33 +538,57 @@ export default function AddQuestionForm() {
                     if (found) matchedChapterId = String(found.chapterId);
                 }
 
-                // If not matched, default to the currently selected chapter dropdown
                 if (!matchedChapterId && chapterId) {
                     matchedChapterId = chapterId;
                 }
 
-                return {
+                // If chapter matched, load its topics and match topics
+                let matchedTopicIds: number[] = [];
+                if (matchedChapterId) {
+                    const chTopics =
+                        await loadTopicsForChapter(matchedChapterId);
+                    if (chTopics.length > 0 && tNames.length > 0) {
+                        const matched = chTopics.filter((t) =>
+                            tNames.some(
+                                (raw) =>
+                                    raw.toLowerCase() ===
+                                        t.topicName.toLowerCase() ||
+                                    t.topicName
+                                        .toLowerCase()
+                                        .includes(raw.toLowerCase()) ||
+                                    raw
+                                        .toLowerCase()
+                                        .includes(t.topicName.toLowerCase()),
+                            ),
+                        );
+                        matchedTopicIds = matched.map((m) => m.topicId);
+                    }
+                    // Default to first topic if none matched
+                    if (matchedTopicIds.length === 0 && chTopics.length > 0) {
+                        matchedTopicIds = [chTopics[0].topicId];
+                    }
+                }
+
+                items.push({
                     id: `json-q-${idx}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
                     questionText: qText,
                     rawChapterName: chName,
                     rawTopicNames: tNames,
                     chapterId: matchedChapterId,
-                    topicIds: [],
+                    topicIds: matchedTopicIds,
                     images: [],
                     status: "idle",
-                };
-            });
+                });
+            }
 
             if (items.length === 0) {
-                throw new Error(
-                    "The provided JSON array does not contain any questions.",
-                );
+                throw new Error("No questions found in the JSON.");
             }
 
             setJsonItems(items);
             setNotice({
                 kind: "success",
-                message: `Parsed ${items.length} question(s). Review each question below, match topics, and optionally attach images.`,
+                message: `Parsed ${items.length} question(s). You can verify or correct the chapter/topics and attach images for each question below.`,
             });
         } catch (err) {
             setJsonParseError(
@@ -520,11 +610,8 @@ export default function AddQuestionForm() {
         reader.readAsText(file);
     };
 
-    // JSON item image attachments
-    const handleAddJsonImages = (
-        itemId: string,
-        files: FileList | null,
-    ) => {
+    // JSON item image attachments & reordering
+    const handleAddJsonImages = (itemId: string, files: FileList | null) => {
         if (!files || files.length === 0) return;
         const newAttachments: ImageAttachment[] = [];
         for (let i = 0; i < files.length; i++) {
@@ -569,6 +656,26 @@ export default function AddQuestionForm() {
         );
     };
 
+    const handleMoveJsonImage = (
+        itemId: string,
+        index: number,
+        direction: -1 | 1,
+    ) => {
+        setJsonItems((prev) =>
+            prev.map((item) => {
+                if (item.id !== itemId) return item;
+                const targetIdx = index + direction;
+                if (targetIdx < 0 || targetIdx >= item.images.length)
+                    return item;
+                const updated = [...item.images];
+                const temp = updated[index];
+                updated[index] = updated[targetIdx];
+                updated[targetIdx] = temp;
+                return { ...item, images: updated };
+            }),
+        );
+    };
+
     const handleRemoveJsonItem = (itemId: string) => {
         setJsonItems((prev) => {
             const target = prev.find((item) => item.id === itemId);
@@ -581,13 +688,44 @@ export default function AddQuestionForm() {
         });
     };
 
+    // JSON item inline correction handlers
+    const handleJsonItemChapterChange = async (
+        itemId: string,
+        newChapterId: string,
+    ) => {
+        const chTopics = await loadTopicsForChapter(newChapterId);
+        setJsonItems((prev) =>
+            prev.map((item) => {
+                if (item.id !== itemId) return item;
+                return {
+                    ...item,
+                    chapterId: newChapterId,
+                    topicIds:
+                        chTopics.length > 0 ? [chTopics[0].topicId] : [],
+                };
+            }),
+        );
+    };
+
+    const handleToggleJsonItemTopic = (itemId: string, tId: number) => {
+        setJsonItems((prev) =>
+            prev.map((item) => {
+                if (item.id !== itemId) return item;
+                const nextTopics = item.topicIds.includes(tId)
+                    ? item.topicIds.filter((id) => id !== tId)
+                    : [...item.topicIds, tId];
+                return { ...item, topicIds: nextTopics };
+            }),
+        );
+    };
+
     // JSON Batch Import Runner
     const handleRunBatchImport = async () => {
         if (!department || !subject || !type || !sourceId) {
             setNotice({
                 kind: "error",
                 message:
-                    "Please select Department, Subject, Question Type, and Source before importing.",
+                    "Please select Department, Subject, Question Type, and Source above before importing.",
             });
             return;
         }
@@ -596,6 +734,18 @@ export default function AddQuestionForm() {
             setNotice({
                 kind: "error",
                 message: "No questions available to import.",
+            });
+            return;
+        }
+
+        // Validate that all questions have chapter and at least 1 topic
+        const unassignedIndex = jsonItems.findIndex(
+            (it) => !it.chapterId || it.topicIds.length === 0,
+        );
+        if (unassignedIndex !== -1) {
+            setNotice({
+                kind: "error",
+                message: `Question #${unassignedIndex + 1} has no chapter or topics assigned. Please correct it before importing.`,
             });
             return;
         }
@@ -610,11 +760,13 @@ export default function AddQuestionForm() {
 
         for (let i = 0; i < jsonItems.length; i++) {
             const item = jsonItems[i];
+            // Skip already saved questions
+            if (item.status === "success") continue;
+
             setJsonImportProgress(
                 `Processing question ${i + 1} of ${jsonItems.length}: "${item.questionText.slice(0, 30)}…"`,
             );
 
-            // Update item state to uploading
             setJsonItems((prev) =>
                 prev.map((it) =>
                     it.id === item.id ? { ...it, status: "uploading" } : it,
@@ -625,41 +777,6 @@ export default function AddQuestionForm() {
                 if (!item.questionText.trim()) {
                     throw new Error("Question text is empty.");
                 }
-                const effectiveChapterId = item.chapterId || chapterId;
-                if (!effectiveChapterId) {
-                    throw new Error("No chapter selected for this question.");
-                }
-
-                // If no topic selected, fetch topics for this chapter and auto-match
-                let targetTopicIds = item.topicIds;
-                if (targetTopicIds.length === 0) {
-                    const chTopics = await fetchApi<TopicOption[]>(
-                        `/api/topics?chapterId=${effectiveChapterId}`,
-                    );
-                    if (chTopics.length > 0 && item.rawTopicNames?.length) {
-                        const matched = chTopics.filter((t) =>
-                            item.rawTopicNames?.some(
-                                (raw) =>
-                                    raw.toLowerCase() ===
-                                        t.topicName.toLowerCase() ||
-                                    t.topicName
-                                        .toLowerCase()
-                                        .includes(raw.toLowerCase()),
-                            ),
-                        );
-                        if (matched.length > 0) {
-                            targetTopicIds = matched.map((m) => m.topicId);
-                        } else {
-                            targetTopicIds = [chTopics[0].topicId];
-                        }
-                    } else if (chTopics.length > 0) {
-                        targetTopicIds = [chTopics[0].topicId];
-                    } else {
-                        throw new Error(
-                            "Selected chapter has no topics available.",
-                        );
-                    }
-                }
 
                 // 1. Upload attached images to Cloudinary (if any)
                 const uploadedUrls: string[] = [];
@@ -668,11 +785,14 @@ export default function AddQuestionForm() {
                     setJsonImportProgress(
                         `Question ${i + 1}/${jsonItems.length}: Uploading image ${j + 1}/${item.images.length}…`,
                     );
-                    const url = await uploadToCloudinary(img.file);
+                    const url = await uploadToCloudinaryWithRetry(
+                        img.file,
+                        (txt) => setJsonImportProgress(txt),
+                    );
                     uploadedUrls.push(url);
                 }
 
-                // 2. Save question
+                // 2. Save question atomically
                 setJsonImportProgress(
                     `Question ${i + 1}/${jsonItems.length}: Saving question record…`,
                 );
@@ -684,7 +804,7 @@ export default function AddQuestionForm() {
                             quesText: item.questionText.trim(),
                             quesType: type,
                             sourceId: Number(sourceId),
-                            topicIds: targetTopicIds,
+                            topicIds: item.topicIds,
                             imageUrls: uploadedUrls,
                         }),
                     },
@@ -1182,56 +1302,101 @@ export default function AddQuestionForm() {
                             )}
                         </div>
 
-                        {/* Image Previews */}
+                        {/* Image Previews with Reordering */}
                         {manualImages.length > 0 && (
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 p-3 bg-neutral-950 rounded-lg border border-neutral-800">
                                 {manualImages.map((img, idx) => (
                                     <div
                                         key={img.id}
-                                        className="relative group rounded-lg overflow-hidden border border-neutral-700 bg-neutral-900"
+                                        className="relative group rounded-lg overflow-hidden border border-neutral-700 bg-neutral-900 flex flex-col justify-between"
                                     >
-                                        <img
-                                            src={img.previewUrl}
-                                            alt={`Preview ${idx + 1}`}
-                                            className="w-full h-28 object-cover"
-                                        />
-                                        <div className="p-2 text-xs">
-                                            <p
-                                                className="truncate text-neutral-300 font-medium"
-                                                title={img.file.name}
+                                        <div className="relative">
+                                            <img
+                                                src={img.previewUrl}
+                                                alt={`Preview ${idx + 1}`}
+                                                className="w-full h-28 object-cover"
+                                            />
+                                            <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[10px] bg-black/70 text-white font-semibold">
+                                                #{idx + 1}
+                                            </span>
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    handleRemoveManualImage(
+                                                        img.id,
+                                                    )
+                                                }
+                                                className="absolute top-1.5 right-1.5 p-1 rounded bg-red-600/90 text-white hover:bg-red-500 transition-colors shadow"
+                                                title="Remove image"
                                             >
-                                                {img.file.name}
-                                            </p>
-                                            <p className="text-[10px] text-neutral-500">
-                                                {(
-                                                    img.file.size / 1024
-                                                ).toFixed(0)}{" "}
-                                                KB · Order #{idx + 1}
-                                            </p>
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    width="12"
+                                                    height="12"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    strokeWidth="2"
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                >
+                                                    <path d="M18 6 6 18" />
+                                                    <path d="m6 6 12 12" />
+                                                </svg>
+                                            </button>
                                         </div>
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                handleRemoveManualImage(img.id)
-                                            }
-                                            className="absolute top-1.5 right-1.5 p-1 rounded bg-red-600/90 text-white hover:bg-red-500 transition-colors shadow"
-                                            title="Remove image"
-                                        >
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                width="12"
-                                                height="12"
-                                                viewBox="0 0 24 24"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeWidth="2"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                            >
-                                                <path d="M18 6 6 18" />
-                                                <path d="m6 6 12 12" />
-                                            </svg>
-                                        </button>
+
+                                        <div className="p-2 text-xs flex items-center justify-between border-t border-neutral-800">
+                                            <div className="truncate flex-1 mr-2">
+                                                <p
+                                                    className="truncate text-neutral-300 font-medium"
+                                                    title={img.file.name}
+                                                >
+                                                    {img.file.name}
+                                                </p>
+                                                <p className="text-[10px] text-neutral-500">
+                                                    {(
+                                                        img.file.size / 1024
+                                                    ).toFixed(0)}{" "}
+                                                    KB
+                                                </p>
+                                            </div>
+
+                                            {/* Reorder Buttons */}
+                                            <div className="flex items-center gap-1">
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        handleMoveManualImage(
+                                                            idx,
+                                                            -1,
+                                                        )
+                                                    }
+                                                    disabled={idx === 0}
+                                                    className="p-1 rounded bg-neutral-800 hover:bg-neutral-700 disabled:opacity-30 text-neutral-300"
+                                                    title="Move earlier"
+                                                >
+                                                    ←
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        handleMoveManualImage(
+                                                            idx,
+                                                            1,
+                                                        )
+                                                    }
+                                                    disabled={
+                                                        idx ===
+                                                        manualImages.length - 1
+                                                    }
+                                                    className="p-1 rounded bg-neutral-800 hover:bg-neutral-700 disabled:opacity-30 text-neutral-300"
+                                                    title="Move later"
+                                                >
+                                                    →
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -1337,13 +1502,12 @@ export default function AddQuestionForm() {
                         </div>
                     </div>
 
-                    {/* Parsed Questions Preview Cards */}
+                    {/* Parsed Questions Preview Cards with Inline Chapter/Topic Correction */}
                     {jsonItems.length > 0 && (
                         <div className="space-y-4">
                             <div className="flex items-center justify-between">
                                 <h4 className="text-base font-semibold text-neutral-200">
-                                    Preview & Image Attachment (
-                                    {jsonItems.length})
+                                    Preview & Correction ({jsonItems.length})
                                 </h4>
                                 <button
                                     type="button"
@@ -1355,167 +1519,284 @@ export default function AddQuestionForm() {
                                 </button>
                             </div>
 
-                            {jsonItems.map((item, idx) => (
-                                <div
-                                    key={item.id}
-                                    className={`bg-neutral-900 border rounded-xl p-5 relative space-y-4 transition-colors ${
-                                        item.status === "success"
-                                            ? "border-emerald-500/50 bg-emerald-950/10"
-                                            : item.status === "error"
-                                              ? "border-red-500/60 bg-red-950/10"
-                                              : "border-neutral-800"
-                                    }`}
-                                >
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div className="flex items-center gap-2">
-                                            <span className="w-6 h-6 rounded-full bg-red-900/40 text-red-400 text-xs font-bold flex items-center justify-center border border-red-500/30">
-                                                {idx + 1}
-                                            </span>
-                                            {item.rawChapterName && (
-                                                <span className="px-2 py-0.5 rounded text-[11px] bg-neutral-800 text-neutral-300 font-medium">
-                                                    Chapter:{" "}
-                                                    {item.rawChapterName}
+                            {jsonItems.map((item, idx) => {
+                                const currentChapterTopics =
+                                    chapterTopicsCache[item.chapterId] ?? [];
+
+                                return (
+                                    <div
+                                        key={item.id}
+                                        className={`bg-neutral-900 border rounded-xl p-5 relative space-y-4 transition-colors ${
+                                            item.status === "success"
+                                                ? "border-emerald-500/50 bg-emerald-950/10"
+                                                : item.status === "error"
+                                                  ? "border-red-500/60 bg-red-950/10"
+                                                  : "border-neutral-800"
+                                        }`}
+                                    >
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="flex items-center gap-2">
+                                                <span className="w-6 h-6 rounded-full bg-red-900/40 text-red-400 text-xs font-bold flex items-center justify-center border border-red-500/30">
+                                                    {idx + 1}
                                                 </span>
-                                            )}
-                                            {item.rawTopicNames?.map(
-                                                (tName, tIdx) => (
-                                                    <span
-                                                        key={tIdx}
-                                                        className="px-2 py-0.5 rounded text-[11px] bg-red-950/40 border border-red-500/30 text-red-300"
-                                                    >
-                                                        {tName}
+                                                {item.rawChapterName && (
+                                                    <span className="px-2 py-0.5 rounded text-[11px] bg-neutral-800 text-neutral-300 font-medium">
+                                                        Raw Chapter:{" "}
+                                                        {item.rawChapterName}
                                                     </span>
-                                                ),
-                                            )}
-                                        </div>
+                                                )}
+                                                {item.rawTopicNames?.map(
+                                                    (tName, tIdx) => (
+                                                        <span
+                                                            key={tIdx}
+                                                            className="px-2 py-0.5 rounded text-[11px] bg-red-950/40 border border-red-500/30 text-red-300"
+                                                        >
+                                                            {tName}
+                                                        </span>
+                                                    ),
+                                                )}
+                                            </div>
 
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                handleRemoveJsonItem(item.id)
-                                            }
-                                            className="text-neutral-500 hover:text-red-400 transition-colors p-1"
-                                            title="Exclude question"
-                                        >
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                width="16"
-                                                height="16"
-                                                viewBox="0 0 24 24"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeWidth="2"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    handleRemoveJsonItem(item.id)
+                                                }
+                                                className="text-neutral-500 hover:text-red-400 transition-colors p-1"
+                                                title="Exclude question"
                                             >
-                                                <path d="M18 6 6 18" />
-                                                <path d="m6 6 12 12" />
-                                            </svg>
-                                        </button>
-                                    </div>
-
-                                    {/* Question Text */}
-                                    <p className="text-sm text-neutral-200 font-medium leading-relaxed">
-                                        {item.questionText}
-                                    </p>
-
-                                    {/* Image Attachment per JSON question */}
-                                    <div className="pt-3 border-t border-neutral-800/80">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <span className="text-xs font-semibold text-neutral-400">
-                                                Question Images (
-                                                {item.images.length})
-                                            </span>
-                                            <label className="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 transition-colors">
                                                 <svg
                                                     xmlns="http://www.w3.org/2000/svg"
-                                                    width="12"
-                                                    height="12"
+                                                    width="16"
+                                                    height="16"
                                                     viewBox="0 0 24 24"
                                                     fill="none"
                                                     stroke="currentColor"
                                                     strokeWidth="2"
                                                     strokeLinecap="round"
                                                     strokeLinejoin="round"
-                                                    className="text-red-400"
                                                 >
-                                                    <path d="M5 12h14" />
-                                                    <path d="M12 5v14" />
+                                                    <path d="M18 6 6 18" />
+                                                    <path d="m6 6 12 12" />
                                                 </svg>
-                                                Add Images
-                                                <input
-                                                    type="file"
-                                                    multiple
-                                                    accept="image/jpeg,image/png,image/webp,image/gif"
-                                                    onChange={(e) => {
-                                                        handleAddJsonImages(
-                                                            item.id,
-                                                            e.target.files,
-                                                        );
-                                                        e.target.value = "";
-                                                    }}
-                                                    className="hidden"
-                                                />
-                                            </label>
+                                            </button>
                                         </div>
 
-                                        {item.images.length > 0 && (
-                                            <div className="flex flex-wrap gap-2">
-                                                {item.images.map((img) => (
-                                                    <div
-                                                        key={img.id}
-                                                        className="relative group rounded border border-neutral-700 overflow-hidden w-20 h-20 bg-neutral-950"
-                                                    >
-                                                        <img
-                                                            src={img.previewUrl}
-                                                            alt="preview"
-                                                            className="w-full h-full object-cover"
-                                                        />
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                handleRemoveJsonImage(
-                                                                    item.id,
-                                                                    img.id,
-                                                                )
-                                                            }
-                                                            className="absolute top-1 right-1 p-0.5 rounded bg-red-600 text-white hover:bg-red-500 shadow"
+                                        {/* Question Text */}
+                                        <p className="text-sm text-neutral-200 font-medium leading-relaxed">
+                                            {item.questionText}
+                                        </p>
+
+                                        {/* Inline Chapter & Topic Correction */}
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-neutral-800/80 bg-neutral-950/40 p-3 rounded-lg">
+                                            <div>
+                                                <label className="block text-[11px] font-semibold text-neutral-400 mb-1">
+                                                    Assigned Chapter
+                                                </label>
+                                                <select
+                                                    value={item.chapterId}
+                                                    onChange={(e) =>
+                                                        handleJsonItemChapterChange(
+                                                            item.id,
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    className="w-full rounded bg-neutral-900 border border-neutral-700 px-2 py-1.5 text-xs text-neutral-200 focus:outline-none focus:ring-1 focus:ring-red-500"
+                                                >
+                                                    <option value="">
+                                                        Select Chapter
+                                                    </option>
+                                                    {sortedChapters.map((c) => (
+                                                        <option
+                                                            key={c.chapterId}
+                                                            value={c.chapterId}
                                                         >
-                                                            <svg
-                                                                xmlns="http://www.w3.org/2000/svg"
-                                                                width="10"
-                                                                height="10"
-                                                                viewBox="0 0 24 24"
-                                                                fill="none"
-                                                                stroke="currentColor"
-                                                                strokeWidth="2"
-                                                                strokeLinecap="round"
-                                                                strokeLinejoin="round"
-                                                            >
-                                                                <path d="M18 6 6 18" />
-                                                                <path d="m6 6 12 12" />
-                                                            </svg>
-                                                        </button>
-                                                    </div>
-                                                ))}
+                                                            {c.chapterNo}.{" "}
+                                                            {c.chapterName}
+                                                        </option>
+                                                    ))}
+                                                </select>
                                             </div>
+
+                                            <div>
+                                                <label className="block text-[11px] font-semibold text-neutral-400 mb-1">
+                                                    Assigned Topics (
+                                                    {item.topicIds.length})
+                                                </label>
+                                                {currentChapterTopics.length ===
+                                                0 ? (
+                                                    <p className="text-xs text-neutral-500">
+                                                        Select a chapter to view
+                                                        topics.
+                                                    </p>
+                                                ) : (
+                                                    <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+                                                        {currentChapterTopics.map(
+                                                            (t) => {
+                                                                const active =
+                                                                    item.topicIds.includes(
+                                                                        t.topicId,
+                                                                    );
+                                                                return (
+                                                                    <button
+                                                                        type="button"
+                                                                        key={
+                                                                            t.topicId
+                                                                        }
+                                                                        onClick={() =>
+                                                                            handleToggleJsonItemTopic(
+                                                                                item.id,
+                                                                                t.topicId,
+                                                                            )
+                                                                        }
+                                                                        className={`px-2 py-0.5 rounded text-[11px] font-medium border transition-colors ${
+                                                                            active
+                                                                                ? "bg-red-600 text-white border-red-500"
+                                                                                : "bg-neutral-900 text-neutral-400 border-neutral-700 hover:text-neutral-200"
+                                                                        }`}
+                                                                    >
+                                                                        {
+                                                                            t.topicName
+                                                                        }
+                                                                    </button>
+                                                                );
+                                                            },
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Image Attachment per JSON question */}
+                                        <div className="pt-2 border-t border-neutral-800/80">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-xs font-semibold text-neutral-400">
+                                                    Attached Images (
+                                                    {item.images.length})
+                                                </span>
+                                                <label className="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 transition-colors">
+                                                    <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        width="12"
+                                                        height="12"
+                                                        viewBox="0 0 24 24"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        strokeWidth="2"
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        className="text-red-400"
+                                                    >
+                                                        <path d="M5 12h14" />
+                                                        <path d="M12 5v14" />
+                                                    </svg>
+                                                    Add Images
+                                                    <input
+                                                        type="file"
+                                                        multiple
+                                                        accept="image/jpeg,image/png,image/webp,image/gif"
+                                                        onChange={(e) => {
+                                                            handleAddJsonImages(
+                                                                item.id,
+                                                                e.target.files,
+                                                            );
+                                                            e.target.value = "";
+                                                        }}
+                                                        className="hidden"
+                                                    />
+                                                </label>
+                                            </div>
+
+                                            {item.images.length > 0 && (
+                                                <div className="flex flex-wrap gap-2">
+                                                    {item.images.map(
+                                                        (img, imgIdx) => (
+                                                            <div
+                                                                key={img.id}
+                                                                className="relative group rounded border border-neutral-700 overflow-hidden w-24 h-24 bg-neutral-950 flex flex-col justify-between"
+                                                            >
+                                                                <img
+                                                                    src={
+                                                                        img.previewUrl
+                                                                    }
+                                                                    alt="preview"
+                                                                    className="w-full h-16 object-cover"
+                                                                />
+                                                                <div className="flex items-center justify-between px-1 py-0.5 bg-neutral-900 border-t border-neutral-800 text-[10px]">
+                                                                    <div className="flex items-center gap-1">
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() =>
+                                                                                handleMoveJsonImage(
+                                                                                    item.id,
+                                                                                    imgIdx,
+                                                                                    -1,
+                                                                                )
+                                                                            }
+                                                                            disabled={
+                                                                                imgIdx ===
+                                                                                0
+                                                                            }
+                                                                            className="px-1 text-neutral-400 hover:text-white disabled:opacity-20"
+                                                                        >
+                                                                            ←
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() =>
+                                                                                handleMoveJsonImage(
+                                                                                    item.id,
+                                                                                    imgIdx,
+                                                                                    1,
+                                                                                )
+                                                                            }
+                                                                            disabled={
+                                                                                imgIdx ===
+                                                                                item
+                                                                                    .images
+                                                                                    .length -
+                                                                                    1
+                                                                            }
+                                                                            className="px-1 text-neutral-400 hover:text-white disabled:opacity-20"
+                                                                        >
+                                                                            →
+                                                                        </button>
+                                                                    </div>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() =>
+                                                                            handleRemoveJsonImage(
+                                                                                item.id,
+                                                                                img.id,
+                                                                            )
+                                                                        }
+                                                                        className="p-0.5 text-red-400 hover:text-red-300"
+                                                                    >
+                                                                        ✕
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        ),
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Status Indicator */}
+                                        {item.status === "success" && (
+                                            <p className="text-xs text-emerald-400 font-medium">
+                                                Saved successfully (ID #
+                                                {item.savedQuesId})
+                                            </p>
+                                        )}
+                                        {item.status === "error" && (
+                                            <p className="text-xs text-red-400 font-medium">
+                                                Failed: {item.error}
+                                            </p>
                                         )}
                                     </div>
-
-                                    {/* Status Indicator */}
-                                    {item.status === "success" && (
-                                        <p className="text-xs text-emerald-400 font-medium">
-                                            Saved successfully (ID #
-                                            {item.savedQuesId})
-                                        </p>
-                                    )}
-                                    {item.status === "error" && (
-                                        <p className="text-xs text-red-400 font-medium">
-                                            Failed: {item.error}
-                                        </p>
-                                    )}
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
                 </div>

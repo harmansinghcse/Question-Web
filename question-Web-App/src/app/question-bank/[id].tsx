@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-    ActivityIndicator,
     Dimensions,
     Modal,
     Pressable,
@@ -12,6 +11,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAppTheme } from "../../providers/ThemeProvider";
 import {
@@ -24,7 +24,6 @@ import {
 import {
     api,
     type QuestionDetail,
-    type QuestionImage,
 } from "../../services/api";
 import type { AppTheme } from "../../constants/theme";
 
@@ -33,16 +32,20 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 export default function QuestionDetailsScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const { theme } = useAppTheme();
-    const s = useMemo(() => makeStyles(theme), [theme]);
+    const s = useMemo(() => makeStyles(theme, insets), [theme, insets]);
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [question, setQuestion] = useState<QuestionDetail | null>(null);
 
-    // Image Modal viewer state
-    const [selectedImage, setSelectedImage] = useState<QuestionImage | null>(
+    // Multi-image Modal viewer state
+    const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(
         null,
+    );
+    const [failedImageIds, setFailedImageIds] = useState<Set<number>>(
+        new Set(),
     );
 
     const loadQuestion = async () => {
@@ -71,9 +74,34 @@ export default function QuestionDetailsScreen() {
         ? TYPE_META[question.quesType] ?? TYPE_META.SUBJECTIVE
         : TYPE_META.SUBJECTIVE;
 
+    const currentModalImage =
+        question &&
+        selectedImageIndex !== null &&
+        question.images[selectedImageIndex]
+            ? question.images[selectedImageIndex]
+            : null;
+
+    const handlePrevModalImage = () => {
+        if (selectedImageIndex === null || !question) return;
+        setSelectedImageIndex((prev) =>
+            prev !== null && prev > 0 ? prev - 1 : question.images.length - 1,
+        );
+    };
+
+    const handleNextModalImage = () => {
+        if (selectedImageIndex === null || !question) return;
+        setSelectedImageIndex((prev) =>
+            prev !== null && prev < question.images.length - 1 ? prev + 1 : 0,
+        );
+    };
+
+    const markImageFailed = (imageId: number) => {
+        setFailedImageIds((prev) => new Set(prev).add(imageId));
+    };
+
     return (
         <View style={s.screen}>
-            {/* Top Navigation Header */}
+            {/* Top Navigation Header with safe area support */}
             <View style={s.header}>
                 <Pressable
                     onPress={() => router.back()}
@@ -240,90 +268,116 @@ export default function QuestionDetailsScreen() {
                         </View>
                     </View>
 
-                    {/* Attached Images Section */}
-                    <View style={s.imagesSection}>
-                        <View style={s.imagesHeader}>
-                            <View style={s.imagesHeaderLeft}>
-                                <Ionicons
-                                    name="image-outline"
-                                    size={18}
-                                    color={theme.accent}
-                                />
-                                <Text style={s.imagesHeaderTitle}>
-                                    Attached Images
-                                </Text>
-                                <View style={s.imageCountBadge}>
-                                    <Text style={s.imageCountText}>
-                                        {question.images.length}
+                    {/* Attached Images Section - only rendered if question has images */}
+                    {question.images && question.images.length > 0 && (
+                        <View style={s.imagesSection}>
+                            <View style={s.imagesHeader}>
+                                <View style={s.imagesHeaderLeft}>
+                                    <Ionicons
+                                        name="image-outline"
+                                        size={18}
+                                        color={theme.accent}
+                                    />
+                                    <Text style={s.imagesHeaderTitle}>
+                                        Attached Images
                                     </Text>
+                                    <View style={s.imageCountBadge}>
+                                        <Text style={s.imageCountText}>
+                                            {question.images.length}
+                                        </Text>
+                                    </View>
                                 </View>
-                            </View>
-                            {question.images.length > 0 && (
                                 <Text style={s.tapHint}>
                                     Tap image to enlarge
                                 </Text>
-                            )}
-                        </View>
+                            </View>
 
-                        {question.images.length === 0 ? (
-                            <View style={s.noImagesCard}>
-                                <Ionicons
-                                    name="images-outline"
-                                    size={28}
-                                    color={theme.border}
-                                />
-                                <Text style={s.noImagesText}>
-                                    No figures or diagrams attached to this
-                                    question.
-                                </Text>
-                            </View>
-                        ) : (
                             <View style={s.imagesGrid}>
-                                {question.images.map((img, idx) => (
-                                    <Pressable
-                                        key={img.imageId}
-                                        onPress={() => setSelectedImage(img)}
-                                        accessibilityRole="button"
-                                        accessibilityLabel={`Enlarge image ${idx + 1}`}
-                                        style={({ pressed }) => [
-                                            s.imageThumbnailWrapper,
-                                            pressed && { opacity: 0.85 },
-                                        ]}
-                                    >
-                                        <Image
-                                            source={{ uri: img.imageUrl }}
-                                            style={s.imageThumbnail}
-                                            contentFit="cover"
-                                            transition={300}
-                                        />
-                                        <View style={s.imageIndexTag}>
-                                            <Text style={s.imageIndexTagText}>
-                                                #{idx + 1}
-                                            </Text>
-                                        </View>
-                                    </Pressable>
-                                ))}
+                                {question.images.map((img, idx) => {
+                                    const hasFailed = failedImageIds.has(
+                                        img.imageId,
+                                    );
+
+                                    return (
+                                        <Pressable
+                                            key={img.imageId}
+                                            onPress={() =>
+                                                setSelectedImageIndex(idx)
+                                            }
+                                            accessibilityRole="button"
+                                            accessibilityLabel={`Enlarge image ${idx + 1}`}
+                                            style={({ pressed }) => [
+                                                s.imageThumbnailWrapper,
+                                                pressed && { opacity: 0.85 },
+                                            ]}
+                                        >
+                                            {hasFailed ? (
+                                                <View
+                                                    style={
+                                                        s.imageFailedFallback
+                                                    }
+                                                >
+                                                    <Ionicons
+                                                        name="alert-circle-outline"
+                                                        size={22}
+                                                        color={theme.muted}
+                                                    />
+                                                    <Text
+                                                        style={
+                                                            s.imageFailedText
+                                                        }
+                                                    >
+                                                        Image Unavailable
+                                                    </Text>
+                                                </View>
+                                            ) : (
+                                                <Image
+                                                    source={{
+                                                        uri: img.imageUrl,
+                                                    }}
+                                                    style={s.imageThumbnail}
+                                                    contentFit="cover"
+                                                    transition={300}
+                                                    onError={() =>
+                                                        markImageFailed(
+                                                            img.imageId,
+                                                        )
+                                                    }
+                                                />
+                                            )}
+                                            <View style={s.imageIndexTag}>
+                                                <Text
+                                                    style={s.imageIndexTagText}
+                                                >
+                                                    #{idx + 1}
+                                                </Text>
+                                            </View>
+                                        </Pressable>
+                                    );
+                                })}
                             </View>
-                        )}
-                    </View>
+                        </View>
+                    )}
                 </ScrollView>
             )}
 
-            {/* Full-Screen Tap-To-Enlarge Image Modal */}
+            {/* Full-Screen Tap-To-Enlarge Image Modal with Multi-Image Navigation */}
             <Modal
-                visible={selectedImage !== null}
+                visible={selectedImageIndex !== null}
                 transparent
                 animationType="fade"
-                onRequestClose={() => setSelectedImage(null)}
+                onRequestClose={() => setSelectedImageIndex(null)}
             >
                 <View style={s.modalOverlay}>
-                    {/* Modal Bar */}
+                    {/* Modal Bar with safe area padding */}
                     <View style={s.modalBar}>
                         <Text style={s.modalBarTitle}>
-                            Image Preview
+                            {question && question.images.length > 1
+                                ? `Image ${(selectedImageIndex ?? 0) + 1} of ${question.images.length}`
+                                : "Image Preview"}
                         </Text>
                         <Pressable
-                            onPress={() => setSelectedImage(null)}
+                            onPress={() => setSelectedImageIndex(null)}
                             accessibilityRole="button"
                             accessibilityLabel="Close enlarged viewer"
                             style={s.modalCloseButton}
@@ -331,30 +385,79 @@ export default function QuestionDetailsScreen() {
                         >
                             <Ionicons
                                 name="close-circle"
-                                size={28}
+                                size={30}
                                 color="#FFFFFF"
                             />
                         </Pressable>
                     </View>
 
-                    {/* Enlarged Image Container */}
+                    {/* Enlarged Image Container with Prev/Next buttons */}
                     <View style={s.modalImageContainer}>
-                        {selectedImage && (
+                        {currentModalImage && (
                             <Image
-                                source={{ uri: selectedImage.imageUrl }}
+                                source={{ uri: currentModalImage.imageUrl }}
                                 style={s.modalImage}
                                 contentFit="contain"
                                 transition={200}
                             />
                         )}
+
+                        {question && question.images.length > 1 && (
+                            <>
+                                <Pressable
+                                    onPress={handlePrevModalImage}
+                                    style={[s.modalNavButton, { left: 16 }]}
+                                    accessibilityLabel="Previous image"
+                                    hitSlop={12}
+                                >
+                                    <Ionicons
+                                        name="chevron-back"
+                                        size={28}
+                                        color="#FFFFFF"
+                                    />
+                                </Pressable>
+
+                                <Pressable
+                                    onPress={handleNextModalImage}
+                                    style={[s.modalNavButton, { right: 16 }]}
+                                    accessibilityLabel="Next image"
+                                    hitSlop={12}
+                                >
+                                    <Ionicons
+                                        name="chevron-forward"
+                                        size={28}
+                                        color="#FFFFFF"
+                                    />
+                                </Pressable>
+                            </>
+                        )}
                     </View>
+
+                    {/* Dot Pagination indicators if multiple images */}
+                    {question && question.images.length > 1 && (
+                        <View style={s.modalDotsRow}>
+                            {question.images.map((img, dotIdx) => (
+                                <View
+                                    key={img.imageId}
+                                    style={[
+                                        s.modalDot,
+                                        dotIdx === selectedImageIndex &&
+                                            s.modalDotActive,
+                                    ]}
+                                />
+                            ))}
+                        </View>
+                    )}
                 </View>
             </Modal>
         </View>
     );
 }
 
-function makeStyles(t: AppTheme) {
+function makeStyles(
+    t: AppTheme,
+    insets: { top: number; bottom: number; left: number; right: number },
+) {
     return StyleSheet.create({
         screen: {
             flex: 1,
@@ -365,7 +468,7 @@ function makeStyles(t: AppTheme) {
             alignItems: "center",
             gap: 12,
             paddingHorizontal: 20,
-            paddingTop: 16,
+            paddingTop: Math.max(insets.top, 14),
             paddingBottom: 14,
             borderBottomWidth: 1,
             borderBottomColor: t.border,
@@ -407,7 +510,7 @@ function makeStyles(t: AppTheme) {
         scrollContent: {
             padding: 16,
             gap: 16,
-            paddingBottom: 40,
+            paddingBottom: Math.max(insets.bottom + 20, 40),
         },
 
         /* Meta card */
@@ -598,6 +701,19 @@ function makeStyles(t: AppTheme) {
             width: "100%",
             height: "100%",
         },
+        imageFailedFallback: {
+            width: "100%",
+            height: "100%",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 4,
+            backgroundColor: t.surfaceAlt,
+        },
+        imageFailedText: {
+            fontSize: 10,
+            color: t.muted,
+            fontWeight: "600",
+        },
         imageIndexTag: {
             position: "absolute",
             top: 6,
@@ -616,7 +732,7 @@ function makeStyles(t: AppTheme) {
         /* Modal viewer */
         modalOverlay: {
             flex: 1,
-            backgroundColor: "rgba(0, 0, 0, 0.94)",
+            backgroundColor: "rgba(0, 0, 0, 0.95)",
             justifyContent: "space-between",
         },
         modalBar: {
@@ -624,7 +740,7 @@ function makeStyles(t: AppTheme) {
             alignItems: "center",
             justifyContent: "space-between",
             paddingHorizontal: 20,
-            paddingTop: 48,
+            paddingTop: Math.max(insets.top, 24),
             paddingBottom: 16,
         },
         modalBarTitle: {
@@ -640,10 +756,39 @@ function makeStyles(t: AppTheme) {
             justifyContent: "center",
             alignItems: "center",
             padding: 16,
+            position: "relative",
         },
         modalImage: {
             width: "100%",
             height: "100%",
+        },
+        modalNavButton: {
+            position: "absolute",
+            top: "50%",
+            marginTop: -22,
+            width: 44,
+            height: 44,
+            borderRadius: 22,
+            backgroundColor: "rgba(0, 0, 0, 0.6)",
+            alignItems: "center",
+            justifyContent: "center",
+        },
+        modalDotsRow: {
+            flexDirection: "row",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: 8,
+            paddingBottom: Math.max(insets.bottom, 24),
+        },
+        modalDot: {
+            width: 8,
+            height: 8,
+            borderRadius: 4,
+            backgroundColor: "rgba(255, 255, 255, 0.35)",
+        },
+        modalDotActive: {
+            width: 20,
+            backgroundColor: "#FFFFFF",
         },
     });
 }
