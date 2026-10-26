@@ -154,12 +154,51 @@ export const QUESTION_TYPES: QuestionType[] = [
     "TRUE/FALSE",
 ];
 
+export interface QuestionImage {
+    imageId: number;
+    imageUrl: string;
+    displayOrder: number;
+}
+
+export interface QuestionSourceDetail {
+    sourceId: number;
+    sourceType: "EXAM" | "BOOK";
+    label: string;
+    examType?: string | null;
+    examYear?: number | null;
+    semesterNo?: number | null;
+    bookName?: string | null;
+    authorName?: string | null;
+}
+
 export interface Question {
     quesId: number;
     quesText: string;
     quesType: QuestionType;
     sourceId: number;
     topics: Topic[];
+    images?: QuestionImage[];
+}
+
+export interface QuestionDetail {
+    quesId: number;
+    quesText: string;
+    quesType: QuestionType;
+    sourceId: number;
+    source: QuestionSourceDetail | null;
+    chapter: {
+        chapterId: number;
+        chapterNo: number;
+        chapterName: string;
+    } | null;
+    subject: {
+        subjectKey: number;
+        subjectId: string;
+        subjectName: string | null;
+        semester: number;
+    } | null;
+    topics: Topic[];
+    images: QuestionImage[];
 }
 
 export interface CreateQuestionPayload {
@@ -167,6 +206,7 @@ export interface CreateQuestionPayload {
     quesType: QuestionType;
     sourceId: number;
     topicIds: number[];
+    imageUrls?: string[];
 }
 
 export interface CreatedQuestionResponse {
@@ -175,6 +215,7 @@ export interface CreatedQuestionResponse {
     quesType: QuestionType;
     sourceId: number;
     topicIds: number[];
+    imageUrls?: string[];
 }
 
 /** Filters for `api.searchQuestions`. All optional. */
@@ -333,6 +374,10 @@ export const api = {
 
     /** Every question, as returned by the backend. */
     getQuestions: (): Promise<Question[]> => loadQuestions(),
+
+    /** Fetches complete details for a single question including images and source. */
+    getQuestionById: (id: number): Promise<QuestionDetail> =>
+        request<QuestionDetail>(`/questions/${id}`),
 
     /** Filtered, paginated questions (used by Home and Question Bank). */
     searchQuestions,

@@ -6,6 +6,7 @@ import {
   IsIn,
   IsInt,
   IsNotEmpty,
+  IsOptional,
   IsString,
   MaxLength,
   Min,
@@ -37,4 +38,9 @@ export class CreateQuestionDto {
   @IsInt({ each: true })
   @Min(1, { each: true })
   topicIds: number[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  imageUrls?: string[];
 }
