@@ -1,3 +1,5 @@
+import { authSession } from "./auth-session";
+
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL?.replace(/\/+$/, "");
 
 /** Max time to wait for the backend before giving up. */
@@ -28,6 +30,7 @@ function extractErrorMessage(body: string, status: number): string {
 async function request<T>(
     endpoint: string,
     options: RequestInit = {},
+    isRetry = false,
 ): Promise<T> {
     if (!API_BASE_URL) {
         throw new Error(
@@ -45,17 +48,25 @@ async function request<T>(
         controller.abort();
     }, TIMEOUT_MS);
 
+    const headers: Record<string, string> = {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        ...(options.headers as Record<string, string>),
+    };
+
+    // Attach in-memory access token if available and not already specified
+    const token = authSession.getAccessToken();
+    if (token && !headers.Authorization) {
+        headers.Authorization = `Bearer ${token}`;
+    }
+
     let response: Response;
 
     try {
         response = await fetch(url, {
             ...options,
             signal: options.signal ?? controller.signal,
-            headers: {
-                Accept: "application/json",
-                "Content-Type": "application/json",
-                ...options.headers,
-            },
+            headers,
         });
     } catch (err: unknown) {
         const raw = err instanceof Error ? err.message : "";
@@ -77,6 +88,14 @@ async function request<T>(
         throw new Error(`Network error: ${message}`);
     } finally {
         clearTimeout(timeout);
+    }
+
+    // Auto-refresh token on 401 Unauthorized for authenticated endpoints
+    if (response.status === 401 && !isRetry) {
+        const refreshedToken = await authSession.refreshAccessToken();
+        if (refreshedToken) {
+            return request<T>(endpoint, options, true);
+        }
     }
 
     if (!response.ok) {

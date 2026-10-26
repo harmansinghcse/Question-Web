@@ -8,7 +8,6 @@ import {
   Query,
   Body,
   ParseIntPipe,
-  DefaultValuePipe,
 } from '@nestjs/common';
 import { ChaptersService } from './chapters.service';
 import { Chapter } from './entities/chapter.entity';

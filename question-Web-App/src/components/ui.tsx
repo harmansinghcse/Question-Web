@@ -6,83 +6,94 @@ import {
     Text,
     View,
 } from "react-native";
+import { useRouter } from "expo-router";
 import Markdown from "react-native-markdown-display";
 import { Ionicons } from "@expo/vector-icons";
-
 import { useAppTheme } from "../providers/ThemeProvider";
 import type { Question, QuestionType } from "../services/api";
 
 type IconName = React.ComponentProps<typeof Ionicons>["name"];
 
-// ─── Question type styling ───────────────────────────────────────────────────
-
 export const TYPE_META: Record<
     QuestionType,
     { label: string; short: string; color: string; icon: IconName }
 > = {
-    MCQ: {
-        label: "Multiple choice",
-        short: "MCQ",
-        color: "#6842E8",
-        icon: "radio-button-on-outline",
-    },
-    FILLUPS: {
-        label: "Fill in the blanks",
-        short: "Fill-ups",
-        color: "#D6409F",
-        icon: "create-outline",
-    },
     SUBJECTIVE: {
         label: "Subjective",
         short: "Subjective",
-        color: "#2BA471",
+        color: "#EF4444",
         icon: "document-text-outline",
+    },
+    MCQ: {
+        label: "Multiple Choice",
+        short: "MCQ",
+        color: "#3B82F6",
+        icon: "list-outline",
+    },
+    FILLUPS: {
+        label: "Fill in the Blanks",
+        short: "Fill-ups",
+        color: "#F59E0B",
+        icon: "create-outline",
     },
     "TRUE/FALSE": {
         label: "True / False",
         short: "True / False",
-        color: "#E08A00",
+        color: "#10B981",
         icon: "checkmark-done-outline",
     },
 };
-
-// ─── Badge ───────────────────────────────────────────────────────────────────
 
 export function Badge({
     label,
     color,
     icon,
+    onPress,
 }: {
     label: string;
     color?: string;
     icon?: IconName;
+    onPress?: () => void;
 }) {
     const { theme } = useAppTheme();
-    const fg = color ?? theme.muted;
-    return (
+    const fg = color ?? theme.textSecondary;
+    const content = (
         <View
             style={{
                 flexDirection: "row",
                 alignItems: "center",
                 gap: 4,
                 paddingHorizontal: 8,
-                paddingVertical: 3,
-                borderRadius: 8,
-                backgroundColor: color ? color + "1A" : theme.surfaceAlt,
+                paddingVertical: 4,
+                borderRadius: 6,
+                borderWidth: 1,
+                borderColor: color ? color + "38" : theme.border,
+                backgroundColor: color ? color + "14" : theme.surfaceAlt,
             }}
         >
             {icon ? <Ionicons name={icon} size={11} color={fg} /> : null}
             <Text
-                style={{ color: fg, fontSize: 11, fontWeight: "700" }}
+                style={{ color: fg, fontSize: 11, fontWeight: "600" }}
                 numberOfLines={1}
             >
                 {label}
             </Text>
         </View>
     );
-}
 
-// ─── Pill (filter chip) ──────────────────────────────────────────────────────
+    if (onPress) {
+        return (
+            <Pressable
+                onPress={onPress}
+                accessibilityRole="button"
+                style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}
+            >
+                {content}
+            </Pressable>
+        );
+    }
+    return content;
+}
 
 export function Pill({
     label,
@@ -90,12 +101,14 @@ export function Pill({
     onPress,
     color,
     icon,
+    count,
 }: {
     label: string;
     active?: boolean;
     onPress: () => void;
     color?: string;
     icon?: IconName;
+    count?: number;
 }) {
     const { theme } = useAppTheme();
     const activeBg = color ?? theme.accent;
@@ -108,9 +121,9 @@ export function Pill({
                 flexDirection: "row",
                 alignItems: "center",
                 gap: 6,
-                paddingHorizontal: 14,
-                paddingVertical: 8,
-                borderRadius: 999,
+                paddingHorizontal: 13,
+                paddingVertical: 7,
+                borderRadius: 8,
                 borderWidth: 1,
                 borderColor: active ? activeBg : theme.border,
                 backgroundColor: active ? activeBg : theme.surface,
@@ -120,25 +133,45 @@ export function Pill({
             {icon ? (
                 <Ionicons
                     name={icon}
-                    size={14}
-                    color={active ? "#FFFFFF" : theme.muted}
+                    size={13}
+                    color={active ? "#FFFFFF" : color ?? theme.muted}
                 />
             ) : null}
             <Text
                 numberOfLines={1}
                 style={{
-                    color: active ? "#FFFFFF" : theme.text,
+                    color: active ? "#FFFFFF" : theme.textSecondary,
                     fontSize: 12,
-                    fontWeight: "700",
+                    fontWeight: active ? "700" : "600",
                 }}
             >
                 {label}
             </Text>
+            {count !== undefined ? (
+                <View
+                    style={{
+                        paddingHorizontal: 5,
+                        paddingVertical: 1,
+                        borderRadius: 4,
+                        backgroundColor: active
+                            ? "rgba(255,255,255,0.2)"
+                            : theme.surfaceAlt,
+                    }}
+                >
+                    <Text
+                        style={{
+                            color: active ? "#FFFFFF" : theme.muted,
+                            fontSize: 10,
+                            fontWeight: "700",
+                        }}
+                    >
+                        {count}
+                    </Text>
+                </View>
+            ) : null}
         </Pressable>
     );
 }
-
-// ─── Section header ──────────────────────────────────────────────────────────
 
 export function SectionHeader({
     title,
@@ -156,7 +189,7 @@ export function SectionHeader({
         <View
             style={{
                 flexDirection: "row",
-                alignItems: "flex-end",
+                alignItems: "center",
                 justifyContent: "space-between",
                 marginBottom: 12,
                 gap: 12,
@@ -166,8 +199,9 @@ export function SectionHeader({
                 <Text
                     style={{
                         color: theme.text,
-                        fontSize: 17,
+                        fontSize: 16,
                         fontWeight: "800",
+                        letterSpacing: 0.1,
                     }}
                 >
                     {title}
@@ -189,23 +223,32 @@ export function SectionHeader({
                     onPress={onAction}
                     accessibilityRole="button"
                     hitSlop={8}
+                    style={({ pressed }) => ({
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 4,
+                        opacity: pressed ? 0.75 : 1,
+                    })}
                 >
                     <Text
                         style={{
                             color: theme.accent,
-                            fontSize: 13,
+                            fontSize: 12,
                             fontWeight: "700",
                         }}
                     >
                         {actionLabel}
                     </Text>
+                    <Ionicons
+                        name="arrow-forward"
+                        size={13}
+                        color={theme.accent}
+                    />
                 </Pressable>
             ) : null}
         </View>
     );
 }
-
-// ─── Loading / error / empty ─────────────────────────────────────────────────
 
 export function LoadingBlock({ label }: { label: string }) {
     const { theme } = useAppTheme();
@@ -216,11 +259,17 @@ export function LoadingBlock({ label }: { label: string }) {
                 alignItems: "center",
                 justifyContent: "center",
                 gap: 10,
-                paddingVertical: 28,
+                paddingVertical: 32,
+                backgroundColor: theme.surface,
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: theme.border,
             }}
         >
             <ActivityIndicator size="small" color={theme.accent} />
-            <Text style={{ color: theme.muted, fontSize: 13 }}>{label}</Text>
+            <Text style={{ color: theme.muted, fontSize: 13, fontWeight: "500" }}>
+                {label}
+            </Text>
         </View>
     );
 }
@@ -241,10 +290,10 @@ export function ErrorBlock({
                 flexDirection: "row",
                 alignItems: "center",
                 gap: 12,
-                padding: 14,
-                borderRadius: 14,
+                padding: 16,
+                borderRadius: 12,
                 borderWidth: 1,
-                borderColor: theme.danger,
+                borderColor: theme.danger + "66",
                 backgroundColor: theme.surface,
             }}
         >
@@ -261,11 +310,12 @@ export function ErrorBlock({
                 </Text>
                 {message ? (
                     <Text
-                        numberOfLines={2}
+                        numberOfLines={3}
                         style={{
                             color: theme.muted,
                             fontSize: 12,
                             marginTop: 2,
+                            lineHeight: 17,
                         }}
                     >
                         {message}
@@ -275,12 +325,13 @@ export function ErrorBlock({
             <Pressable
                 onPress={onRetry}
                 accessibilityRole="button"
-                style={{
+                style={({ pressed }) => ({
                     paddingHorizontal: 14,
                     paddingVertical: 8,
-                    borderRadius: 10,
+                    borderRadius: 8,
                     backgroundColor: theme.accent,
-                }}
+                    opacity: pressed ? 0.85 : 1,
+                })}
             >
                 <Text
                     style={{
@@ -289,7 +340,7 @@ export function ErrorBlock({
                         fontWeight: "700",
                     }}
                 >
-                    Try again
+                    Retry
                 </Text>
             </Pressable>
         </View>
@@ -314,29 +365,36 @@ export function EmptyBlock({
         <View
             style={{
                 alignItems: "center",
-                padding: 28,
-                borderRadius: 18,
+                padding: 32,
+                borderRadius: 14,
                 borderWidth: 1,
                 borderStyle: "dashed",
-                borderColor: theme.border,
+                borderColor: theme.borderStrong,
                 backgroundColor: theme.surface,
             }}
         >
             <View
                 style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 24,
+                    width: 46,
+                    height: 46,
+                    borderRadius: 12,
                     alignItems: "center",
                     justifyContent: "center",
-                    backgroundColor: theme.surfaceAlt,
+                    backgroundColor: theme.accentSoft,
+                    borderWidth: 1,
+                    borderColor: theme.accent + "33",
                     marginBottom: 12,
                 }}
             >
                 <Ionicons name={icon} size={22} color={theme.accent} />
             </View>
             <Text
-                style={{ color: theme.text, fontSize: 15, fontWeight: "800" }}
+                style={{
+                    color: theme.text,
+                    fontSize: 15,
+                    fontWeight: "700",
+                    textAlign: "center",
+                }}
             >
                 {title}
             </Text>
@@ -347,7 +405,7 @@ export function EmptyBlock({
                     lineHeight: 19,
                     textAlign: "center",
                     marginTop: 4,
-                    maxWidth: 360,
+                    maxWidth: 380,
                 }}
             >
                 {text}
@@ -356,18 +414,19 @@ export function EmptyBlock({
                 <Pressable
                     onPress={onAction}
                     accessibilityRole="button"
-                    style={{
+                    style={({ pressed }) => ({
                         marginTop: 16,
-                        paddingHorizontal: 18,
-                        paddingVertical: 10,
-                        borderRadius: 12,
+                        paddingHorizontal: 16,
+                        paddingVertical: 9,
+                        borderRadius: 8,
                         backgroundColor: theme.accent,
-                    }}
+                        opacity: pressed ? 0.85 : 1,
+                    })}
                 >
                     <Text
                         style={{
                             color: "#FFFFFF",
-                            fontSize: 13,
+                            fontSize: 12,
                             fontWeight: "700",
                         }}
                     >
@@ -379,8 +438,6 @@ export function EmptyBlock({
     );
 }
 
-// ─── Markdown ────────────────────────────────────────────────────────────────
-
 const MONO = Platform.select({
     ios: "Menlo",
     android: "monospace",
@@ -390,7 +447,6 @@ const MONO = Platform.select({
 /** Renders question text as Markdown, styled with the app theme. */
 export function MarkdownText({ children }: { children: string }) {
     const { theme } = useAppTheme();
-
     const styles = useMemo(
         () => ({
             body: { color: theme.text, fontSize: 14, lineHeight: 22 },
@@ -416,7 +472,7 @@ export function MarkdownText({ children }: { children: string }) {
                 marginTop: 2,
                 marginBottom: 4,
             },
-            strong: { fontWeight: "800" as const },
+            strong: { fontWeight: "800" as const, color: theme.text },
             em: { fontStyle: "italic" as const },
             link: {
                 color: theme.accent,
@@ -424,37 +480,38 @@ export function MarkdownText({ children }: { children: string }) {
             },
             bullet_list: { marginBottom: 8 },
             ordered_list: { marginBottom: 8 },
-            list_item: { marginBottom: 3 },
+            list_item: { marginBottom: 4 },
             code_inline: {
                 fontFamily: MONO,
-                fontSize: 13,
+                fontSize: 12,
                 color: theme.accent,
                 backgroundColor: theme.surfaceAlt,
                 borderRadius: 4,
-                paddingHorizontal: 4,
+                paddingHorizontal: 5,
+                paddingVertical: 1,
                 borderWidth: 0,
             },
             code_block: {
                 fontFamily: MONO,
-                fontSize: 13,
-                lineHeight: 19,
+                fontSize: 12,
+                lineHeight: 18,
                 color: theme.text,
                 backgroundColor: theme.surfaceAlt,
                 borderColor: theme.border,
                 borderWidth: 1,
-                borderRadius: 10,
+                borderRadius: 8,
                 padding: 12,
                 marginBottom: 8,
             },
             fence: {
                 fontFamily: MONO,
-                fontSize: 13,
-                lineHeight: 19,
+                fontSize: 12,
+                lineHeight: 18,
                 color: theme.text,
                 backgroundColor: theme.surfaceAlt,
                 borderColor: theme.border,
                 borderWidth: 1,
-                borderRadius: 10,
+                borderRadius: 8,
                 padding: 12,
                 marginBottom: 8,
             },
@@ -488,28 +545,36 @@ export function MarkdownText({ children }: { children: string }) {
         [theme],
     );
 
-    // Normalise Windows line endings so lists and code fences parse correctly.
     return (
         <Markdown style={styles}>{children.replace(/\r\n/g, "\n")}</Markdown>
     );
 }
 
-// ─── Question card ───────────────────────────────────────────────────────────
-
 const MAX_TOPIC_BADGES = 3;
-const COLLAPSED_HEIGHT = 150;
+const COLLAPSED_HEIGHT = 140;
 
-export function QuestionCard({ question }: { question: Question }) {
+export function QuestionCard({
+    question,
+    sourceLabel,
+}: {
+    question: Question;
+    sourceLabel?: string;
+}) {
+    const router = useRouter();
     const { theme } = useAppTheme();
     const [expanded, setExpanded] = useState(false);
+
     const meta = TYPE_META[question.quesType] ?? TYPE_META.SUBJECTIVE;
     const topics = question.topics ?? [];
     const extra = topics.length - MAX_TOPIC_BADGES;
 
-    // Long questions (long text, many lines, code) are clamped until expanded.
     const isLong =
-        question.quesText.length > 280 ||
-        question.quesText.split("\n").length > 7;
+        question.quesText.length > 260 ||
+        question.quesText.split("\n").length > 6;
+
+    const openDetail = () => {
+        router.push(`/question-bank/${question.quesId}` as never);
+    };
 
     return (
         <View
@@ -517,13 +582,73 @@ export function QuestionCard({ question }: { question: Question }) {
                 backgroundColor: theme.surface,
                 borderWidth: 1,
                 borderColor: theme.border,
-                borderLeftWidth: 4,
+                borderLeftWidth: 3,
                 borderLeftColor: meta.color,
-                borderRadius: 14,
-                padding: 14,
-                gap: 10,
+                borderRadius: 12,
+                padding: 16,
+                gap: 12,
             }}
         >
+            {/* Top metadata row */}
+            <View
+                style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 8,
+                }}
+            >
+                <View
+                    style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 6,
+                        flexWrap: "wrap",
+                        flex: 1,
+                    }}
+                >
+                    <Badge
+                        label={meta.short}
+                        color={meta.color}
+                        icon={meta.icon}
+                    />
+                    {sourceLabel ? (
+                        <Badge
+                            label={sourceLabel}
+                            icon="bookmark-outline"
+                        />
+                    ) : null}
+                </View>
+                <Pressable
+                    onPress={openDetail}
+                    accessibilityRole="button"
+                    accessibilityLabel={`View Question #${question.quesId}`}
+                    hitSlop={8}
+                    style={({ pressed }) => ({
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 4,
+                        opacity: pressed ? 0.7 : 1,
+                    })}
+                >
+                    <Text
+                        style={{
+                            color: theme.muted,
+                            fontSize: 11,
+                            fontWeight: "700",
+                        }}
+                    >
+                        #{question.quesId}
+                    </Text>
+                    <Ionicons
+                        name="open-outline"
+                        size={13}
+                        color={theme.muted}
+                    />
+                </Pressable>
+            </View>
+
+            {/* Question body */}
             <View
                 style={
                     isLong && !expanded
@@ -545,21 +670,78 @@ export function QuestionCard({ question }: { question: Question }) {
                     <Text
                         style={{
                             color: theme.accent,
-                            fontSize: 13,
+                            fontSize: 12,
                             fontWeight: "700",
                         }}
                     >
-                        {expanded ? "Show less" : "Show more"}
+                        {expanded ? "Show less ↑" : "Read full question ↓"}
                     </Text>
                 </Pressable>
             )}
 
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-                <Badge label={meta.short} color={meta.color} icon={meta.icon} />
-                {topics.slice(0, MAX_TOPIC_BADGES).map((t) => (
-                    <Badge key={t.topicId} label={t.topicName} />
-                ))}
-                {extra > 0 ? <Badge label={`+${extra} more`} /> : null}
+            {/* Footer with topics + detail action */}
+            <View
+                style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 8,
+                    paddingTop: 4,
+                    borderTopWidth: 1,
+                    borderTopColor: theme.border,
+                }}
+            >
+                <View
+                    style={{
+                        flexDirection: "row",
+                        flexWrap: "wrap",
+                        gap: 6,
+                        flex: 1,
+                    }}
+                >
+                    {topics.length === 0 ? (
+                        <Text style={{ color: theme.muted, fontSize: 11 }}>
+                            General Topic
+                        </Text>
+                    ) : (
+                        topics.slice(0, MAX_TOPIC_BADGES).map((t) => (
+                            <Badge key={t.topicId} label={t.topicName} />
+                        ))
+                    )}
+                    {extra > 0 ? <Badge label={`+${extra} more`} /> : null}
+                </View>
+
+                <Pressable
+                    onPress={openDetail}
+                    accessibilityRole="button"
+                    style={({ pressed }) => ({
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 4,
+                        paddingHorizontal: 10,
+                        paddingVertical: 5,
+                        borderRadius: 6,
+                        backgroundColor: theme.surfaceAlt,
+                        borderWidth: 1,
+                        borderColor: theme.border,
+                        opacity: pressed ? 0.8 : 1,
+                    })}
+                >
+                    <Text
+                        style={{
+                            color: theme.textSecondary,
+                            fontSize: 11,
+                            fontWeight: "600",
+                        }}
+                    >
+                        Details
+                    </Text>
+                    <Ionicons
+                        name="chevron-forward"
+                        size={12}
+                        color={theme.textSecondary}
+                    />
+                </Pressable>
             </View>
         </View>
     );
@@ -573,8 +755,8 @@ export function Card({ children }: { children: ReactNode }) {
                 backgroundColor: theme.surface,
                 borderWidth: 1,
                 borderColor: theme.border,
-                borderRadius: 18,
-                padding: 16,
+                borderRadius: 14,
+                padding: 18,
             }}
         >
             {children}
