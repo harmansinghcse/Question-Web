@@ -32,6 +32,7 @@ import {
     TYPE_META,
 } from "../../components/ui";
 import { useAppTheme } from "../../providers/ThemeProvider";
+import { useAuth } from "../../providers/AuthProvider";
 import {
     api,
     QUESTION_TYPES,
@@ -42,6 +43,8 @@ import {
 } from "../../services/api";
 import { useApiData } from "../../hooks/use-api-data";
 import {
+    filterSubjectsForStudent,
+    parseStudentEmail,
     sortSubjects,
     subjectColour,
     subjectDisplayName,
@@ -56,12 +59,30 @@ function asType(value?: string): QuestionType | null {
 
 export default function QuestionBankScreen() {
     const { theme } = useAppTheme();
+    const { user } = useAuth();
     const s = useMemo(() => makeStyles(theme), [theme]);
     const params = useLocalSearchParams<{
         q?: string;
         subjectKey?: string;
         type?: string;
     }>();
+
+    // Student profile derived dynamically from authenticated email
+    const studentProfile = useMemo(
+        () => (user?.email ? parseStudentEmail(user.email) : null),
+        [user?.email],
+    );
+
+    // Subject scope toggle: 'my-semester' | 'all'
+    const [subjectScope, setSubjectScope] = useState<"my-semester" | "all">(
+        () => (params.subjectKey ? "all" : studentProfile ? "my-semester" : "all"),
+    );
+
+    useEffect(() => {
+        if (!params.subjectKey && studentProfile) {
+            setSubjectScope("my-semester");
+        }
+    }, [studentProfile, params.subjectKey]);
 
     // ── Filter state (seeded from route params) ─────────────────────────────
     const [search, setSearch] = useState(params.q ?? "");
@@ -81,6 +102,9 @@ export default function QuestionBankScreen() {
         setSubjectKey(params.subjectKey ? Number(params.subjectKey) : null);
         setQuesType(asType(params.type));
         setPage(1);
+        if (params.subjectKey) {
+            setSubjectScope("all");
+        }
     }, [params.q, params.subjectKey, params.type]);
 
     // Debounce typing so filtering doesn't run on every keystroke.
@@ -114,13 +138,26 @@ export default function QuestionBankScreen() {
     const statsState = useApiData<QuestionStats>(fetchStats);
     const questionsState = useApiData<QuestionPage>(fetchQuestions);
 
-    const subjects = useMemo(
+    const allSortedSubjects = useMemo(
         () =>
             subjectsState.status === "success"
                 ? sortSubjects(subjectsState.data)
                 : [],
         [subjectsState],
     );
+
+    const displayedSubjects = useMemo(() => {
+        if (subjectScope === "all" || !studentProfile) {
+            return allSortedSubjects;
+        }
+        const filtered = filterSubjectsForStudent(allSortedSubjects, studentProfile);
+        // If the selected subject is not in the filtered list, include it so selection isn't lost
+        if (subjectKey !== null && !filtered.some((s) => s.subjectKey === subjectKey)) {
+            const currentSub = allSortedSubjects.find((s) => s.subjectKey === subjectKey);
+            if (currentSub) return [currentSub, ...filtered];
+        }
+        return filtered;
+    }, [allSortedSubjects, subjectScope, studentProfile, subjectKey]);
 
     // ── Derived ─────────────────────────────────────────────────────────────
     const filtersActive =
@@ -215,7 +252,46 @@ export default function QuestionBankScreen() {
 
             {/* Subject filter */}
             <View style={s.subjectBlock}>
-                <Text style={s.filterLabel}>Subject</Text>
+                <View style={s.subjectLabelRow}>
+                    <Text style={s.filterLabel}>Subject</Text>
+                    {studentProfile && (
+                        <View style={s.segmentedRow}>
+                            <Pressable
+                                onPress={() => setSubjectScope("my-semester")}
+                                style={[
+                                    s.segmentPill,
+                                    subjectScope === "my-semester" && s.segmentPillActive,
+                                ]}
+                            >
+                                <Text
+                                    style={[
+                                        s.segmentPillText,
+                                        subjectScope === "my-semester" && s.segmentPillTextActive,
+                                    ]}
+                                >
+                                    My Sem ({studentProfile.currentSemester})
+                                </Text>
+                            </Pressable>
+                            <Pressable
+                                onPress={() => setSubjectScope("all")}
+                                style={[
+                                    s.segmentPill,
+                                    subjectScope === "all" && s.segmentPillActive,
+                                ]}
+                            >
+                                <Text
+                                    style={[
+                                        s.segmentPillText,
+                                        subjectScope === "all" && s.segmentPillTextActive,
+                                    ]}
+                                >
+                                    All
+                                </Text>
+                            </Pressable>
+                        </View>
+                    )}
+                </View>
+
                 {subjectsState.status === "loading" && (
                     <LoadingBlock label="Loading subjects" />
                 )}
@@ -226,7 +302,22 @@ export default function QuestionBankScreen() {
                         onRetry={subjectsState.refresh}
                     />
                 )}
-                {subjects.length > 0 && (
+                {subjectsState.status === "success" && displayedSubjects.length === 0 && (
+                    <View style={s.emptySubjectNotice}>
+                        <Text style={s.emptySubjectText}>
+                            No subjects for Semester {studentProfile?.currentSemester}.
+                        </Text>
+                        <Pressable
+                            onPress={() => setSubjectScope("all")}
+                            style={s.emptySubjectAction}
+                        >
+                            <Text style={s.emptySubjectActionText}>
+                                Show all subjects
+                            </Text>
+                        </Pressable>
+                    </View>
+                )}
+                {displayedSubjects.length > 0 && (
                     <ScrollView
                         horizontal
                         showsHorizontalScrollIndicator={false}
@@ -237,7 +328,7 @@ export default function QuestionBankScreen() {
                             active={subjectKey === null}
                             onPress={() => pickSubject(null)}
                         />
-                        {subjects.map((sub) => (
+                        {displayedSubjects.map((sub) => (
                             <Pill
                                 key={sub.subjectKey}
                                 label={subjectDisplayName(sub)}
@@ -267,6 +358,7 @@ export default function QuestionBankScreen() {
                     <Pressable
                         onPress={clearFilters}
                         accessibilityRole="button"
+                        accessibilityLabel="Clear all filters"
                         hitSlop={8}
                     >
                         <Text style={s.clearLink}>Clear filters</Text>
@@ -274,7 +366,7 @@ export default function QuestionBankScreen() {
                 )}
             </View>
 
-            {/* Results */}
+            {/* Questions list */}
             {questionsState.status === "loading" && (
                 <LoadingBlock label="Loading questions" />
             )}
@@ -289,38 +381,31 @@ export default function QuestionBankScreen() {
                 questionsState.data.items.length === 0 && (
                     <EmptyBlock
                         icon="search-outline"
-                        title={
-                            filtersActive
-                                ? "No questions match these filters"
-                                : "No questions yet"
-                        }
+                        title="No questions found"
                         text={
                             filtersActive
-                                ? "Try a different keyword or clear some filters."
-                                : "Questions will appear here once they're added."
+                                ? "Try broadening your search or clearing filters."
+                                : "The question bank is currently empty."
                         }
-                        actionLabel={
-                            filtersActive ? "Clear filters" : undefined
-                        }
-                        onAction={filtersActive ? clearFilters : undefined}
                     />
                 )}
             {questionsState.status === "success" &&
                 questionsState.data.items.length > 0 && (
                     <>
-                        <View style={{ gap: 10 }}>
+                        <View style={{ gap: 12 }}>
                             {questionsState.data.items.map((q) => (
                                 <QuestionCard key={q.quesId} question={q} />
                             ))}
                         </View>
 
+                        {/* Pagination */}
                         {totalPages > 1 && (
                             <View style={s.pager}>
                                 <Pressable
-                                    disabled={page <= 1}
                                     onPress={() =>
                                         setPage((p) => Math.max(1, p - 1))
                                     }
+                                    disabled={page <= 1}
                                     accessibilityRole="button"
                                     accessibilityLabel="Previous page"
                                     style={[
@@ -335,16 +420,18 @@ export default function QuestionBankScreen() {
                                     />
                                     <Text style={s.pagerText}>Previous</Text>
                                 </Pressable>
+
                                 <Text style={s.pagerInfo}>
                                     Page {page} of {totalPages}
                                 </Text>
+
                                 <Pressable
-                                    disabled={page >= totalPages}
                                     onPress={() =>
                                         setPage((p) =>
                                             Math.min(totalPages, p + 1),
                                         )
                                     }
+                                    disabled={page >= totalPages}
                                     accessibilityRole="button"
                                     accessibilityLabel="Next page"
                                     style={[
@@ -393,7 +480,59 @@ function makeStyles(t: AppTheme) {
 
         pillRow: { gap: 8, paddingRight: 8 },
         subjectBlock: { marginTop: 14, marginBottom: 20, gap: 8 },
+        subjectLabelRow: {
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+        },
         filterLabel: { color: t.muted, fontSize: 12, fontWeight: "700" },
+        segmentedRow: {
+            flexDirection: "row",
+            gap: 4,
+            backgroundColor: t.surface,
+            padding: 2,
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: t.border,
+        },
+        segmentPill: {
+            paddingVertical: 3,
+            paddingHorizontal: 8,
+            borderRadius: 6,
+        },
+        segmentPillActive: {
+            backgroundColor: t.accent,
+        },
+        segmentPillText: {
+            fontSize: 11,
+            color: t.muted,
+            fontWeight: "600",
+        },
+        segmentPillTextActive: {
+            color: "#FFFFFF",
+            fontWeight: "700",
+        },
+        emptySubjectNotice: {
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 8,
+            paddingVertical: 6,
+        },
+        emptySubjectText: {
+            fontSize: 12,
+            color: t.muted,
+        },
+        emptySubjectAction: {
+            paddingVertical: 2,
+            paddingHorizontal: 6,
+            backgroundColor: t.accent + "22",
+            borderRadius: 4,
+        },
+        emptySubjectActionText: {
+            fontSize: 11,
+            fontWeight: "700",
+            color: t.accent,
+        },
 
         resultsHeader: {
             flexDirection: "row",

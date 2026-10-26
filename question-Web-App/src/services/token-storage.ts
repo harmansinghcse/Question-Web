@@ -2,13 +2,20 @@ import * as SecureStore from 'expo-secure-store';
 
 const REFRESH_TOKEN_KEY = 'question_web_secure_refresh_token';
 
-// In-memory fallback for environments where SecureStore is unavailable (e.g., web during dev)
+// In-memory fallback
 let memoryRefreshToken: string | null = null;
+
+function getWebStorage(): Storage | null {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    return window.localStorage;
+  }
+  return null;
+}
 
 export const tokenStorage = {
   /**
-   * Stores the refresh token securely in device keystore/keychain.
-   * Never stores tokens in ordinary AsyncStorage.
+   * Stores the refresh token securely in device keystore/keychain (native)
+   * or localStorage (web).
    */
   async saveRefreshToken(token: string): Promise<void> {
     try {
@@ -17,33 +24,55 @@ export const tokenStorage = {
         await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, token, {
           keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK,
         });
-      } else {
+        return;
+      }
+    } catch {
+      // Fall through to web/memory
+    }
+
+    const webStorage = getWebStorage();
+    if (webStorage) {
+      try {
+        webStorage.setItem(REFRESH_TOKEN_KEY, token);
+      } catch {
         memoryRefreshToken = token;
       }
-    } catch (err) {
-      console.warn('[tokenStorage] SecureStore unavailable, using memory store:', err);
+    } else {
       memoryRefreshToken = token;
     }
   },
 
   /**
-   * Retrieves the stored refresh token from secure storage.
+   * Retrieves the stored refresh token from secure storage (native)
+   * or localStorage (web).
    */
   async getRefreshToken(): Promise<string | null> {
     try {
       const isAvailable = await SecureStore.isAvailableAsync();
       if (isAvailable) {
-        return await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
+        const token = await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
+        if (token) return token;
       }
-      return memoryRefreshToken;
-    } catch (err) {
-      console.warn('[tokenStorage] Failed to read refresh token:', err);
-      return memoryRefreshToken;
+    } catch {
+      // Fall through to web/memory
     }
+
+    const webStorage = getWebStorage();
+    if (webStorage) {
+      try {
+        const token = webStorage.getItem(REFRESH_TOKEN_KEY);
+        if (token) return token;
+      } catch {
+        return memoryRefreshToken;
+      }
+    }
+
+    return memoryRefreshToken;
   },
 
   /**
-   * Completely removes the refresh token from secure storage.
+   * Completely removes the refresh token from secure storage (native)
+   * or localStorage (web).
    */
   async clearRefreshToken(): Promise<void> {
     try {
@@ -51,10 +80,19 @@ export const tokenStorage = {
       if (isAvailable) {
         await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
       }
-    } catch (err) {
-      console.warn('[tokenStorage] Failed to clear refresh token:', err);
-    } finally {
-      memoryRefreshToken = null;
+    } catch {
+      // Ignore
     }
+
+    const webStorage = getWebStorage();
+    if (webStorage) {
+      try {
+        webStorage.removeItem(REFRESH_TOKEN_KEY);
+      } catch {
+        // Ignore
+      }
+    }
+
+    memoryRefreshToken = null;
   },
 };

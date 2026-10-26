@@ -623,17 +623,12 @@ export function QuestionCard({
                         />
                     ) : null}
                 </View>
-                <Pressable
-                    onPress={openDetail}
-                    accessibilityRole="button"
-                    accessibilityLabel={`View Question #${question.quesId}`}
-                    hitSlop={8}
-                    style={({ pressed }) => ({
+                <View
+                    style={{
                         flexDirection: "row",
                         alignItems: "center",
                         gap: 4,
-                        opacity: pressed ? 0.7 : 1,
-                    })}
+                    }}
                 >
                     <Text
                         style={{
@@ -649,7 +644,7 @@ export function QuestionCard({
                         size={13}
                         color={theme.muted}
                     />
-                </Pressable>
+                </View>
             </View>
 
             {/* Question body */}

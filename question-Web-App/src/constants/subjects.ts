@@ -1,4 +1,7 @@
 import type { Subject } from '../services/api';
+import { parseStudentEmail, StudentProfile } from '../utils/student-profile';
+
+export { parseStudentEmail, type StudentProfile };
 
 /**
  * Shared presentation helpers for subjects coming from GET /api/subjects.
@@ -97,4 +100,34 @@ export function subjectMeta(subject: Pick<Subject, 'semester' | 'credits'>): str
     parts.push(`${subject.credits} ${subject.credits === 1 ? 'credit' : 'credits'}`);
   }
   return parts.join(' · ');
+}
+
+/**
+ * Filters a list of subjects to match a student's department and semester.
+ */
+export function filterSubjectsForStudent(
+  subjects: Subject[],
+  profile: StudentProfile | null,
+): Subject[] {
+  if (!profile) return subjects;
+
+  return subjects.filter((subject) => {
+    // 1. Must match student's calculated current semester
+    if (subject.semester !== profile.currentSemester) {
+      return false;
+    }
+
+    // 2. Department check (if department mapping is available)
+    if (profile.deptId && subject.deptId === profile.deptId) {
+      return true;
+    }
+
+    // 3. Fallback: subject ID starts with department code (e.g. CS...)
+    if (profile.deptCode && subjectCode(subject).startsWith(profile.deptCode)) {
+      return true;
+    }
+
+    // If subject has general department or no strict mismatch, match by semester
+    return !subject.deptId || subject.deptId === profile.deptId;
+  });
 }

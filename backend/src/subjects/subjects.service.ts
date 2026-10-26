@@ -7,6 +7,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Subject } from './entities/subject.entity';
 
+export interface SubjectFilterOptions {
+  search?: string;
+  semester?: number;
+  deptId?: number;
+  deptCode?: string;
+}
+
 @Injectable()
 export class SubjectsService {
   constructor(
@@ -14,17 +21,48 @@ export class SubjectsService {
     private readonly repository: Repository<Subject>,
   ) {}
 
-  async findAll(search?: string): Promise<Subject[]> {
+  async findAll(options?: string | SubjectFilterOptions): Promise<Subject[]> {
+    const opts: SubjectFilterOptions =
+      typeof options === 'string' ? { search: options } : options || {};
+
     const query = this.repository.createQueryBuilder('subject');
 
-    if (search?.trim()) {
-      query.where(
+    if (opts.search?.trim()) {
+      query.andWhere(
         '(subject.subjectName LIKE :search OR subject.subjectId LIKE :search)',
-        { search: `%${search.trim()}%` },
+        { search: `%${opts.search.trim()}%` },
       );
     }
 
-    return query.orderBy('subject.subjectName', 'ASC').getMany();
+    if (opts.semester !== undefined && !Number.isNaN(opts.semester)) {
+      query.andWhere('subject.semester = :semester', {
+        semester: opts.semester,
+      });
+    }
+
+    if (opts.deptId !== undefined && !Number.isNaN(opts.deptId)) {
+      if (opts.deptCode) {
+        // Match either department ID or subjectId prefix (e.g. CS101)
+        query.andWhere(
+          '(subject.deptId = :deptId OR subject.subjectId LIKE :deptPrefix)',
+          {
+            deptId: opts.deptId,
+            deptPrefix: `${opts.deptCode.toUpperCase()}%`,
+          },
+        );
+      } else {
+        query.andWhere('subject.deptId = :deptId', { deptId: opts.deptId });
+      }
+    } else if (opts.deptCode) {
+      query.andWhere('subject.subjectId LIKE :deptPrefix', {
+        deptPrefix: `${opts.deptCode.toUpperCase()}%`,
+      });
+    }
+
+    return query
+      .orderBy('subject.semester', 'ASC')
+      .addOrderBy('subject.subjectName', 'ASC')
+      .getMany();
   }
 
   async findOne(id: number): Promise<Subject> {

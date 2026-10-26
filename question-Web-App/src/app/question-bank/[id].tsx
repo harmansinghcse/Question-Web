@@ -104,7 +104,13 @@ export default function QuestionDetailsScreen() {
             {/* Top Navigation Header with safe area support */}
             <View style={s.header}>
                 <Pressable
-                    onPress={() => router.back()}
+                    onPress={() => {
+                        if (router.canGoBack()) {
+                            router.back();
+                        } else {
+                            router.replace("/question-bank");
+                        }
+                    }}
                     style={({ pressed }) => [
                         s.backButton,
                         pressed && { opacity: 0.7 },

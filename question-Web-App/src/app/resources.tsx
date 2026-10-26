@@ -15,7 +15,13 @@ export default function ResourcesScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Pressable
-          onPress={() => router.back()}
+          onPress={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace('/');
+            }
+          }}
           style={styles.backButton}
           accessibilityRole="button"
           accessibilityLabel="Go back"

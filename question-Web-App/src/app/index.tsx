@@ -22,6 +22,7 @@ import {
     TYPE_META,
 } from "../components/ui";
 import { useAppTheme } from "../providers/ThemeProvider";
+import { useAuth } from "../providers/AuthProvider";
 import {
     api,
     QUESTION_TYPES,
@@ -31,6 +32,8 @@ import {
 } from "../services/api";
 import { useApiData } from "../hooks/use-api-data";
 import {
+    filterSubjectsForStudent,
+    parseStudentEmail,
     sortSubjects,
     subjectCode,
     subjectColour,
@@ -43,9 +46,19 @@ import type { AppTheme } from "../constants/theme";
 export default function HomeScreen() {
     const router = useRouter();
     const { theme, ready } = useAppTheme();
+    const { user, isRestoring } = useAuth();
     const { isWide, width } = useLayout();
     const s = useMemo(() => makeStyles(theme), [theme]);
     const [query, setQuery] = useState("");
+
+    // Student profile derived dynamically from authenticated email
+    const studentProfile = useMemo(
+        () => (user?.email ? parseStudentEmail(user.email) : null),
+        [user?.email],
+    );
+
+    // Filter toggle mode: 'my-semester' | 'all'
+    const [filterMode, setFilterMode] = useState<"my-semester" | "all">("my-semester");
 
     // ── Data ────────────────────────────────────────────────────────────────
     const fetchSubjects = useCallback(() => api.getSubjects(), []);
@@ -55,11 +68,11 @@ export default function HomeScreen() {
         [],
     );
 
-    const subjectsState = useApiData<Subject[]>(fetchSubjects, ready);
-    const statsState = useApiData<QuestionStats>(fetchStats, ready);
-    const recentState = useApiData<QuestionPage>(fetchRecent, ready);
+    const subjectsState = useApiData<Subject[]>(fetchSubjects, ready && !isRestoring);
+    const statsState = useApiData<QuestionStats>(fetchStats, ready && !isRestoring);
+    const recentState = useApiData<QuestionPage>(fetchRecent, ready && !isRestoring);
 
-    const subjects = useMemo(
+    const allSortedSubjects = useMemo(
         () =>
             subjectsState.status === "success"
                 ? sortSubjects(subjectsState.data)
@@ -67,7 +80,15 @@ export default function HomeScreen() {
         [subjectsState],
     );
 
-    if (!ready) return <View style={s.blank} />;
+    // Apply personalized filtering when in 'my-semester' mode
+    const displayedSubjects = useMemo(() => {
+        if (filterMode === "all" || !studentProfile) {
+            return allSortedSubjects;
+        }
+        return filterSubjectsForStudent(allSortedSubjects, studentProfile);
+    }, [allSortedSubjects, filterMode, studentProfile]);
+
+    if (!ready || isRestoring) return <View style={s.blank} />;
 
     // ── Navigation helpers ──────────────────────────────────────────────────
     const openQuestionBank = (params: Record<string, string> = {}) =>
@@ -241,11 +262,56 @@ export default function HomeScreen() {
 
             {/* Subjects */}
             <View style={s.section}>
-                <SectionHeader
-                    title="Your subjects"
-                    actionLabel="Open syllabus"
-                    onAction={() => router.push("/syllabus" as never)}
-                />
+                <View style={s.subjectHeaderContainer}>
+                    <SectionHeader
+                        title={
+                            studentProfile && filterMode === "my-semester"
+                                ? `Semester ${studentProfile.currentSemester} Subjects`
+                                : "Your subjects"
+                        }
+                        actionLabel="Open syllabus"
+                        onAction={() => router.push("/syllabus" as never)}
+                    />
+
+                    {/* Personalized Segmented Control */}
+                    {studentProfile && (
+                        <View style={s.filterToggleContainer}>
+                            <Pressable
+                                onPress={() => setFilterMode("my-semester")}
+                                style={[
+                                    s.toggleButton,
+                                    filterMode === "my-semester" && s.toggleButtonActive,
+                                ]}
+                            >
+                                <Text
+                                    style={[
+                                        s.toggleButtonText,
+                                        filterMode === "my-semester" && s.toggleButtonTextActive,
+                                    ]}
+                                >
+                                    My Semester ({`Sem ${studentProfile.currentSemester}`})
+                                </Text>
+                            </Pressable>
+                            <Pressable
+                                onPress={() => setFilterMode("all")}
+                                style={[
+                                    s.toggleButton,
+                                    filterMode === "all" && s.toggleButtonActive,
+                                ]}
+                            >
+                                <Text
+                                    style={[
+                                        s.toggleButtonText,
+                                        filterMode === "all" && s.toggleButtonTextActive,
+                                    ]}
+                                >
+                                    All Semesters
+                                </Text>
+                            </Pressable>
+                        </View>
+                    )}
+                </View>
+
                 {subjectsState.status === "loading" && (
                     <LoadingBlock label="Loading subjects" />
                 )}
@@ -257,17 +323,39 @@ export default function HomeScreen() {
                     />
                 )}
                 {subjectsState.status === "success" &&
-                    subjects.length === 0 && (
-                        <EmptyBlock
-                            icon="school-outline"
-                            title="No subjects yet"
-                            text="Subjects will appear here once they're added to your syllabus."
-                        />
+                    displayedSubjects.length === 0 && (
+                        <View style={s.emptyContainer}>
+                            <EmptyBlock
+                                icon="school-outline"
+                                title={
+                                    filterMode === "my-semester" && studentProfile
+                                        ? `No subjects listed for Semester ${studentProfile.currentSemester}`
+                                        : "No subjects yet"
+                                }
+                                text={
+                                    filterMode === "my-semester" && studentProfile
+                                        ? "There are currently no subjects mapped to your semester in the syllabus. You can view all available syllabus subjects below."
+                                        : "Subjects will appear here once they're added to your syllabus."
+                                }
+                            />
+                            {filterMode === "my-semester" && (
+                                <Pressable
+                                    onPress={() => setFilterMode("all")}
+                                    style={s.switchFilterButton}
+                                >
+                                    <Ionicons name="list" size={15} color="#FFFFFF" />
+                                    <Text style={s.switchFilterButtonText}>
+                                        View All Semesters
+                                    </Text>
+                                </Pressable>
+                            )}
+                        </View>
                     )}
-                {subjects.length > 0 &&
+
+                {displayedSubjects.length > 0 &&
                     (isWide ? (
                         <View style={s.subjectGrid}>
-                            {subjects.map(renderSubjectCard)}
+                            {displayedSubjects.map(renderSubjectCard)}
                         </View>
                     ) : (
                         <ScrollView
@@ -281,7 +369,7 @@ export default function HomeScreen() {
                                 paddingRight: 16,
                             }}
                         >
-                            {subjects.map(renderSubjectCard)}
+                            {displayedSubjects.map(renderSubjectCard)}
                         </ScrollView>
                     ))}
             </View>
@@ -299,49 +387,40 @@ export default function HomeScreen() {
                             returnKeyType="search"
                             placeholder="Search by keyword or topic"
                             placeholderTextColor={theme.muted}
-                            accessibilityLabel="Search questions"
+                            accessibilityLabel="Search query"
                             style={s.searchInput}
                         />
-                        <Pressable
-                            onPress={submitSearch}
-                            accessibilityRole="button"
-                            accessibilityLabel="Search"
-                            style={s.searchButton}
-                        >
-                            <Text style={s.searchButtonText}>Search</Text>
-                        </Pressable>
+                        {query.length > 0 && (
+                            <Pressable
+                                onPress={() => setQuery("")}
+                                accessibilityRole="button"
+                                accessibilityLabel="Clear search"
+                                hitSlop={8}
+                            >
+                                <Ionicons
+                                    name="close-circle"
+                                    size={18}
+                                    color={theme.muted}
+                                />
+                            </Pressable>
+                        )}
                     </View>
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={{ gap: 8, paddingTop: 12 }}
-                    >
-                        {QUESTION_TYPES.map((type) => (
-                            <Pill
-                                key={type}
-                                label={TYPE_META[type].short}
-                                icon={TYPE_META[type].icon}
-                                onPress={() => openQuestionBank({ type })}
-                            />
-                        ))}
-                    </ScrollView>
                 </Card>
             </View>
 
-            {/* Latest questions */}
+            {/* Recent questions */}
             <View style={s.section}>
                 <SectionHeader
-                    title="Latest questions"
-                    subtitle="Most recently added"
-                    actionLabel="See all"
+                    title="Recent questions"
+                    actionLabel="View all"
                     onAction={() => openQuestionBank()}
                 />
                 {recentState.status === "loading" && (
-                    <LoadingBlock label="Loading questions" />
+                    <LoadingBlock label="Loading recent questions" />
                 )}
                 {recentState.status === "error" && (
                     <ErrorBlock
-                        title="Couldn't load questions"
+                        title="Couldn't load recent questions"
                         message={recentState.message}
                         onRetry={recentState.refresh}
                     />
@@ -356,9 +435,12 @@ export default function HomeScreen() {
                     )}
                 {recentState.status === "success" &&
                     recentState.data.items.length > 0 && (
-                        <View style={{ gap: 10 }}>
+                        <View style={{ gap: 12 }}>
                             {recentState.data.items.map((q) => (
-                                <QuestionCard key={q.quesId} question={q} />
+                                <QuestionCard
+                                    key={q.quesId}
+                                    question={q}
+                                />
                             ))}
                         </View>
                     )}
@@ -369,137 +451,194 @@ export default function HomeScreen() {
 
 function makeStyles(t: AppTheme) {
     return StyleSheet.create({
-        blank: { flex: 1, backgroundColor: t.background },
-        section: { marginBottom: 28 },
-
+        blank: {
+            flex: 1,
+            backgroundColor: t.background,
+        },
         hero: {
-            backgroundColor: t.accent,
-            borderRadius: 20,
-            padding: 24,
-            marginBottom: 16,
+            backgroundColor: t.surface,
+            borderRadius: 16,
+            padding: 20,
+            marginBottom: 24,
+            borderWidth: 1,
+            borderColor: t.border,
         },
         heroTitle: {
-            color: "#FFFFFF",
-            fontSize: 24,
-            fontWeight: "800",
-            lineHeight: 30,
+            fontSize: 22,
+            fontWeight: "700",
+            color: t.text,
+            marginBottom: 6,
         },
         heroText: {
-            color: "rgba(255,255,255,0.88)",
             fontSize: 14,
-            lineHeight: 21,
-            marginTop: 6,
-            maxWidth: 480,
+            color: t.muted,
+            marginBottom: 16,
+            lineHeight: 20,
         },
         heroButton: {
             flexDirection: "row",
             alignItems: "center",
-            alignSelf: "flex-start",
             gap: 8,
-            marginTop: 18,
-            paddingHorizontal: 18,
-            paddingVertical: 11,
-            borderRadius: 12,
-            backgroundColor: "#FFFFFF",
+            alignSelf: "flex-start",
+            paddingVertical: 8,
+            paddingHorizontal: 12,
+            borderRadius: 8,
+            backgroundColor: t.accent + "1A",
         },
-        heroButtonText: { color: t.accent, fontSize: 14, fontWeight: "800" },
-
+        heroButtonText: {
+            color: t.accent,
+            fontSize: 13,
+            fontWeight: "700",
+        },
         statsRow: {
             flexDirection: "row",
             flexWrap: "wrap",
-            gap: 10,
+            gap: 12,
             marginBottom: 28,
         },
         statTile: {
-            flexGrow: 1,
-            flexBasis: 150,
+            flex: 1,
+            minWidth: 140,
+            backgroundColor: t.surface,
+            borderRadius: 12,
+            padding: 12,
             flexDirection: "row",
             alignItems: "center",
-            gap: 12,
-            padding: 12,
-            borderRadius: 14,
-            backgroundColor: t.surface,
+            gap: 10,
             borderWidth: 1,
             borderColor: t.border,
         },
         statIcon: {
-            width: 38,
-            height: 38,
-            borderRadius: 11,
+            width: 36,
+            height: 36,
+            borderRadius: 8,
             alignItems: "center",
             justifyContent: "center",
         },
-        statValue: { color: t.text, fontSize: 20, fontWeight: "800" },
-        statLabel: { color: t.muted, fontSize: 12, marginTop: 1 },
-
-        subjectGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
-        subjectCard: {
-            minHeight: 128,
-            padding: 14,
-            borderRadius: 16,
-            borderWidth: 1,
-            borderTopWidth: 4,
-            borderColor: t.border,
+        statValue: {
+            fontSize: 18,
+            fontWeight: "800",
+            color: t.text,
+        },
+        statLabel: {
+            fontSize: 11,
+            color: t.muted,
+            marginTop: 2,
+        },
+        section: {
+            marginBottom: 28,
+        },
+        subjectHeaderContainer: {
+            marginBottom: 10,
+        },
+        filterToggleContainer: {
+            flexDirection: "row",
             backgroundColor: t.surface,
-            justifyContent: "space-between",
-            gap: 10,
+            borderRadius: 10,
+            padding: 4,
+            borderWidth: 1,
+            borderColor: t.border,
+            alignSelf: "flex-start",
+            marginTop: 8,
+            gap: 4,
+        },
+        toggleButton: {
+            paddingVertical: 6,
+            paddingHorizontal: 12,
+            borderRadius: 8,
+        },
+        toggleButtonActive: {
+            backgroundColor: t.accent,
+        },
+        toggleButtonText: {
+            fontSize: 12,
+            fontWeight: "600",
+            color: t.muted,
+        },
+        toggleButtonTextActive: {
+            color: "#FFFFFF",
+            fontWeight: "700",
+        },
+        emptyContainer: {
+            alignItems: "center",
+        },
+        switchFilterButton: {
+            marginTop: 12,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 6,
+            backgroundColor: t.accent,
+            paddingVertical: 8,
+            paddingHorizontal: 16,
+            borderRadius: 8,
+        },
+        switchFilterButtonText: {
+            color: "#FFFFFF",
+            fontSize: 13,
+            fontWeight: "700",
+        },
+        subjectGrid: {
+            flexDirection: "row",
+            flexWrap: "wrap",
+            gap: 12,
+        },
+        subjectCard: {
+            backgroundColor: t.surface,
+            borderRadius: 12,
+            padding: 14,
+            borderWidth: 1,
+            borderColor: t.border,
+            borderTopWidth: 3,
         },
         subjectTop: {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
+            marginBottom: 12,
         },
         subjectIconBox: {
-            width: 38,
-            height: 38,
-            borderRadius: 11,
+            width: 32,
+            height: 32,
+            borderRadius: 8,
             alignItems: "center",
             justifyContent: "center",
-            paddingHorizontal: 4,
         },
         subjectCode: {
-            borderRadius: 8,
-            paddingHorizontal: 7,
-            paddingVertical: 3,
-            flexShrink: 1,
+            paddingHorizontal: 6,
+            paddingVertical: 2,
+            borderRadius: 6,
         },
         subjectName: {
-            color: t.text,
             fontSize: 14,
             fontWeight: "700",
-            lineHeight: 19,
-        },
-        subjectMeta: { color: t.muted, fontSize: 12 },
-
-        cardTitle: {
             color: t.text,
-            fontSize: 16,
-            fontWeight: "800",
+            marginBottom: 4,
+            lineHeight: 18,
+        },
+        subjectMeta: {
+            fontSize: 11,
+            color: t.muted,
+        },
+        cardTitle: {
+            fontSize: 15,
+            fontWeight: "700",
+            color: t.text,
             marginBottom: 12,
         },
         searchBox: {
             flexDirection: "row",
             alignItems: "center",
-            gap: 10,
-            paddingLeft: 14,
-            paddingRight: 6,
-            borderRadius: 14,
-            borderWidth: 1,
-            borderColor: t.border,
             backgroundColor: t.surfaceAlt,
+            borderRadius: 10,
+            paddingHorizontal: 12,
+            height: 42,
+            gap: 8,
         },
         searchInput: {
             flex: 1,
             color: t.text,
             fontSize: 14,
-            paddingVertical: 12,
+            paddingVertical: 0,
         },
-        searchButton: {
-            paddingHorizontal: 16,
-            paddingVertical: 9,
-            borderRadius: 10,
-            backgroundColor: t.accent,
-        },
-        searchButtonText: { color: "#FFFFFF", fontSize: 13, fontWeight: "700" },
     });
 }

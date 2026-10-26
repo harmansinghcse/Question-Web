@@ -5,17 +5,9 @@
  *   1. Load all subjects from GET /api/subjects on mount.
  *   2. When the user taps a subject, fetch chapters via GET /api/chapters?subjectKey=<n>.
  *   3. When the user taps a chapter, fetch topics via GET /api/topics?chapterId=<n>.
- *
- * Data is fetched on demand — no pre-loading of descendant data.
- *
- * If this screen is opened from the home screen with a `subjectKey` param,
- * that subject is pre-selected automatically.
- *
- * Spacing: everything uses the 4/8 grid below (SP) so gaps, padding and
- * margins stay consistent across header, stats, filters, cards and lists.
  */
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
     ActivityIndicator,
     Pressable,
@@ -30,8 +22,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { api, type Chapter, type Subject, type Topic } from "../services/api";
 import { useApiData } from "../hooks/use-api-data";
 import { useAppTheme } from "../providers/ThemeProvider";
+import { useAuth } from "../providers/AuthProvider";
 import type { AppTheme } from "../constants/theme";
 import {
+    parseStudentEmail,
     sortSubjects,
     subjectCode,
     subjectColour,
@@ -51,9 +45,6 @@ const SP = {
     xxxl: 32,
 } as const;
 
-// ─── Palette ──────────────────────────────────────────────────────────────────
-// Dark mode uses pure black with purple accents (matches the Question Web
-// mockup). Light mode keeps the app theme but swaps in the same purple accent.
 function isDarkTheme(bg: string) {
     const hex = bg.replace("#", "");
     if (hex.length < 6) return true;
@@ -142,11 +133,18 @@ function EmptyCard({
 
 export default function SyllabusScreen() {
     const { theme: appTheme } = useAppTheme();
+    const { user } = useAuth();
     const theme = useMemo(() => withPalette(appTheme), [appTheme]);
     const styles = useMemo(() => makeStyles(theme), [theme]);
     const insets = useSafeAreaInsets();
     const router = useRouter();
     const params = useLocalSearchParams<{ subjectKey?: string }>();
+
+    // Calculate authenticated student profile dynamically
+    const studentProfile = useMemo(
+        () => (user?.email ? parseStudentEmail(user.email) : null),
+        [user?.email],
+    );
 
     // Store selected subject KEY (number) and chapter as state.
     const [selectedSubjectKey, setSelectedSubjectKey] = useState<number | null>(
@@ -238,7 +236,18 @@ export default function SyllabusScreen() {
     }
 
     // ── Semester filter + grouping ────────────────────────────────────────────
-    const [semesterFilter, setSemesterFilter] = useState<number | null>(null);
+    // Default to student's current semester if available, or null (All)
+    const [semesterFilter, setSemesterFilter] = useState<number | null>(() => {
+        if (params.subjectKey) return null; // If subject key passed, show all
+        return studentProfile?.currentSemester ?? null;
+    });
+
+    // Ensure filter updates as soon as authenticated student profile finishes restoring
+    useEffect(() => {
+        if (!params.subjectKey && studentProfile?.currentSemester) {
+            setSemesterFilter(studentProfile.currentSemester);
+        }
+    }, [studentProfile?.currentSemester, params.subjectKey]);
 
     const semesters = useMemo(
         () =>
@@ -297,18 +306,15 @@ export default function SyllabusScreen() {
                             <Text style={styles.topicName}>
                                 {topic.topicName}
                             </Text>
-                            {/* Questions API is not yet implemented on the backend. */}
-                            <Text style={styles.topicQStatus}>
-                                Topic {i + 1} · Questions not yet available
-                            </Text>
                         </View>
+                        <Text style={styles.topicIdx}>#{i + 1}</Text>
                     </View>
                 ))}
             </View>
         );
     }
 
-    function renderChapters(subject: Subject, colour: string) {
+    function renderChapters(colour: string) {
         return (
             <View style={styles.chapterList}>
                 {chaptersState.status === "loading" && (
@@ -321,78 +327,57 @@ export default function SyllabusScreen() {
                         styles={styles}
                     />
                 )}
-                {chaptersState.status === "success" &&
-                    chapters.length === 0 && (
-                        <Text style={styles.inlineEmpty}>
-                            No chapters found for this subject.
-                        </Text>
-                    )}
-                {chaptersState.status === "success" && chapters.length > 0 && (
-                    <Text style={styles.chapterCount}>
-                        {chapters.length}{" "}
-                        {chapters.length === 1 ? "CHAPTER" : "CHAPTERS"}
+                {chaptersState.status === "success" && chapters.length === 0 && (
+                    <Text style={styles.inlineEmpty}>
+                        No chapters listed under this subject.
                     </Text>
                 )}
-
                 {chapters.map((chapter) => {
-                    const active =
-                        selectedChapter?.chapterId === chapter.chapterId;
+                    const open = selectedChapterKey === chapter.chapterId;
                     return (
-                        <View key={chapter.chapterId}>
+                        <View
+                            key={chapter.chapterId}
+                            style={[
+                                styles.chapterCard,
+                                open && { borderColor: colour },
+                            ]}
+                        >
                             <Pressable
                                 accessibilityRole="button"
-                                accessibilityLabel={`Select chapter ${chapter.chapterName} of ${subjectDisplayName(subject)}`}
-                                accessibilityState={{ expanded: active }}
+                                accessibilityLabel={`${open ? "Collapse" : "Expand"} chapter ${chapter.chapterNo}: ${chapter.chapterName}`}
+                                accessibilityState={{ expanded: open }}
                                 onPress={() =>
-                                    selectChapter(
-                                        active ? null : chapter.chapterId,
-                                    )
+                                    selectChapter(open ? null : chapter.chapterId)
                                 }
+                                style={styles.chapterPressable}
                             >
                                 <View
                                     style={[
-                                        styles.chapterRow,
-                                        active && {
-                                            borderColor: colour,
-                                            backgroundColor: colour + "14",
-                                        },
+                                        styles.chapterNumberBadge,
+                                        { backgroundColor: colour + "20" },
                                     ]}
                                 >
-                                    <View
-                                        style={[
-                                            styles.chapterNo,
-                                            { backgroundColor: colour + "22" },
-                                        ]}
-                                    >
-                                        <Text
-                                            style={[
-                                                styles.chapterNoText,
-                                                { color: colour },
-                                            ]}
-                                        >
-                                            {chapter.chapterNo}
-                                        </Text>
-                                    </View>
                                     <Text
                                         style={[
-                                            styles.chapterName,
-                                            active && { color: colour },
-                                        ]}
-                                        numberOfLines={2}
-                                    >
-                                        {chapter.chapterName}
-                                    </Text>
-                                    <Text
-                                        style={[
-                                            styles.chapterArrow,
-                                            active && { color: colour },
+                                            styles.chapterNumberText,
+                                            { color: colour },
                                         ]}
                                     >
-                                        {active ? "⌄" : "›"}
+                                        CH {chapter.chapterNo}
                                     </Text>
                                 </View>
+                                <Text
+                                    style={styles.chapterName}
+                                    numberOfLines={2}
+                                >
+                                    {chapter.chapterName}
+                                </Text>
+                                <Text style={styles.chevron}>
+                                    {open ? "▲" : "▼"}
+                                </Text>
                             </Pressable>
-                            {active && renderTopics(colour)}
+
+                            {open && renderTopics(colour)}
                         </View>
                     );
                 })}
@@ -401,72 +386,117 @@ export default function SyllabusScreen() {
     }
 
     return (
-        <View style={styles.screen}>
-            {/* ── Header ──────────────────────────────────────────────────────── */}
-            <View style={[styles.header, { paddingTop: insets.top + SP.md }]}>
-                <Pressable
-                    onPress={() => router.back()}
-                    style={styles.backButton}
-                >
-                    <Text style={styles.backText}>‹</Text>
-                </Pressable>
-                <View style={styles.headerText}>
-                    <Text style={styles.eyebrow}>CURRICULUM</Text>
-                    <Text style={styles.title}>Syllabus</Text>
-                    <Text style={styles.subtitle} numberOfLines={1}>
-                        {selectedChapter
-                            ? selectedChapter.chapterName
-                            : selectedSubject
-                              ? subjectDisplayName(selectedSubject)
-                              : "Select a subject to get started"}
-                    </Text>
-                </View>
-            </View>
-
+        <View
+            style={[
+                styles.screen,
+                { paddingTop: insets.top, paddingBottom: insets.bottom },
+            ]}
+        >
             <ScrollView
-                contentContainerStyle={styles.content}
+                style={styles.scroll}
+                contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
-                keyboardShouldPersistTaps="handled"
             >
-                {/* ── Overview stats ───────────────────────────────────────────── */}
-                {subjects.length > 0 && (
-                    <View style={styles.statsRow}>
-                        {[
-                            { label: "SUBJECTS", value: subjects.length },
-                            {
-                                label: "SEMESTERS",
-                                value: semesters.filter((s) => s > 0).length,
-                            },
-                            { label: "CREDITS", value: totalCredits },
-                        ].map((stat) => (
-                            <View key={stat.label} style={styles.statCard}>
-                                <Text style={styles.statValue}>
-                                    {stat.value}
-                                </Text>
-                                <Text style={styles.statLabel}>
-                                    {stat.label}
+                {/* ── Top Bar ─────────────────────────────────────────────────── */}
+                <View style={styles.topBar}>
+                    <Pressable
+                        onPress={() => {
+                            if (router.canGoBack()) {
+                                router.back();
+                            } else {
+                                router.replace("/");
+                            }
+                        }}
+                        style={styles.iconButton}
+                        accessibilityRole="button"
+                        accessibilityLabel="Go back"
+                    >
+                        <Text style={styles.iconButtonText}>←</Text>
+                    </Pressable>
+
+                    <Text style={styles.topBarTitle}>Syllabus</Text>
+
+                    <View style={styles.topBarRight}>
+                        {studentProfile && (
+                            <View style={styles.profileBadge}>
+                                <Text style={styles.profileBadgeText}>
+                                    {`Sem ${studentProfile.currentSemester}`}
                                 </Text>
                             </View>
-                        ))}
+                        )}
                     </View>
-                )}
+                </View>
 
-                {/* ── Semester filter pills ─────────────────────────────────────── */}
-                {semesters.length > 1 && (
+                {/* ── Header ──────────────────────────────────────────────────── */}
+                <View style={styles.header}>
+                    <Text style={styles.headerTitle}>Course Syllabus</Text>
+                    <Text style={styles.headerSubtitle}>
+                        {studentProfile
+                            ? `Personalized for ${studentProfile.deptCode} (Semester ${studentProfile.currentSemester})`
+                            : "Browse through subjects, chapters, and topics."}
+                    </Text>
+                </View>
+
+                {/* ── Semester filter pills ──────────────────────────────────── */}
+                {semesters.length > 0 && (
                     <ScrollView
                         horizontal
                         showsHorizontalScrollIndicator={false}
-                        style={styles.filterScroll}
                         contentContainerStyle={styles.filterRow}
                     >
-                        {[null, ...semesters].map((sem) => {
+                        {studentProfile && (
+                            <Pressable
+                                onPress={() =>
+                                    setSemesterFilter(
+                                        semesterFilter === studentProfile.currentSemester
+                                            ? null
+                                            : studentProfile.currentSemester,
+                                    )
+                                }
+                                style={[
+                                    styles.filterPill,
+                                    semesterFilter === studentProfile.currentSemester &&
+                                        styles.filterPillActive,
+                                ]}
+                            >
+                                <Text
+                                    style={[
+                                        styles.filterPillText,
+                                        semesterFilter === studentProfile.currentSemester &&
+                                            styles.filterPillTextActive,
+                                    ]}
+                                >
+                                    ★ My Semester (Sem {studentProfile.currentSemester})
+                                </Text>
+                            </Pressable>
+                        )}
+
+                        <Pressable
+                            onPress={() => setSemesterFilter(null)}
+                            style={[
+                                styles.filterPill,
+                                semesterFilter === null && styles.filterPillActive,
+                            ]}
+                        >
+                            <Text
+                                style={[
+                                    styles.filterPillText,
+                                    semesterFilter === null &&
+                                        styles.filterPillTextActive,
+                                ]}
+                            >
+                                All Semesters
+                            </Text>
+                        </Pressable>
+
+                        {semesters.map((sem) => {
                             const active = semesterFilter === sem;
                             return (
                                 <Pressable
-                                    key={sem ?? "all"}
-                                    onPress={() => setSemesterFilter(sem)}
-                                    accessibilityRole="button"
-                                    accessibilityState={{ selected: active }}
+                                    key={sem}
+                                    onPress={() =>
+                                        setSemesterFilter(active ? null : sem)
+                                    }
                                     style={[
                                         styles.filterPill,
                                         active && styles.filterPillActive,
@@ -474,15 +504,11 @@ export default function SyllabusScreen() {
                                 >
                                     <Text
                                         style={[
-                                            styles.filterText,
-                                            active && styles.filterTextActive,
+                                            styles.filterPillText,
+                                            active && styles.filterPillTextActive,
                                         ]}
                                     >
-                                        {sem == null
-                                            ? "All"
-                                            : sem === 0
-                                              ? "Other"
-                                              : `Sem ${sem}`}
+                                        {sem === 0 ? "Other" : `Sem ${sem}`}
                                     </Text>
                                 </Pressable>
                             );
@@ -504,11 +530,27 @@ export default function SyllabusScreen() {
                     />
                 )}
                 {subjectsState.status === "success" &&
-                    subjects.length === 0 && (
-                        <EmptyCard
-                            text="No subjects found. Ask your administrator to add subjects to the database."
-                            styles={styles}
-                        />
+                    groupedSubjects.length === 0 && (
+                        <View style={{ gap: 12 }}>
+                            <EmptyCard
+                                text={
+                                    semesterFilter !== null
+                                        ? `No subjects found for Semester ${semesterFilter}. Switch to All Semesters to view full curriculum.`
+                                        : "No subjects found."
+                                }
+                                styles={styles}
+                            />
+                            {semesterFilter !== null && (
+                                <Pressable
+                                    onPress={() => setSemesterFilter(null)}
+                                    style={styles.retryButton}
+                                >
+                                    <Text style={styles.retryText}>
+                                        View All Semesters
+                                    </Text>
+                                </Pressable>
+                            )}
+                        </View>
                     )}
 
                 {/* ── Vertical subject list, grouped by semester ────────────────── */}
@@ -582,80 +624,30 @@ export default function SyllabusScreen() {
                                                     {subjectIcon(subject)}
                                                 </Text>
                                             </View>
-                                            <View style={styles.subjectBody}>
+                                            <View style={{ flex: 1 }}>
                                                 <Text
-                                                    style={[
-                                                        styles.subjectName,
-                                                        active && {
-                                                            color: colour,
-                                                        },
-                                                    ]}
+                                                    style={styles.subjectTitle}
                                                     numberOfLines={2}
                                                 >
                                                     {name}
                                                 </Text>
-                                                <View
-                                                    style={
-                                                        styles.subjectMetaRow
-                                                    }
+                                                <Text
+                                                    style={styles.subjectMeta}
                                                 >
                                                     {code !== "" &&
-                                                        code !== name && (
-                                                            <View
-                                                                style={[
-                                                                    styles.codeBadge,
-                                                                    {
-                                                                        borderColor:
-                                                                            colour +
-                                                                            "55",
-                                                                    },
-                                                                ]}
-                                                            >
-                                                                <Text
-                                                                    style={[
-                                                                        styles.codeBadgeText,
-                                                                        {
-                                                                            color: colour,
-                                                                        },
-                                                                    ]}
-                                                                >
-                                                                    {code}
-                                                                </Text>
-                                                            </View>
-                                                        )}
-                                                    <Text
-                                                        style={
-                                                            styles.subjectMeta
-                                                        }
-                                                        numberOfLines={1}
-                                                    >
-                                                        {subjectMeta(subject)}
-                                                    </Text>
-                                                </View>
-                                            </View>
-                                            <View
-                                                style={[
-                                                    styles.expandButton,
-                                                    active && {
-                                                        backgroundColor: colour,
-                                                    },
-                                                ]}
-                                            >
-                                                <Text
-                                                    style={[
-                                                        styles.expandIcon,
-                                                        active && {
-                                                            color: "#FFFFFF",
-                                                        },
-                                                    ]}
-                                                >
-                                                    {active ? "−" : "+"}
+                                                    code !== name
+                                                        ? `${code} · `
+                                                        : ""}
+                                                    {subjectMeta(subject)}
                                                 </Text>
                                             </View>
+                                            <Text style={styles.chevron}>
+                                                {active ? "▲" : "▼"}
+                                            </Text>
                                         </View>
                                     </Pressable>
 
-                                    {active && renderChapters(subject, colour)}
+                                    {active && renderChapters(colour)}
                                 </View>
                             );
                         })}
@@ -666,305 +658,286 @@ export default function SyllabusScreen() {
     );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
 function makeStyles(t: AppTheme) {
     return StyleSheet.create({
-        screen: { flex: 1, backgroundColor: t.background },
-
-        // Header
-        header: {
+        screen: {
+            flex: 1,
+            backgroundColor: t.background,
+        },
+        scroll: {
+            flex: 1,
+        },
+        scrollContent: {
+            padding: SP.lg,
+            gap: SP.lg,
+        },
+        topBar: {
             flexDirection: "row",
             alignItems: "center",
-            gap: SP.lg,
-            paddingHorizontal: SP.xl,
-            paddingTop: SP.lg,
-            paddingBottom: SP.lg,
-            borderBottomWidth: 1,
-            borderBottomColor: t.border,
-            backgroundColor: t.surface,
+            justifyContent: "space-between",
+            marginBottom: SP.sm,
         },
-        backButton: {
-            width: 44,
-            height: 44,
-            borderRadius: 14,
-            backgroundColor: t.surfaceAlt,
+        topBarTitle: {
+            fontSize: 16,
+            fontWeight: "700",
+            color: t.text,
+        },
+        topBarRight: {
+            minWidth: 40,
+            alignItems: "flex-end",
+        },
+        profileBadge: {
+            backgroundColor: t.accent + "22",
+            paddingHorizontal: 8,
+            paddingVertical: 4,
+            borderRadius: 6,
+        },
+        profileBadgeText: {
+            fontSize: 11,
+            fontWeight: "700",
+            color: t.accent,
+        },
+        iconButton: {
+            width: 36,
+            height: 36,
+            borderRadius: 8,
+            backgroundColor: t.surface,
             borderWidth: 1,
             borderColor: t.border,
             alignItems: "center",
             justifyContent: "center",
         },
-        backText: { color: t.text, fontSize: 32, lineHeight: 34 },
-        headerText: { flex: 1 },
-        eyebrow: {
-            color: t.accent,
-            fontSize: 10,
-            fontWeight: "800",
-            letterSpacing: 1.5,
-        },
-        title: {
+        iconButtonText: {
+            fontSize: 18,
             color: t.text,
-            fontSize: 26,
-            fontWeight: "900",
-            marginTop: SP.xs / 2,
         },
-        subtitle: { color: t.muted, fontSize: 12, marginTop: SP.xs },
-
-        // Scroll content: 20px gutter, 24px breathing room top, 40px bottom
-        content: {
-            paddingHorizontal: SP.xl,
-            paddingTop: SP.xl,
-            paddingBottom: SP.xxxl + SP.sm,
+        header: {
+            gap: SP.xs,
         },
-
-        // Stats strip
-        statsRow: { flexDirection: "row", gap: SP.md, marginBottom: SP.xl },
-        statCard: {
-            flex: 1,
-            backgroundColor: t.surface,
-            borderWidth: 1,
-            borderColor: t.border,
-            borderRadius: 18,
-            paddingVertical: SP.lg,
-            paddingHorizontal: SP.sm,
-            alignItems: "center",
-        },
-        statValue: { color: t.text, fontSize: 22, fontWeight: "900" },
-        statLabel: {
-            color: t.muted,
-            fontSize: 9,
+        headerTitle: {
+            fontSize: 24,
             fontWeight: "800",
-            letterSpacing: 1,
-            marginTop: SP.xs,
+            color: t.text,
         },
-
-        // Semester filter pills
-        filterScroll: { flexGrow: 0 },
+        headerSubtitle: {
+            fontSize: 13,
+            color: t.muted,
+        },
         filterRow: {
             gap: SP.sm,
-            paddingRight: SP.xl,
-            paddingBottom: SP.xs,
+            paddingVertical: SP.xs,
         },
         filterPill: {
-            paddingHorizontal: SP.lg,
-            paddingVertical: SP.sm + 2,
-            borderRadius: 999,
+            paddingVertical: 6,
+            paddingHorizontal: 12,
+            borderRadius: 8,
             backgroundColor: t.surface,
             borderWidth: 1,
             borderColor: t.border,
         },
-        filterPillActive: { backgroundColor: t.accent, borderColor: t.accent },
-        filterText: { color: t.text, fontSize: 12, fontWeight: "700" },
-        filterTextActive: { color: "#FFFFFF" },
-
-        // Semester groups
-        semesterGroup: { marginTop: SP.xxl },
+        filterPillActive: {
+            backgroundColor: t.accent,
+            borderColor: t.accent,
+        },
+        filterPillText: {
+            fontSize: 12,
+            fontWeight: "600",
+            color: t.muted,
+        },
+        filterPillTextActive: {
+            color: "#FFFFFF",
+            fontWeight: "700",
+        },
+        semesterGroup: {
+            gap: SP.md,
+            marginTop: SP.sm,
+        },
         semesterHeader: {
             flexDirection: "row",
             alignItems: "center",
             gap: SP.md,
-            marginBottom: SP.md + SP.xs,
         },
         semesterTitle: {
-            color: t.accent,
             fontSize: 11,
-            fontWeight: "900",
-            letterSpacing: 1.5,
+            fontWeight: "800",
+            color: t.muted,
+            letterSpacing: 1,
         },
-        semesterLine: { flex: 1, height: 1, backgroundColor: t.border },
-        semesterCount: { color: t.muted, fontSize: 10, fontWeight: "700" },
-
-        // Subject cards (vertical, full width)
+        semesterLine: {
+            flex: 1,
+            height: 1,
+            backgroundColor: t.border,
+        },
+        semesterCount: {
+            fontSize: 11,
+            color: t.muted,
+        },
         subjectCard: {
             backgroundColor: t.surface,
+            borderRadius: 12,
             borderWidth: 1,
             borderColor: t.border,
-            borderRadius: 20,
-            marginBottom: SP.md,
             overflow: "hidden",
         },
         subjectAccent: {
-            position: "absolute",
-            left: 0,
-            top: 0,
-            bottom: 0,
-            width: 4,
+            height: 3,
         },
-        subjectPressable: { alignSelf: "stretch" },
+        subjectPressable: {
+            padding: SP.md,
+        },
         subjectRow: {
-            alignSelf: "stretch",
-            flexDirection: "row",
-            alignItems: "center",
-            gap: SP.md + SP.xs,
-            paddingVertical: SP.lg,
-            paddingLeft: SP.xl,
-            paddingRight: SP.lg,
-        },
-        subjectIconBox: {
-            width: 48,
-            height: 48,
-            borderRadius: 14,
-            alignItems: "center",
-            justifyContent: "center",
-            paddingHorizontal: SP.xs,
-        },
-        subjectIcon: { fontSize: 18, fontWeight: "900" },
-        subjectBody: { flex: 1 },
-        subjectName: {
-            color: t.text,
-            fontSize: 15,
-            fontWeight: "800",
-            lineHeight: 21,
-        },
-        subjectMetaRow: {
-            flexDirection: "row",
-            alignItems: "center",
-            gap: SP.sm,
-            marginTop: SP.sm,
-        },
-        codeBadge: {
-            borderWidth: 1,
-            borderRadius: 8,
-            paddingHorizontal: SP.sm - 1,
-            paddingVertical: 3,
-        },
-        codeBadgeText: { fontSize: 9, fontWeight: "900", letterSpacing: 0.5 },
-        subjectMeta: { color: t.muted, fontSize: 11, flexShrink: 1 },
-        expandButton: {
-            width: 34,
-            height: 34,
-            borderRadius: 11,
-            backgroundColor: t.surfaceAlt,
-            alignItems: "center",
-            justifyContent: "center",
-        },
-        expandIcon: {
-            color: t.text,
-            fontSize: 18,
-            fontWeight: "800",
-            lineHeight: 20,
-        },
-
-        // Chapters
-        chapterList: {
-            borderTopWidth: 1,
-            borderTopColor: t.border,
-            paddingLeft: SP.xl,
-            paddingRight: SP.lg,
-            paddingTop: SP.lg,
-            paddingBottom: SP.sm,
-        },
-        chapterCount: {
-            color: t.muted,
-            fontSize: 9,
-            fontWeight: "900",
-            letterSpacing: 1.3,
-            marginBottom: SP.md,
-        },
-        chapterRow: {
             flexDirection: "row",
             alignItems: "center",
             gap: SP.md,
-            backgroundColor: t.background,
-            borderWidth: 1,
-            borderColor: t.border,
-            borderRadius: 16,
-            paddingVertical: SP.md,
-            paddingHorizontal: SP.md,
-            marginBottom: SP.md,
         },
-        chapterNo: {
-            width: 32,
-            height: 32,
-            borderRadius: 10,
+        subjectIconBox: {
+            width: 40,
+            height: 40,
+            borderRadius: 8,
             alignItems: "center",
             justifyContent: "center",
         },
-        chapterNoText: { fontWeight: "900", fontSize: 14 },
+        subjectIcon: {
+            fontSize: 18,
+            fontWeight: "800",
+        },
+        subjectTitle: {
+            fontSize: 15,
+            fontWeight: "700",
+            color: t.text,
+            marginBottom: 2,
+        },
+        subjectMeta: {
+            fontSize: 12,
+            color: t.muted,
+        },
+        chevron: {
+            fontSize: 11,
+            color: t.muted,
+            marginLeft: SP.xs,
+        },
+        chapterList: {
+            paddingHorizontal: SP.md,
+            paddingBottom: SP.md,
+            gap: SP.sm,
+            borderTopWidth: 1,
+            borderTopColor: t.border + "44",
+            paddingTop: SP.md,
+        },
+        chapterCard: {
+            backgroundColor: t.surfaceAlt,
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: t.border,
+            overflow: "hidden",
+        },
+        chapterPressable: {
+            flexDirection: "row",
+            alignItems: "center",
+            padding: SP.md,
+            gap: SP.md,
+        },
+        chapterNumberBadge: {
+            paddingHorizontal: 6,
+            paddingVertical: 2,
+            borderRadius: 4,
+        },
+        chapterNumberText: {
+            fontSize: 10,
+            fontWeight: "800",
+        },
         chapterName: {
             flex: 1,
-            color: t.text,
             fontSize: 13,
-            fontWeight: "700",
-            lineHeight: 19,
+            fontWeight: "600",
+            color: t.text,
         },
-        chapterArrow: {
-            color: t.muted,
-            fontSize: 18,
-            fontWeight: "700",
-            paddingHorizontal: SP.xs,
-        },
-
-        // Topics — guide line sits under the centre of the chapter number badge
-        // (row padding 12 + half of 32px badge = 28)
         topicList: {
+            paddingHorizontal: SP.md,
+            paddingBottom: SP.md,
+            paddingTop: SP.xs,
             borderLeftWidth: 2,
-            marginLeft: SP.xxl + SP.xs,
-            paddingLeft: SP.lg,
-            marginTop: -SP.xs,
-            marginBottom: SP.md,
+            marginLeft: SP.xl,
+            gap: SP.sm,
         },
         topicRow: {
             flexDirection: "row",
-            alignItems: "flex-start",
-            gap: SP.md,
-            paddingVertical: SP.sm,
+            alignItems: "center",
+            gap: SP.sm,
+            paddingVertical: 2,
         },
-        topicDot: { width: 7, height: 7, borderRadius: 4, marginTop: 7 },
+        topicDot: {
+            width: 5,
+            height: 5,
+            borderRadius: 2.5,
+        },
         topicName: {
-            color: t.text,
-            fontSize: 13,
-            fontWeight: "600",
-            lineHeight: 20,
-        },
-        topicQStatus: { color: t.muted, fontSize: 10, marginTop: 3 },
-        inlineEmpty: {
-            color: t.muted,
             fontSize: 12,
-            paddingVertical: SP.md,
-            paddingHorizontal: SP.xs,
+            color: t.text,
         },
-
-        // Error card
+        topicIdx: {
+            fontSize: 10,
+            color: t.muted,
+        },
+        inlineEmpty: {
+            fontSize: 12,
+            color: t.muted,
+            fontStyle: "italic",
+            paddingVertical: SP.xs,
+        },
         errorCard: {
             flexDirection: "row",
             alignItems: "center",
-            gap: SP.md,
             backgroundColor: t.surface,
+            borderRadius: 8,
+            padding: SP.md,
+            gap: SP.md,
             borderWidth: 1,
-            borderColor: t.danger,
-            borderRadius: 18,
-            padding: SP.lg,
-            marginBottom: SP.lg,
+            borderColor: "#FF4D4F",
         },
-        errorIcon: { color: t.danger, fontSize: 22 },
-        errorTitle: { color: t.danger, fontWeight: "900", fontSize: 13 },
-        errorMessage: { color: t.muted, fontSize: 11, marginTop: SP.xs },
+        errorIcon: {
+            fontSize: 18,
+            color: "#FF4D4F",
+        },
+        errorTitle: {
+            fontSize: 13,
+            fontWeight: "700",
+            color: t.text,
+        },
+        errorMessage: {
+            fontSize: 11,
+            color: t.muted,
+        },
         retryButton: {
             backgroundColor: t.accent,
-            borderRadius: 10,
-            paddingHorizontal: SP.md + SP.xs,
-            paddingVertical: SP.sm,
+            paddingVertical: 6,
+            paddingHorizontal: 12,
+            borderRadius: 6,
+            alignSelf: "center",
         },
-        retryText: { color: "#FFFFFF", fontSize: 11, fontWeight: "800" },
-
-        // Empty card
+        retryText: {
+            fontSize: 12,
+            fontWeight: "700",
+            color: "#FFFFFF",
+        },
         emptyCard: {
+            alignItems: "center",
+            justifyContent: "center",
+            padding: SP.xl,
             backgroundColor: t.surface,
+            borderRadius: 12,
             borderWidth: 1,
             borderColor: t.border,
-            borderRadius: 18,
-            paddingVertical: SP.xxxl,
-            paddingHorizontal: SP.xl,
-            alignItems: "center",
-            marginBottom: SP.lg,
+            gap: SP.xs,
         },
-        emptyIcon: { color: t.muted, fontSize: 32, marginBottom: SP.md },
-        emptyText: {
+        emptyIcon: {
+            fontSize: 24,
             color: t.muted,
-            fontSize: 12,
+        },
+        emptyText: {
+            fontSize: 13,
+            color: t.muted,
             textAlign: "center",
-            lineHeight: 19,
         },
     });
 }
