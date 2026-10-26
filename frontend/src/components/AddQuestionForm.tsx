@@ -47,13 +47,27 @@ interface ImageAttachment {
     previewUrl: string;
 }
 
-interface JsonImportItem {
+export interface RawTopicMapping {
+    rawName: string;
+    resolvedTopicId: number | null;
+    resolvedTopicName?: string;
+}
+
+export interface ResolvedTopicItem {
+    topicId: number;
+    topicName: string;
+}
+
+export type ItemResolutionStatus = "Matched" | "Needs Review" | "Invalid";
+
+export interface JsonImportItem {
     id: string;
+    index: number;
     questionText: string;
-    rawChapterName?: string;
-    rawTopicNames?: string[];
-    chapterId: string;
-    topicIds: number[];
+    rawChapterName: string;
+    rawTopics: RawTopicMapping[];
+    resolvedChapterId: number | null;
+    resolvedTopics: ResolvedTopicItem[];
     images: ImageAttachment[];
     status?: "idle" | "uploading" | "saving" | "success" | "error";
     error?: string;
@@ -83,9 +97,6 @@ const ALLOWED_IMAGE_TYPES = [
     "image/gif",
 ];
 
-/**
- * Uploads a file securely to Cloudinary with automatic retries on transient errors.
- */
 async function uploadToCloudinaryWithRetry(
     file: File,
     onProgress?: (text: string) => void,
@@ -215,6 +226,20 @@ function Field({
     );
 }
 
+export function computeItemStatus(item: JsonImportItem): ItemResolutionStatus {
+    if (!item.questionText.trim()) return "Invalid";
+    if (!item.resolvedChapterId) return "Needs Review";
+    if (item.resolvedTopics.length === 0) return "Needs Review";
+
+    // If any raw topic from the JSON has not been resolved
+    const hasUnresolvedRawTopic = item.rawTopics.some(
+        (rt) => rt.resolvedTopicId === null,
+    );
+    if (hasUnresolvedRawTopic) return "Needs Review";
+
+    return "Matched";
+}
+
 export default function AddQuestionForm() {
     const [mode, setMode] = useState<"manual" | "json">("manual");
 
@@ -238,9 +263,13 @@ export default function AddQuestionForm() {
     const [jsonImportProgress, setJsonImportProgress] = useState<string | null>(
         null,
     );
-    // Cache topics per chapter for JSON inline correction
+    const [previewFilter, setPreviewFilter] = useState<
+        "ALL" | "NEEDS_REVIEW" | "MATCHED" | "INVALID"
+    >("ALL");
+
+    // Cache of topics grouped by chapterId
     const [chapterTopicsCache, setChapterTopicsCache] = useState<
-        Record<string, TopicOption[]>
+        Record<number, TopicOption[]>
     >({});
 
     // Global form saving & notice
@@ -290,8 +319,10 @@ export default function AddQuestionForm() {
         [chapters.data],
     );
 
-    // Fetch topics helper for chapters (used in JSON matching and correction)
-    const loadTopicsForChapter = async (cId: string): Promise<TopicOption[]> => {
+    // Fetch and cache topics for a specific chapter
+    const loadTopicsForChapter = async (
+        cId: number,
+    ): Promise<TopicOption[]> => {
         if (!cId) return [];
         if (chapterTopicsCache[cId]) return chapterTopicsCache[cId];
         try {
@@ -305,10 +336,9 @@ export default function AddQuestionForm() {
         }
     };
 
-    // Preload topics for selected manual chapter
     useEffect(() => {
         if (chapterId) {
-            loadTopicsForChapter(chapterId);
+            loadTopicsForChapter(Number(chapterId));
         }
     }, [chapterId]);
 
@@ -326,7 +356,6 @@ export default function AddQuestionForm() {
         manualSubmitted ? errors[key] : undefined;
     const clearNotice = () => setNotice(null);
 
-    // Reset handlers
     const handleDepartment = (option: ComboOption | null) => {
         setDepartment(option);
         setSubject(null);
@@ -340,6 +369,8 @@ export default function AddQuestionForm() {
         setChapterId("");
         setTopicIds([]);
         clearNotice();
+        // Clear cached JSON items when subject changes to avoid mismatched chapters
+        setJsonItems([]);
     };
 
     const handleChapter = (value: string) => {
@@ -435,7 +466,6 @@ export default function AddQuestionForm() {
         setProgressStatus("Starting upload…");
 
         try {
-            // 1. Upload attached images to Cloudinary first
             const uploadedUrls: string[] = [];
             for (let i = 0; i < manualImages.length; i++) {
                 const img = manualImages[i];
@@ -449,7 +479,6 @@ export default function AddQuestionForm() {
                 uploadedUrls.push(url);
             }
 
-            // 2. Atomically save question and image associations
             setProgressStatus("Saving question to database…");
             const created = await fetchApi<CreatedQuestion>("/api/questions", {
                 method: "POST",
@@ -466,7 +495,6 @@ export default function AddQuestionForm() {
                 throw new Error("Server did not return a valid question ID.");
             }
 
-            // Revoke preview object URLs
             manualImages.forEach((img) => URL.revokeObjectURL(img.previewUrl));
             setManualImages([]);
 
@@ -479,7 +507,6 @@ export default function AddQuestionForm() {
                 }`,
             });
 
-            // Retain department/subject/chapter/type/source for rapid entry
             setText("");
             setTopicIds([]);
             setManualSubmitted(false);
@@ -498,10 +525,18 @@ export default function AddQuestionForm() {
         }
     };
 
-    // JSON Import parsing and auto-matching
+    // Strict Automatic Matching Engine
     const handleParseJson = async () => {
         setJsonParseError(null);
         setNotice(null);
+
+        if (!subject) {
+            setJsonParseError(
+                "Please select a Department and Subject first so chapters and topics can be matched.",
+            );
+            return;
+        }
+
         if (!jsonRaw.trim()) {
             setJsonParseError("Please paste JSON or choose a JSON file first.");
             return;
@@ -520,62 +555,74 @@ export default function AddQuestionForm() {
             for (let idx = 0; idx < parsed.length; idx++) {
                 const item = parsed[idx];
                 const qText = String(item.questionText ?? "").trim();
-                const chName = String(item.chapter ?? "").trim();
-                const tNames: string[] = Array.isArray(item.topics)
-                    ? item.topics.map((t: unknown) => String(t).trim())
+                const rawCh = String(item.chapter ?? "").trim();
+                const rawTopicsList: string[] = Array.isArray(item.topics)
+                    ? item.topics
+                          .map((t: unknown) => String(t).trim())
+                          .filter(Boolean)
                     : [];
 
-                // Try to match chapter by name against sortedChapters
-                let matchedChapterId = "";
-                if (chName && sortedChapters.length > 0) {
-                    const normCh = chName.toLowerCase();
-                    const found = sortedChapters.find(
-                        (c) =>
-                            c.chapterName.toLowerCase() === normCh ||
-                            c.chapterName.toLowerCase().includes(normCh) ||
-                            normCh.includes(c.chapterName.toLowerCase()),
+                // 1. Strict Chapter Matching (exact case-insensitive, trimmed)
+                let resolvedChapterId: number | null = null;
+                if (rawCh) {
+                    const normRaw = rawCh.toLowerCase();
+                    const exactMatches = sortedChapters.filter(
+                        (c) => c.chapterName.trim().toLowerCase() === normRaw,
                     );
-                    if (found) matchedChapterId = String(found.chapterId);
-                }
-
-                if (!matchedChapterId && chapterId) {
-                    matchedChapterId = chapterId;
-                }
-
-                // If chapter matched, load its topics and match topics
-                let matchedTopicIds: number[] = [];
-                if (matchedChapterId) {
-                    const chTopics =
-                        await loadTopicsForChapter(matchedChapterId);
-                    if (chTopics.length > 0 && tNames.length > 0) {
-                        const matched = chTopics.filter((t) =>
-                            tNames.some(
-                                (raw) =>
-                                    raw.toLowerCase() ===
-                                        t.topicName.toLowerCase() ||
-                                    t.topicName
-                                        .toLowerCase()
-                                        .includes(raw.toLowerCase()) ||
-                                    raw
-                                        .toLowerCase()
-                                        .includes(t.topicName.toLowerCase()),
-                            ),
-                        );
-                        matchedTopicIds = matched.map((m) => m.topicId);
+                    // Do not guess if ambiguous or unmatched
+                    if (exactMatches.length === 1) {
+                        resolvedChapterId = exactMatches[0].chapterId;
                     }
-                    // Default to first topic if none matched
-                    if (matchedTopicIds.length === 0 && chTopics.length > 0) {
-                        matchedTopicIds = [chTopics[0].topicId];
+                }
+
+                // 2. Strict Topic Matching (only if chapter uniquely resolved)
+                const rawTopicMappings: RawTopicMapping[] = [];
+                const resolvedTopics: ResolvedTopicItem[] = [];
+
+                let availableTopics: TopicOption[] = [];
+                if (resolvedChapterId) {
+                    availableTopics =
+                        await loadTopicsForChapter(resolvedChapterId);
+                }
+
+                for (const rawTName of rawTopicsList) {
+                    const normT = rawTName.toLowerCase();
+                    const matchedTopics = availableTopics.filter(
+                        (t) => t.topicName.trim().toLowerCase() === normT,
+                    );
+
+                    if (matchedTopics.length === 1) {
+                        const top = matchedTopics[0];
+                        rawTopicMappings.push({
+                            rawName: rawTName,
+                            resolvedTopicId: top.topicId,
+                            resolvedTopicName: top.topicName,
+                        });
+                        if (
+                            !resolvedTopics.some((r) => r.topicId === top.topicId)
+                        ) {
+                            resolvedTopics.push({
+                                topicId: top.topicId,
+                                topicName: top.topicName,
+                            });
+                        }
+                    } else {
+                        // Unmatched or ambiguous
+                        rawTopicMappings.push({
+                            rawName: rawTName,
+                            resolvedTopicId: null,
+                        });
                     }
                 }
 
                 items.push({
                     id: `json-q-${idx}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                    index: idx + 1,
                     questionText: qText,
-                    rawChapterName: chName,
-                    rawTopicNames: tNames,
-                    chapterId: matchedChapterId,
-                    topicIds: matchedTopicIds,
+                    rawChapterName: rawCh,
+                    rawTopics: rawTopicMappings,
+                    resolvedChapterId,
+                    resolvedTopics,
                     images: [],
                     status: "idle",
                 });
@@ -586,9 +633,17 @@ export default function AddQuestionForm() {
             }
 
             setJsonItems(items);
+
+            const needsReviewCount = items.filter(
+                (it) => computeItemStatus(it) === "Needs Review",
+            ).length;
+
             setNotice({
-                kind: "success",
-                message: `Parsed ${items.length} question(s). You can verify or correct the chapter/topics and attach images for each question below.`,
+                kind: needsReviewCount > 0 ? "error" : "success",
+                message:
+                    needsReviewCount > 0
+                        ? `Parsed ${items.length} question(s). ${needsReviewCount} question(s) need manual review before importing.`
+                        : `Parsed ${items.length} question(s). All chapters and topics matched successfully!`,
             });
         } catch (err) {
             setJsonParseError(
@@ -610,7 +665,169 @@ export default function AddQuestionForm() {
         reader.readAsText(file);
     };
 
-    // JSON item image attachments & reordering
+    // Manual Chapter Resolution
+    const handleResolveChapter = async (
+        itemId: string,
+        newChapterId: number | null,
+    ) => {
+        let newTopics: TopicOption[] = [];
+        if (newChapterId) {
+            newTopics = await loadTopicsForChapter(newChapterId);
+        }
+
+        setJsonItems((prev) =>
+            prev.map((item) => {
+                if (item.id !== itemId) return item;
+
+                // When chapter changes, revalidate all raw topics against new chapter
+                const nextRawMappings: RawTopicMapping[] = [];
+                const nextResolvedTopics: ResolvedTopicItem[] = [];
+
+                for (const rt of item.rawTopics) {
+                    const matched = newTopics.filter(
+                        (t) =>
+                            t.topicName.trim().toLowerCase() ===
+                            rt.rawName.toLowerCase(),
+                    );
+                    if (matched.length === 1) {
+                        const top = matched[0];
+                        nextRawMappings.push({
+                            rawName: rt.rawName,
+                            resolvedTopicId: top.topicId,
+                            resolvedTopicName: top.topicName,
+                        });
+                        if (
+                            !nextResolvedTopics.some(
+                                (r) => r.topicId === top.topicId,
+                            )
+                        ) {
+                            nextResolvedTopics.push({
+                                topicId: top.topicId,
+                                topicName: top.topicName,
+                            });
+                        }
+                    } else {
+                        nextRawMappings.push({
+                            rawName: rt.rawName,
+                            resolvedTopicId: null,
+                        });
+                    }
+                }
+
+                return {
+                    ...item,
+                    resolvedChapterId: newChapterId,
+                    rawTopics: nextRawMappings,
+                    resolvedTopics: nextResolvedTopics,
+                };
+            }),
+        );
+    };
+
+    // Manual Topic Resolution for an Unmatched Raw Topic
+    const handleResolveRawTopic = (
+        itemId: string,
+        rawTopicName: string,
+        option: ComboOption | null,
+    ) => {
+        setJsonItems((prev) =>
+            prev.map((item) => {
+                if (item.id !== itemId) return item;
+
+                const nextRaw = item.rawTopics.map((rt) => {
+                    if (rt.rawName !== rawTopicName) return rt;
+                    return {
+                        ...rt,
+                        resolvedTopicId: option ? option.id : null,
+                        resolvedTopicName: option ? option.label : undefined,
+                    };
+                });
+
+                // Rebuild unique resolved topics list
+                const resolvedMap = new Map<number, string>();
+                for (const rt of nextRaw) {
+                    if (rt.resolvedTopicId && rt.resolvedTopicName) {
+                        resolvedMap.set(rt.resolvedTopicId, rt.resolvedTopicName);
+                    }
+                }
+                for (const rt of item.resolvedTopics) {
+                    resolvedMap.set(rt.topicId, rt.topicName);
+                }
+                if (!option) {
+                    // If clearing, ensure old resolved is removed if not used elsewhere
+                    const stillUsed = nextRaw.some(
+                        (r) => r.resolvedTopicId !== null,
+                    );
+                    if (!stillUsed && nextRaw.length > 0) {
+                        resolvedMap.clear();
+                    }
+                }
+
+                const nextResolved: ResolvedTopicItem[] = Array.from(
+                    resolvedMap.entries(),
+                ).map(([topicId, topicName]) => ({ topicId, topicName }));
+
+                return {
+                    ...item,
+                    rawTopics: nextRaw,
+                    resolvedTopics: nextResolved,
+                };
+            }),
+        );
+    };
+
+    // Remove a resolved topic
+    const handleRemoveResolvedTopic = (itemId: string, topicId: number) => {
+        setJsonItems((prev) =>
+            prev.map((item) => {
+                if (item.id !== itemId) return item;
+
+                const nextRaw = item.rawTopics.map((rt) => {
+                    if (rt.resolvedTopicId === topicId) {
+                        return {
+                            ...rt,
+                            resolvedTopicId: null,
+                            resolvedTopicName: undefined,
+                        };
+                    }
+                    return rt;
+                });
+
+                return {
+                    ...item,
+                    rawTopics: nextRaw,
+                    resolvedTopics: item.resolvedTopics.filter(
+                        (t) => t.topicId !== topicId,
+                    ),
+                };
+            }),
+        );
+    };
+
+    // Add extra topic from current chapter
+    const handleAddExtraTopic = (
+        itemId: string,
+        option: ComboOption | null,
+    ) => {
+        if (!option) return;
+        setJsonItems((prev) =>
+            prev.map((item) => {
+                if (item.id !== itemId) return item;
+                if (item.resolvedTopics.some((t) => t.topicId === option.id)) {
+                    return item;
+                }
+                return {
+                    ...item,
+                    resolvedTopics: [
+                        ...item.resolvedTopics,
+                        { topicId: option.id, topicName: option.label },
+                    ],
+                };
+            }),
+        );
+    };
+
+    // Image attachments & reordering for JSON preview
     const handleAddJsonImages = (itemId: string, files: FileList | null) => {
         if (!files || files.length === 0) return;
         const newAttachments: ImageAttachment[] = [];
@@ -688,36 +905,35 @@ export default function AddQuestionForm() {
         });
     };
 
-    // JSON item inline correction handlers
-    const handleJsonItemChapterChange = async (
-        itemId: string,
-        newChapterId: string,
-    ) => {
-        const chTopics = await loadTopicsForChapter(newChapterId);
-        setJsonItems((prev) =>
-            prev.map((item) => {
-                if (item.id !== itemId) return item;
-                return {
-                    ...item,
-                    chapterId: newChapterId,
-                    topicIds:
-                        chTopics.length > 0 ? [chTopics[0].topicId] : [],
-                };
-            }),
-        );
-    };
+    // Filtered items in JSON preview
+    const filteredJsonItems = useMemo(() => {
+        if (previewFilter === "ALL") return jsonItems;
+        return jsonItems.filter((item) => {
+            const st = computeItemStatus(item);
+            if (previewFilter === "NEEDS_REVIEW") return st === "Needs Review";
+            if (previewFilter === "MATCHED") return st === "Matched";
+            if (previewFilter === "INVALID") return st === "Invalid";
+            return true;
+        });
+    }, [jsonItems, previewFilter]);
 
-    const handleToggleJsonItemTopic = (itemId: string, tId: number) => {
-        setJsonItems((prev) =>
-            prev.map((item) => {
-                if (item.id !== itemId) return item;
-                const nextTopics = item.topicIds.includes(tId)
-                    ? item.topicIds.filter((id) => id !== tId)
-                    : [...item.topicIds, tId];
-                return { ...item, topicIds: nextTopics };
-            }),
-        );
-    };
+    const statusCounts = useMemo(() => {
+        let matched = 0;
+        let needsReview = 0;
+        let invalid = 0;
+        for (const item of jsonItems) {
+            const st = computeItemStatus(item);
+            if (st === "Matched") matched++;
+            else if (st === "Needs Review") needsReview++;
+            else if (st === "Invalid") invalid++;
+        }
+        return { matched, needsReview, invalid, total: jsonItems.length };
+    }, [jsonItems]);
+
+    const canRunBatchImport = useMemo(() => {
+        if (jsonItems.length === 0 || saving) return false;
+        return jsonItems.every((it) => computeItemStatus(it) === "Matched");
+    }, [jsonItems, saving]);
 
     // JSON Batch Import Runner
     const handleRunBatchImport = async () => {
@@ -730,22 +946,11 @@ export default function AddQuestionForm() {
             return;
         }
 
-        if (jsonItems.length === 0) {
+        if (!canRunBatchImport) {
             setNotice({
                 kind: "error",
-                message: "No questions available to import.",
-            });
-            return;
-        }
-
-        // Validate that all questions have chapter and at least 1 topic
-        const unassignedIndex = jsonItems.findIndex(
-            (it) => !it.chapterId || it.topicIds.length === 0,
-        );
-        if (unassignedIndex !== -1) {
-            setNotice({
-                kind: "error",
-                message: `Question #${unassignedIndex + 1} has no chapter or topics assigned. Please correct it before importing.`,
+                message:
+                    "Please resolve all questions before importing. Every record must have a resolved chapter and at least one topic.",
             });
             return;
         }
@@ -760,7 +965,6 @@ export default function AddQuestionForm() {
 
         for (let i = 0; i < jsonItems.length; i++) {
             const item = jsonItems[i];
-            // Skip already saved questions
             if (item.status === "success") continue;
 
             setJsonImportProgress(
@@ -777,6 +981,12 @@ export default function AddQuestionForm() {
                 if (!item.questionText.trim()) {
                     throw new Error("Question text is empty.");
                 }
+                if (!item.resolvedChapterId) {
+                    throw new Error("No chapter resolved for this question.");
+                }
+                if (item.resolvedTopics.length === 0) {
+                    throw new Error("No topics resolved for this question.");
+                }
 
                 // 1. Upload attached images to Cloudinary (if any)
                 const uploadedUrls: string[] = [];
@@ -792,10 +1002,14 @@ export default function AddQuestionForm() {
                     uploadedUrls.push(url);
                 }
 
-                // 2. Save question atomically
+                // 2. Save question record with actual database IDs
                 setJsonImportProgress(
                     `Question ${i + 1}/${jsonItems.length}: Saving question record…`,
                 );
+                const topicIds = Array.from(
+                    new Set(item.resolvedTopics.map((t) => t.topicId)),
+                );
+
                 const created = await fetchApi<CreatedQuestion>(
                     "/api/questions",
                     {
@@ -804,7 +1018,7 @@ export default function AddQuestionForm() {
                             quesText: item.questionText.trim(),
                             quesType: type,
                             sourceId: Number(sourceId),
-                            topicIds: item.topicIds,
+                            topicIds,
                             imageUrls: uploadedUrls,
                         }),
                     },
@@ -830,7 +1044,7 @@ export default function AddQuestionForm() {
                 failCount++;
                 const errMsg =
                     err instanceof Error ? err.message : "Unknown error";
-                failedItems.push(`Question #${i + 1}: ${errMsg}`);
+                failedItems.push(`Question #${item.index}: ${errMsg}`);
                 setJsonItems((prev) =>
                     prev.map((it) =>
                         it.id === item.id
@@ -871,7 +1085,7 @@ export default function AddQuestionForm() {
                     </h3>
                     <p className="text-neutral-400 mt-1 text-sm">
                         Create questions manually or batch import from JSON with
-                        Cloudinary image uploads.
+                        strict schema resolution.
                     </p>
                 </div>
 
@@ -929,7 +1143,7 @@ export default function AddQuestionForm() {
                 </div>
             )}
 
-            {/* Progress status during async uploads */}
+            {/* Progress status */}
             {(progressStatus || jsonImportProgress) && (
                 <div className="mb-6 rounded-md border border-neutral-700 bg-neutral-900 px-4 py-3 flex items-center gap-3">
                     <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
@@ -1497,63 +1711,150 @@ export default function AddQuestionForm() {
                                 disabled={saving}
                                 className="px-4 py-2 rounded-md text-xs font-semibold text-white bg-red-600 hover:bg-red-500 transition-colors"
                             >
-                                Parse & Preview Questions
+                                Parse & Validate Questions
                             </button>
                         </div>
                     </div>
 
-                    {/* Parsed Questions Preview Cards with Inline Chapter/Topic Correction */}
+                    {/* Parsed Questions Preview with Resolution Controls */}
                     {jsonItems.length > 0 && (
                         <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <h4 className="text-base font-semibold text-neutral-200">
-                                    Preview & Correction ({jsonItems.length})
-                                </h4>
-                                <button
-                                    type="button"
-                                    onClick={handleRunBatchImport}
-                                    disabled={saving}
-                                    className="px-5 py-2 rounded-md text-sm font-semibold text-white bg-red-600 hover:bg-red-500 disabled:opacity-50 transition-colors flex items-center gap-2"
-                                >
-                                    {saving ? "Importing…" : "Import All Questions"}
-                                </button>
+                            {/* Toolbar: Resolution Filter & Import Action */}
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-neutral-900 border border-neutral-800">
+                                {/* Filter Pills */}
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setPreviewFilter("ALL")}
+                                        className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors ${
+                                            previewFilter === "ALL"
+                                                ? "bg-neutral-200 text-neutral-950"
+                                                : "bg-neutral-800 text-neutral-400 hover:text-neutral-200"
+                                        }`}
+                                    >
+                                        All ({statusCounts.total})
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setPreviewFilter("NEEDS_REVIEW")
+                                        }
+                                        className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors ${
+                                            previewFilter === "NEEDS_REVIEW"
+                                                ? "bg-amber-500 text-neutral-950"
+                                                : "bg-neutral-800 text-amber-400 hover:text-amber-300"
+                                        }`}
+                                    >
+                                        Needs Review ({statusCounts.needsReview})
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setPreviewFilter("MATCHED")
+                                        }
+                                        className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors ${
+                                            previewFilter === "MATCHED"
+                                                ? "bg-emerald-500 text-neutral-950"
+                                                : "bg-neutral-800 text-emerald-400 hover:text-emerald-300"
+                                        }`}
+                                    >
+                                        Matched ({statusCounts.matched})
+                                    </button>
+                                    {statusCounts.invalid > 0 && (
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setPreviewFilter("INVALID")
+                                            }
+                                            className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors ${
+                                                previewFilter === "INVALID"
+                                                    ? "bg-red-500 text-white"
+                                                    : "bg-neutral-800 text-red-400 hover:text-red-300"
+                                            }`}
+                                        >
+                                            Invalid ({statusCounts.invalid})
+                                        </button>
+                                    )}
+                                </div>
+
+                                {/* Import All Button */}
+                                <div className="flex items-center gap-3">
+                                    {!canRunBatchImport && (
+                                        <span className="text-xs text-amber-400 font-medium">
+                                            {statusCounts.needsReview > 0
+                                                ? `Resolve ${statusCounts.needsReview} item(s) before importing`
+                                                : "All items must be valid to import"}
+                                        </span>
+                                    )}
+                                    <button
+                                        type="button"
+                                        onClick={handleRunBatchImport}
+                                        disabled={!canRunBatchImport}
+                                        className="px-5 py-2 rounded-md text-sm font-semibold text-white bg-red-600 hover:bg-red-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                                    >
+                                        {saving ? (
+                                            <>
+                                                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                                Importing…
+                                            </>
+                                        ) : (
+                                            `Import ${statusCounts.matched} Question(s)`
+                                        )}
+                                    </button>
+                                </div>
                             </div>
 
-                            {jsonItems.map((item, idx) => {
-                                const currentChapterTopics =
-                                    chapterTopicsCache[item.chapterId] ?? [];
+                            {/* Item Cards */}
+                            {filteredJsonItems.map((item) => {
+                                const itemStatus = computeItemStatus(item);
+                                const currentChapterTopics = item.resolvedChapterId
+                                    ? chapterTopicsCache[
+                                          item.resolvedChapterId
+                                      ] ?? []
+                                    : [];
+
+                                const topicOptions: ComboOption[] =
+                                    currentChapterTopics.map((t) => ({
+                                        id: t.topicId,
+                                        label: t.topicName,
+                                    }));
 
                                 return (
                                     <div
                                         key={item.id}
                                         className={`bg-neutral-900 border rounded-xl p-5 relative space-y-4 transition-colors ${
-                                            item.status === "success"
-                                                ? "border-emerald-500/50 bg-emerald-950/10"
-                                                : item.status === "error"
-                                                  ? "border-red-500/60 bg-red-950/10"
-                                                  : "border-neutral-800"
+                                            itemStatus === "Matched"
+                                                ? "border-emerald-500/40 bg-emerald-950/5"
+                                                : itemStatus === "Needs Review"
+                                                  ? "border-amber-500/50 bg-amber-950/5"
+                                                  : "border-red-500/60 bg-red-950/10"
                                         }`}
                                     >
+                                        {/* Card Header: Index, Status Badge, Raw Values, Exclude */}
                                         <div className="flex items-start justify-between gap-3">
-                                            <div className="flex items-center gap-2">
-                                                <span className="w-6 h-6 rounded-full bg-red-900/40 text-red-400 text-xs font-bold flex items-center justify-center border border-red-500/30">
-                                                    {idx + 1}
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <span className="w-6 h-6 rounded-full bg-neutral-800 text-neutral-300 text-xs font-bold flex items-center justify-center border border-neutral-700">
+                                                    #{item.index}
                                                 </span>
+
+                                                {/* Status Badge */}
+                                                <span
+                                                    className={`px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider ${
+                                                        itemStatus === "Matched"
+                                                            ? "bg-emerald-900/40 text-emerald-300 border border-emerald-500/40"
+                                                            : itemStatus ===
+                                                                "Needs Review"
+                                                              ? "bg-amber-900/40 text-amber-300 border border-amber-500/40"
+                                                              : "bg-red-900/40 text-red-300 border border-red-500/40"
+                                                    }`}
+                                                >
+                                                    {itemStatus}
+                                                </span>
+
                                                 {item.rawChapterName && (
-                                                    <span className="px-2 py-0.5 rounded text-[11px] bg-neutral-800 text-neutral-300 font-medium">
-                                                        Raw Chapter:{" "}
-                                                        {item.rawChapterName}
+                                                    <span className="px-2 py-0.5 rounded text-[11px] bg-neutral-800 text-neutral-400 font-mono">
+                                                        JSON Ch: "{item.rawChapterName}"
                                                     </span>
-                                                )}
-                                                {item.rawTopicNames?.map(
-                                                    (tName, tIdx) => (
-                                                        <span
-                                                            key={tIdx}
-                                                            className="px-2 py-0.5 rounded text-[11px] bg-red-950/40 border border-red-500/30 text-red-300"
-                                                        >
-                                                            {tName}
-                                                        </span>
-                                                    ),
                                                 )}
                                             </div>
 
@@ -1563,7 +1864,7 @@ export default function AddQuestionForm() {
                                                     handleRemoveJsonItem(item.id)
                                                 }
                                                 className="text-neutral-500 hover:text-red-400 transition-colors p-1"
-                                                title="Exclude question"
+                                                title="Exclude from import"
                                             >
                                                 <svg
                                                     xmlns="http://www.w3.org/2000/svg"
@@ -1584,27 +1885,62 @@ export default function AddQuestionForm() {
 
                                         {/* Question Text */}
                                         <p className="text-sm text-neutral-200 font-medium leading-relaxed">
-                                            {item.questionText}
+                                            {item.questionText || (
+                                                <span className="text-red-400 italic">
+                                                    (Empty question text)
+                                                </span>
+                                            )}
                                         </p>
 
-                                        {/* Inline Chapter & Topic Correction */}
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-neutral-800/80 bg-neutral-950/40 p-3 rounded-lg">
+                                        {/* Resolution Controls Section */}
+                                        <div className="pt-3 border-t border-neutral-800/80 bg-neutral-950/50 p-3.5 rounded-lg space-y-4">
+                                            {/* Chapter Resolution */}
                                             <div>
-                                                <label className="block text-[11px] font-semibold text-neutral-400 mb-1">
-                                                    Assigned Chapter
-                                                </label>
+                                                <div className="flex items-center justify-between mb-1.5">
+                                                    <label className="text-xs font-semibold text-neutral-300 flex items-center gap-2">
+                                                        <span>Resolved Chapter:</span>
+                                                        {item.resolvedChapterId ? (
+                                                            <span className="text-emerald-400 font-normal">
+                                                                ✓ Resolved
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-amber-400 font-normal">
+                                                                ⚠ Needs Selection
+                                                            </span>
+                                                        )}
+                                                    </label>
+                                                    {item.rawChapterName &&
+                                                        !item.resolvedChapterId && (
+                                                            <span className="text-[11px] text-amber-300/90 italic">
+                                                                No exact match found for "{item.rawChapterName}"
+                                                            </span>
+                                                        )}
+                                                </div>
+
                                                 <select
-                                                    value={item.chapterId}
+                                                    value={
+                                                        item.resolvedChapterId ??
+                                                        ""
+                                                    }
                                                     onChange={(e) =>
-                                                        handleJsonItemChapterChange(
+                                                        handleResolveChapter(
                                                             item.id,
-                                                            e.target.value,
+                                                            e.target.value
+                                                                ? Number(
+                                                                      e.target
+                                                                          .value,
+                                                                  )
+                                                                : null,
                                                         )
                                                     }
-                                                    className="w-full rounded bg-neutral-900 border border-neutral-700 px-2 py-1.5 text-xs text-neutral-200 focus:outline-none focus:ring-1 focus:ring-red-500"
+                                                    className={`w-full rounded bg-neutral-900 border px-3 py-1.5 text-xs text-neutral-200 focus:outline-none focus:ring-1 focus:ring-red-500 ${
+                                                        !item.resolvedChapterId
+                                                            ? "border-amber-500/60"
+                                                            : "border-neutral-700"
+                                                    }`}
                                                 >
                                                     <option value="">
-                                                        Select Chapter
+                                                        -- Select Chapter --
                                                     </option>
                                                     {sortedChapters.map((c) => (
                                                         <option
@@ -1618,56 +1954,173 @@ export default function AddQuestionForm() {
                                                 </select>
                                             </div>
 
+                                            {/* Topics Resolution */}
                                             <div>
-                                                <label className="block text-[11px] font-semibold text-neutral-400 mb-1">
-                                                    Assigned Topics (
-                                                    {item.topicIds.length})
-                                                </label>
-                                                {currentChapterTopics.length ===
-                                                0 ? (
-                                                    <p className="text-xs text-neutral-500">
-                                                        Select a chapter to view
-                                                        topics.
+                                                <div className="flex items-center justify-between mb-1.5">
+                                                    <label className="text-xs font-semibold text-neutral-300 flex items-center gap-2">
+                                                        <span>Topic Mappings:</span>
+                                                        {item.resolvedTopics
+                                                            .length > 0 ? (
+                                                            <span className="text-emerald-400 font-normal">
+                                                                {item.resolvedTopics.length} mapped
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-amber-400 font-normal">
+                                                                At least 1 topic required
+                                                            </span>
+                                                        )}
+                                                    </label>
+                                                </div>
+
+                                                {!item.resolvedChapterId ? (
+                                                    <p className="text-xs text-neutral-500 py-1">
+                                                        Select a chapter above to resolve topic mappings.
                                                     </p>
                                                 ) : (
-                                                    <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
-                                                        {currentChapterTopics.map(
-                                                            (t) => {
-                                                                const active =
-                                                                    item.topicIds.includes(
-                                                                        t.topicId,
-                                                                    );
-                                                                return (
-                                                                    <button
-                                                                        type="button"
-                                                                        key={
-                                                                            t.topicId
-                                                                        }
-                                                                        onClick={() =>
-                                                                            handleToggleJsonItemTopic(
-                                                                                item.id,
-                                                                                t.topicId,
-                                                                            )
-                                                                        }
-                                                                        className={`px-2 py-0.5 rounded text-[11px] font-medium border transition-colors ${
-                                                                            active
-                                                                                ? "bg-red-600 text-white border-red-500"
-                                                                                : "bg-neutral-900 text-neutral-400 border-neutral-700 hover:text-neutral-200"
-                                                                        }`}
-                                                                    >
-                                                                        {
-                                                                            t.topicName
-                                                                        }
-                                                                    </button>
-                                                                );
-                                                            },
+                                                    <div className="space-y-2.5">
+                                                        {/* Unresolved Raw Topics from JSON */}
+                                                        {item.rawTopics.map(
+                                                            (rt, rtIdx) => (
+                                                                <div
+                                                                    key={rtIdx}
+                                                                    className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2 rounded border text-xs ${
+                                                                        rt.resolvedTopicId
+                                                                            ? "bg-neutral-900/60 border-neutral-800"
+                                                                            : "bg-amber-950/20 border-amber-500/40"
+                                                                    }`}
+                                                                >
+                                                                    <div className="flex items-center gap-2 flex-1 truncate">
+                                                                        <span className="text-neutral-400 font-mono truncate">
+                                                                            "{rt.rawName}"
+                                                                        </span>
+                                                                        <span className="text-neutral-500">
+                                                                            →
+                                                                        </span>
+                                                                        <span
+                                                                            className={
+                                                                                rt.resolvedTopicId
+                                                                                    ? "text-emerald-400 font-medium"
+                                                                                    : "text-amber-400 font-medium"
+                                                                            }
+                                                                        >
+                                                                            {rt.resolvedTopicName ??
+                                                                                "Unresolved (Select from chapter)"}
+                                                                        </span>
+                                                                    </div>
+
+                                                                    {/* Searchable dropdown to map this specific raw topic */}
+                                                                    <div className="w-full sm:w-64">
+                                                                        <SearchableSelect
+                                                                            id={`select-raw-${item.id}-${rtIdx}`}
+                                                                            options={
+                                                                                topicOptions
+                                                                            }
+                                                                            value={
+                                                                                rt.resolvedTopicId
+                                                                                    ? {
+                                                                                          id: rt.resolvedTopicId,
+                                                                                          label:
+                                                                                              rt.resolvedTopicName ??
+                                                                                              "",
+                                                                                      }
+                                                                                    : null
+                                                                            }
+                                                                            onChange={(
+                                                                                opt,
+                                                                            ) =>
+                                                                                handleResolveRawTopic(
+                                                                                    item.id,
+                                                                                    rt.rawName,
+                                                                                    opt,
+                                                                                )
+                                                                            }
+                                                                            placeholder="Map to topic…"
+                                                                            noun="topics"
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            ),
                                                         )}
+
+                                                        {/* All currently resolved topic badges with removal option */}
+                                                        {item.resolvedTopics
+                                                            .length > 0 && (
+                                                            <div className="pt-2">
+                                                                <span className="text-[11px] text-neutral-400 block mb-1">
+                                                                    Resolved Topics:
+                                                                </span>
+                                                                <div className="flex flex-wrap gap-1.5">
+                                                                    {item.resolvedTopics.map(
+                                                                        (t) => (
+                                                                            <span
+                                                                                key={
+                                                                                    t.topicId
+                                                                                }
+                                                                                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs bg-red-950/40 border border-red-500/30 text-red-300"
+                                                                            >
+                                                                                {
+                                                                                    t.topicName
+                                                                                }
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() =>
+                                                                                        handleRemoveResolvedTopic(
+                                                                                            item.id,
+                                                                                            t.topicId,
+                                                                                        )
+                                                                                    }
+                                                                                    className="text-red-400 hover:text-red-200"
+                                                                                    title="Remove topic"
+                                                                                >
+                                                                                    ✕
+                                                                                </button>
+                                                                            </span>
+                                                                        ),
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Option to add extra topic from the resolved chapter */}
+                                                        <div className="pt-2 flex flex-col sm:flex-row sm:items-center gap-2">
+                                                            <span className="text-xs text-neutral-400 whitespace-nowrap">
+                                                                Add additional topic:
+                                                            </span>
+                                                            <div className="w-full sm:w-64">
+                                                                <SearchableSelect
+                                                                    id={`add-extra-${item.id}`}
+                                                                    options={topicOptions.filter(
+                                                                        (
+                                                                            opt,
+                                                                        ) =>
+                                                                            !item.resolvedTopics.some(
+                                                                                (
+                                                                                    r,
+                                                                                ) =>
+                                                                                    r.topicId ===
+                                                                                    opt.id,
+                                                                            ),
+                                                                    )}
+                                                                    value={null}
+                                                                    onChange={(
+                                                                        opt,
+                                                                    ) =>
+                                                                        handleAddExtraTopic(
+                                                                            item.id,
+                                                                            opt,
+                                                                        )
+                                                                    }
+                                                                    placeholder="+ Add another topic…"
+                                                                    noun="topics"
+                                                                />
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 )}
                                             </div>
                                         </div>
 
-                                        {/* Image Attachment per JSON question */}
+                                        {/* Image Attachments per Question Card */}
                                         <div className="pt-2 border-t border-neutral-800/80">
                                             <div className="flex items-center justify-between mb-2">
                                                 <span className="text-xs font-semibold text-neutral-400">
@@ -1782,7 +2235,7 @@ export default function AddQuestionForm() {
                                             )}
                                         </div>
 
-                                        {/* Status Indicator */}
+                                        {/* Status Feedback */}
                                         {item.status === "success" && (
                                             <p className="text-xs text-emerald-400 font-medium">
                                                 Saved successfully (ID #
