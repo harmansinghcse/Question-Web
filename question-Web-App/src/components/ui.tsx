@@ -774,7 +774,8 @@ export function ProgressBar({
     height?: number;
 }) {
     const { theme } = useAppTheme();
-    const clamped = Math.max(0, Math.min(100, Math.round(progress)));
+    const pct = progress <= 1 && progress > 0 ? progress * 100 : progress;
+    const clamped = Math.max(0, Math.min(100, Math.round(pct)));
     return (
         <View
             style={{

@@ -37,8 +37,8 @@ export const authSession = {
     listeners.forEach((listener) => {
       try {
         listener(user);
-      } catch (err) {
-        console.error('[authSession] Listener error:', err);
+      } catch {
+        console.error('[authSession] Listener error:');
       }
     });
   },
@@ -65,7 +65,7 @@ export const authSession = {
         await tokenStorage.saveRefreshToken(response.refreshToken);
         authSession.notify(response.user);
         return response.accessToken;
-      } catch (err) {
+      } catch {
         // If refresh fails (revoked, expired, invalid, or disabled account), clear local state
         memoryAccessToken = null;
         await tokenStorage.clearRefreshToken();

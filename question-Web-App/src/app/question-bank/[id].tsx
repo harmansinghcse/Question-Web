@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
     Dimensions,
@@ -48,7 +48,7 @@ export default function QuestionDetailsScreen() {
         new Set(),
     );
 
-    const loadQuestion = async () => {
+    const loadQuestion = useCallback(async () => {
         if (!id) return;
         setLoading(true);
         setError(null);
@@ -64,10 +64,35 @@ export default function QuestionDetailsScreen() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [id]);
 
     useEffect(() => {
-        loadQuestion();
+        if (!id) return;
+        let isMounted = true;
+        api.getQuestionById(Number(id))
+            .then((data) => {
+                if (isMounted) {
+                    setQuestion(data);
+                    setError(null);
+                }
+            })
+            .catch((err: unknown) => {
+                if (isMounted) {
+                    setError(
+                        err instanceof Error
+                            ? err.message
+                            : "Failed to load question details.",
+                    );
+                }
+            })
+            .finally(() => {
+                if (isMounted) {
+                    setLoading(false);
+                }
+            });
+        return () => {
+            isMounted = false;
+        };
     }, [id]);
 
     const typeMeta = question
@@ -330,7 +355,7 @@ export default function QuestionDetailsScreen() {
                                                     />
                                                     <Text
                                                         style={
-                                                            s.imageFailedText
+                                                             s.imageFailedText
                                                         }
                                                     >
                                                         Image Unavailable

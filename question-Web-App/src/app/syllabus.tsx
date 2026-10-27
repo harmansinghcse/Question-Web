@@ -7,7 +7,7 @@
  *   3. When the user taps a chapter, fetch topics via GET /api/topics?chapterId=<n>.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
     ActivityIndicator,
     Pressable,
@@ -45,29 +45,8 @@ const SP = {
     xxxl: 32,
 } as const;
 
-function isDarkTheme(bg: string) {
-    const hex = bg.replace("#", "");
-    if (hex.length < 6) return true;
-    const r = parseInt(hex.slice(0, 2), 16);
-    const g = parseInt(hex.slice(2, 4), 16);
-    const b = parseInt(hex.slice(4, 6), 16);
-    return (0.299 * r + 0.587 * g + 0.114 * b) / 255 < 0.5;
-}
-
 function withPalette(t: AppTheme): AppTheme {
-    if (isDarkTheme(t.background)) {
-        return {
-            ...t,
-            background: "#000000",
-            surface: "#0B0B12",
-            surfaceAlt: "#17162B",
-            border: "#26234A",
-            text: "#FFFFFF",
-            muted: "#A7A3C9",
-            accent: "#7C5CFF",
-        };
-    }
-    return { ...t, accent: "#6D4AFF" };
+    return t;
 }
 
 // ─── Shared UI primitives ─────────────────────────────────────────────────────
@@ -143,7 +122,7 @@ export default function SyllabusScreen() {
     // Calculate authenticated student profile dynamically
     const studentProfile = useMemo(
         () => (user?.email ? parseStudentEmail(user.email) : null),
-        [user?.email],
+        [user],
     );
 
     // Store selected subject KEY (number) and chapter as state.
@@ -201,14 +180,7 @@ export default function SyllabusScreen() {
         [chaptersData],
     );
 
-    const selectedChapter = useMemo(
-        () =>
-            selectedChapterKey != null
-                ? (chapters.find((c) => c.chapterId === selectedChapterKey) ??
-                  null)
-                : null,
-        [chapters, selectedChapterKey],
-    );
+
 
     // ── Topics ────────────────────────────────────────────────────────────────
     const fetchTopics = useCallback(
@@ -225,7 +197,7 @@ export default function SyllabusScreen() {
 
     const topics = topicsState.status === "success" ? topicsState.data : [];
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
+    // ── Helpers ───────────────────────────────────────────────────────
     function selectSubject(key: number | null) {
         setSelectedSubjectKey(key);
         setSelectedChapterKey(null);
@@ -243,11 +215,11 @@ export default function SyllabusScreen() {
     });
 
     // Ensure filter updates as soon as authenticated student profile finishes restoring
-    useEffect(() => {
-        if (!params.subjectKey && studentProfile?.currentSemester) {
-            setSemesterFilter(studentProfile.currentSemester);
-        }
-    }, [studentProfile?.currentSemester, params.subjectKey]);
+    const [prevProfileSem, setPrevProfileSem] = useState<number | undefined>(studentProfile?.currentSemester);
+    if (!params.subjectKey && studentProfile?.currentSemester !== prevProfileSem) {
+        setPrevProfileSem(studentProfile?.currentSemester);
+        setSemesterFilter(studentProfile?.currentSemester ?? null);
+    }
 
     const semesters = useMemo(
         () =>
@@ -267,11 +239,6 @@ export default function SyllabusScreen() {
         }
         return Array.from(groups.entries()).sort(([a], [b]) => a - b);
     }, [subjects, semesterFilter]);
-
-    const totalCredits = useMemo(
-        () => subjects.reduce((sum, s) => sum + (s.credits ?? 0), 0),
-        [subjects],
-    );
 
     // ── Inline renderers ──────────────────────────────────────────────────────
     function renderTopics(colour: string) {
