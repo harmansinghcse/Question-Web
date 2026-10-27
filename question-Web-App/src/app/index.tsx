@@ -103,198 +103,129 @@ export default function HomeScreen() {
         return "Student";
     }, [user]);
 
-    const todayDateString = useMemo(() => {
-        const now = new Date();
-        return now.toLocaleDateString("en-US", {
-            weekday: "long",
+    // ── Nearest Exam ────────────────────────────────────────────────────────
+    const nearestExamInfo = useMemo(() => {
+        if (!exams || exams.length === 0) return null;
+        const sorted = [...exams].sort(
+            (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+        );
+        const next = sorted[0];
+        const examDate = new Date(next.date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        examDate.setHours(0, 0, 0, 0);
+        const diffDays = Math.ceil(
+            (examDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+        );
+
+        let countdownLabel = `${diffDays} days left`;
+        let countdownTone: "urgent" | "soon" | "normal" = "normal";
+        if (diffDays < 0) {
+            countdownLabel = "Concluded";
+        } else if (diffDays === 0) {
+            countdownLabel = "Today";
+            countdownTone = "urgent";
+        } else if (diffDays === 1) {
+            countdownLabel = "Tomorrow";
+            countdownTone = "soon";
+        } else if (diffDays <= 7) {
+            countdownTone = "soon";
+        }
+
+        const formattedDate = new Date(next.date).toLocaleDateString("en-US", {
+            month: "short",
             day: "numeric",
-            month: "long",
         });
-    }, []);
 
-    // ── Schedule Handlers ───────────────────────────────────────────────────
-    const handleAddClass = async () => {
-        if (!newClassTime.trim() || !newClassTitle.trim()) return;
-        const updated = await studyStorage.addScheduleItem({
-            time: newClassTime.trim(),
-            title: newClassTitle.trim(),
-            location: newClassLocation.trim() || "Online / TBA",
-            type: "lecture",
+        return {
+            exam: next,
+            countdownLabel,
+            countdownTone,
+            formattedDate,
+        };
+    }, [exams]);
+
+    // ── Today's Schedule (at most 3 entries on Home) ────────────────────────
+    const todaySchedule = useMemo(() => {
+        return schedule.slice(0, 3);
+    }, [schedule]);
+
+    // ── Syllabus Progress Preview (at most 3 subject rows) ───────────────────
+    const syllabusPreview = useMemo(() => {
+        if (!subjects || subjects.length === 0) return [];
+        return subjects.slice(0, 3).map((sub) => {
+            const totalCount = sub.credits ? sub.credits * 3 : 12;
+            const completedCount = Math.min(
+                totalCount,
+                Array.from(completedTopicIds).filter(
+                    (id) => Math.abs(id % 100) === sub.subjectKey % 100,
+                ).length,
+            );
+            const percentage =
+                totalCount > 0
+                    ? Math.min(100, Math.round((completedCount / totalCount) * 100))
+                    : 0;
+            return {
+                subjectKey: sub.subjectKey,
+                code: subjectCode(sub),
+                name: subjectDisplayName(sub),
+                completedCount,
+                totalCount,
+                percentage,
+            };
         });
-        setSchedule(updated);
-        setNewClassTime("");
-        setNewClassTitle("");
-        setNewClassLocation("");
-    };
+    }, [subjects, completedTopicIds]);
 
-    if (!ready || isRestoring) return <View style={s.blank} />;
-
-    const stats = statsState.status === "success" ? statsState.data : null;
-    const statValue = (n: number | undefined) =>
-        n !== undefined
-            ? n.toLocaleString()
-            : statsState.status === "loading"
-              ? "…"
-              : "0";
-
-    // ── 5 Quick Overview Stat Tiles ─────────────────────────────────────────
-    const statTiles = [
-        {
-            key: "total",
-            label: "Questions",
-            icon: "documents-outline" as const,
-            color: "#6D5EF6",
-            bgColor: "#6D5EF61A",
-            value: stats?.total,
-            onPress: () => openQuestionBank(),
-        },
-        {
-            key: "MCQ",
-            label: "MCQ",
-            icon: "list-outline" as const,
-            color: "#3B82F6",
-            bgColor: "#3B82F61A",
-            value: stats?.byType?.MCQ,
-            onPress: () => openQuestionBank({ type: "MCQ" }),
-        },
-        {
-            key: "FILLUPS",
-            label: "Fill-ups",
-            icon: "create-outline" as const,
-            color: "#F59E0B",
-            bgColor: "#F59E0B1A",
-            value: stats?.byType?.FILLUPS,
-            onPress: () => openQuestionBank({ type: "FILLUPS" }),
-        },
-        {
-            key: "SUBJECTIVE",
-            label: "Subjective",
-            icon: "reader-outline" as const,
-            color: "#F43F5E",
-            bgColor: "#F43F5E1A",
-            value: stats?.byType?.SUBJECTIVE,
-            onPress: () => openQuestionBank({ type: "SUBJECTIVE" }),
-        },
-        {
-            key: "TRUE/FALSE",
-            label: "True / False",
-            icon: "checkmark-circle-outline" as const,
-            color: "#10B981",
-            bgColor: "#10B9811A",
-            value: stats?.byType?.["TRUE/FALSE"],
-            onPress: () => openQuestionBank({ type: "TRUE/FALSE" }),
-        },
-    ];
-
-    // ── 9 Academic Tools Cards ──────────────────────────────────────────────
-    const academicTools = [
-        {
-            id: "syllabus",
-            title: "Syllabus",
-            desc: "Track topics and progress",
-            icon: "book-outline" as const,
-            color: "#8B5CF6",
-            bgColor: "#8B5CF61A",
-            onPress: () => openSyllabus(),
-        },
-        {
-            id: "revision",
-            title: "Quiz Revision",
-            desc: "MCQ, Fill-ins & True/False quizzes",
-            icon: "flash-outline" as const,
-            color: "#EF4444",
-            bgColor: "#EF44441A",
-            onPress: () => router.push("/quiz-revision" as never),
-        },
-        {
-            id: "questions",
-            title: "Question Bank",
-            desc: "Practise questions by subject",
-            icon: "layers-outline" as const,
-            color: "#3B82F6",
-            bgColor: "#3B82F61A",
-            onPress: () => openQuestionBank(),
-        },
-        {
-            id: "timetable",
-            title: "Timetable",
-            desc: "Classes & exams schedule",
-            icon: "calendar-outline" as const,
-            color: "#10B981",
-            bgColor: "#10B9811A",
-            onPress: () => setActiveModal("timetable"),
-        },
-        {
-            id: "resources",
-            title: "Resources",
-            desc: "Notes, PDFs and more",
-            icon: "folder-outline" as const,
-            color: "#F59E0B",
-            bgColor: "#F59E0B1A",
-            onPress: () => router.push("/resources" as never),
-        },
-        {
-            id: "planner",
-            title: "Daily Planner",
-            desc: "Plan your study day",
-            icon: "list-outline" as const,
-            color: "#F43F5E",
-            bgColor: "#F43F5E1A",
-            onPress: () => setActiveModal("daily-planner"),
-        },
-        {
-            id: "timer",
-            title: "Focus Timer",
-            desc: "Stay focused and productive",
-            icon: "timer-outline" as const,
-            color: "#8B5CF6",
-            bgColor: "#8B5CF61A",
-            onPress: () => setActiveModal("focus-timer"),
-        },
-        {
-            id: "exams",
-            title: "Upcoming Exams",
-            desc: "View exam dates and countdowns",
-            icon: "alarm-outline" as const,
-            color: "#F97316",
-            bgColor: "#F973161A",
-            onPress: () => setActiveModal("upcoming-exams"),
-        },
-        {
-            id: "report",
-            title: "Study Report",
-            desc: "Review weekly study progress",
-            icon: "bar-chart-outline" as const,
-            color: "#6366F1",
-            bgColor: "#6366F11A",
-            onPress: () => setActiveModal("study-report"),
-        },
-        {
-            id: "reminders",
-            title: "Study Reminders",
-            desc: "Manage study reminders",
-            icon: "notifications-outline" as const,
-            color: "#EC4899",
-            bgColor: "#EC48991A",
-            onPress: () => setActiveModal("study-reminders"),
-        },
-    ];
+    // ── 4 Study Tools Shortcuts (Balanced 2x2 grid) ──────────────────────────
+    const homeStudyTools = useMemo(
+        () => [
+            {
+                id: "planner",
+                title: "Daily Planner",
+                subtitle: `${goals.filter((g) => g.completed).length} of ${goals.length} goals completed`,
+                icon: "checkbox-outline" as const,
+                onPress: () => setActiveModal("daily-planner"),
+            },
+            {
+                id: "report",
+                title: "Study Report",
+                subtitle: `${studyStats.totalMinutes} mins recorded`,
+                icon: "bar-chart-outline" as const,
+                onPress: () => setActiveModal("study-report"),
+            },
+            {
+                id: "timer",
+                title: "Focus Timer",
+                subtitle: "25m Interval",
+                icon: "timer-outline" as const,
+                onPress: () => setActiveModal("focus-timer"),
+            },
+            {
+                id: "reminders",
+                title: "Study Reminders",
+                subtitle: "Daily study alerts",
+                icon: "notifications-outline" as const,
+                onPress: () => setActiveModal("study-reminders"),
+            },
+        ],
+        [goals, studyStats],
+    );
 
     return (
         <AppShell active="home">
             <View style={s.container}>
-                {/* 1. MAKE TODAY COUNT WELCOME BANNER (Calm, neutral-dominant, refined) */}
+                {/* 1. WELCOME BANNER */}
                 <View style={s.bannerCard}>
                     <View style={s.bannerContent}>
                         <View style={s.bannerTextCol}>
                             <Text style={s.bannerGreeting}>
-                                {greeting}, {displayName}
+                                {greeting} 👋, {displayName}
                             </Text>
                             <Text style={s.bannerHeadline}>
-                                {"Make today count."}
+                                Make today count.
                             </Text>
                             <Text style={s.bannerSubtitle}>
-                                Organize your daily lectures, upcoming tests, and syllabus goals.
+                                Stay consistent, keep learning, and achieve your goals.
                             </Text>
                             <Pressable
                                 onPress={() => setActiveModal("daily-planner")}
@@ -305,14 +236,14 @@ export default function HomeScreen() {
                                     pressed && { opacity: 0.85 },
                                 ]}
                             >
-                                <Ionicons
-                                    name="checkmark-circle-outline"
-                                    size={15}
-                                    color="#FFFFFF"
-                                />
                                 <Text style={s.bannerButtonText}>
                                     Go to My Plan
                                 </Text>
+                                <Ionicons
+                                    name="arrow-forward"
+                                    size={14}
+                                    color="#FFFFFF"
+                                />
                             </Pressable>
                         </View>
                         {isWide && (
@@ -323,19 +254,19 @@ export default function HomeScreen() {
                     </View>
                 </View>
 
-                {/* 2. UPCOMING EXAMS & TESTS */}
+                {/* 2. UPCOMING EXAM */}
                 <View style={s.section}>
                     <View style={s.sectionHeader}>
                         <Text style={s.sectionTitle}>
-                            Upcoming Exams & Tests
+                            Upcoming Exam
                         </Text>
                         <Pressable
                             onPress={() => setActiveModal("upcoming-exams")}
                             accessibilityRole="button"
-                            accessibilityLabel="Manage exams"
+                            accessibilityLabel="View all exams"
                             style={s.actionLink}
                         >
-                            <Text style={s.actionLinkText}>Manage</Text>
+                            <Text style={s.actionLinkText}>View All</Text>
                             <Ionicons
                                 name="chevron-forward"
                                 size={13}
@@ -347,7 +278,7 @@ export default function HomeScreen() {
                     {nearestExamInfo ? (
                         <View style={s.card}>
                             <View style={s.examRow}>
-                                <View style={{ flex: 1, gap: 3 }}>
+                                <View style={{ flex: 1, gap: 4 }}>
                                     <View style={s.examTagRow}>
                                         <View style={s.subjectPill}>
                                             <Text style={s.subjectPillText}>
@@ -393,14 +324,14 @@ export default function HomeScreen() {
                                     No upcoming exams scheduled
                                 </Text>
                                 <Text style={s.emptyCardSub}>
-                                    Add your quizzes, mid-terms, or final exams.
+                                    Add your upcoming tests and assignment deadlines to track countdowns.
                                 </Text>
                             </View>
                             <Pressable
                                 onPress={() => setActiveModal("upcoming-exams")}
-                                style={s.emptyCardBtn}
+                                style={s.emptyAction}
                             >
-                                <Text style={s.emptyCardBtnText}>Add Exam</Text>
+                                <Text style={s.emptyActionText}>Add Exam</Text>
                             </Pressable>
                         </View>
                     )}
@@ -409,22 +340,16 @@ export default function HomeScreen() {
                 {/* 3. TODAY'S TIMETABLE */}
                 <View style={s.section}>
                     <View style={s.sectionHeader}>
-                        <View style={s.sectionTitleRow}>
-                            <Text style={s.sectionTitle}>
-                                {"Today's Timetable"}
-                            </Text>
-                            <Text style={s.sectionDot}>·</Text>
-                            <Text style={s.sectionSubtitle}>
-                                {todayDateString}
-                            </Text>
-                        </View>
+                        <Text style={s.sectionTitle}>
+                            {"Today's Timetable"}
+                        </Text>
                         <Pressable
                             onPress={() => setActiveModal("timetable")}
                             accessibilityRole="button"
-                            accessibilityLabel="Manage timetable"
+                            accessibilityLabel="View full timetable"
                             style={s.actionLink}
                         >
-                            <Text style={s.actionLinkText}>Manage</Text>
+                            <Text style={s.actionLinkText}>View All</Text>
                             <Ionicons
                                 name="chevron-forward"
                                 size={13}
@@ -433,33 +358,22 @@ export default function HomeScreen() {
                         </Pressable>
                     </View>
 
-                    {schedule.length > 0 ? (
-                        <View style={s.scheduleContainer}>
-                            {schedule.map((item, idx) => (
+                    {todaySchedule.length > 0 ? (
+                        <View style={s.card}>
+                            {todaySchedule.map((item, idx) => (
                                 <View
                                     key={item.id}
                                     style={[
                                         s.scheduleRow,
-                                        idx < schedule.length - 1 && s.scheduleDivider,
+                                        idx < todaySchedule.length - 1 && s.scheduleDivider,
                                     ]}
                                 >
-                                    <Text style={s.scheduleTimeText}>
-                                        {item.time}
-                                    </Text>
-                                    <View style={{ flex: 1, gap: 2 }}>
-                                        <Text style={s.scheduleTitle} numberOfLines={1}>
-                                            {item.title}
+                                    <Text style={s.scheduleTime}>{item.time}</Text>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={s.scheduleTitle}>{item.title}</Text>
+                                        <Text style={s.scheduleLocation}>
+                                            {item.location}
                                         </Text>
-                                        <View style={s.scheduleLocationRow}>
-                                            <Ionicons
-                                                name="location-outline"
-                                                size={11}
-                                                color={theme.muted}
-                                            />
-                                            <Text style={s.scheduleLocationText}>
-                                                {item.location}
-                                            </Text>
-                                        </View>
                                     </View>
                                 </View>
                             ))}
@@ -473,17 +387,17 @@ export default function HomeScreen() {
                             />
                             <View style={s.emptyCardBody}>
                                 <Text style={s.emptyCardTitle}>
-                                    {"No classes scheduled for today"}
+                                    No classes scheduled today
                                 </Text>
                                 <Text style={s.emptyCardSub}>
-                                    Customize your daily lectures and lab timings.
+                                    Add your daily lectures and lab timings to keep your routine organized.
                                 </Text>
                             </View>
                             <Pressable
                                 onPress={() => setActiveModal("timetable")}
-                                style={s.emptyCardBtn}
+                                style={s.emptyAction}
                             >
-                                <Text style={s.emptyCardBtnText}>Add Class</Text>
+                                <Text style={s.emptyActionText}>Add Class</Text>
                             </Pressable>
                         </View>
                     )}
@@ -492,9 +406,7 @@ export default function HomeScreen() {
                 {/* 4. SYLLABUS TRACKER */}
                 <View style={s.section}>
                     <View style={s.sectionHeader}>
-                        <Text style={s.sectionTitle}>
-                            Syllabus Tracker
-                        </Text>
+                        <Text style={s.sectionTitle}>Syllabus Tracker</Text>
                         <Pressable
                             onPress={() => router.push("/syllabus" as never)}
                             accessibilityRole="button"
@@ -519,7 +431,7 @@ export default function HomeScreen() {
                             onRetry={subjectsState.refresh}
                         />
                     ) : syllabusPreview.length > 0 ? (
-                        <View style={s.syllabusContainer}>
+                        <View style={s.card}>
                             {syllabusPreview.map((item, idx) => (
                                 <Pressable
                                     key={item.subjectKey}
@@ -535,20 +447,18 @@ export default function HomeScreen() {
                                     ]}
                                 >
                                     <View style={s.syllabusHeaderRow}>
-                                        <View style={{ flex: 1, gap: 2 }}>
-                                            <View style={s.syllabusCodeRow}>
-                                                <View style={s.subjectPill}>
-                                                    <Text style={s.subjectPillText}>
-                                                        {item.code}
-                                                    </Text>
-                                                </View>
-                                                <Text
-                                                    style={s.syllabusName}
-                                                    numberOfLines={1}
-                                                >
-                                                    {item.name}
+                                        <View style={s.syllabusCodeRow}>
+                                            <View style={s.subjectPill}>
+                                                <Text style={s.subjectPillText}>
+                                                    {item.code}
                                                 </Text>
                                             </View>
+                                            <Text
+                                                style={s.syllabusName}
+                                                numberOfLines={1}
+                                            >
+                                                {item.name}
+                                            </Text>
                                         </View>
                                         <Text style={s.syllabusPctText}>
                                             {item.percentage}%
@@ -588,101 +498,47 @@ export default function HomeScreen() {
                     )}
                 </View>
 
-                {/* 5. FOUR STUDY TOOLS CARDS (Balanced, calm 2x2 grid) */}
+                {/* 5. FOUR STUDY TOOLS CARDS (Balanced 2x2 grid) */}
                 <View style={s.section}>
                     <View style={s.sectionHeader}>
                         <Text style={s.sectionTitle}>Study Tools</Text>
                     </View>
 
                     <View style={s.toolsGrid}>
-                        {/* 1. Daily Planner */}
-                        <Pressable
-                            onPress={() => setActiveModal("daily-planner")}
-                            style={({ pressed }) => [
-                                s.toolCard,
-                                pressed && { opacity: 0.85 },
-                            ]}
-                        >
-                            <View style={s.toolIconWrap}>
+                        {homeStudyTools.map((tool) => (
+                            <Pressable
+                                key={tool.id}
+                                onPress={tool.onPress}
+                                accessibilityRole="button"
+                                accessibilityLabel={tool.title}
+                                style={({ pressed }) => [
+                                    s.toolCard,
+                                    pressed && { opacity: 0.85 },
+                                ]}
+                            >
+                                <View style={s.toolIconWrapper}>
+                                    <Ionicons
+                                        name={tool.icon}
+                                        size={20}
+                                        color={theme.accent}
+                                    />
+                                </View>
+                                <View style={s.toolTextCol}>
+                                    <Text style={s.toolTitle}>{tool.title}</Text>
+                                    <Text style={s.toolSub}>{tool.subtitle}</Text>
+                                </View>
                                 <Ionicons
-                                    name="checkbox-outline"
-                                    size={18}
-                                    color={theme.accent}
+                                    name="chevron-forward"
+                                    size={13}
+                                    color={theme.muted}
                                 />
-                            </View>
-                            <View style={s.toolTextCol}>
-                                <Text style={s.toolTitle}>Daily Planner</Text>
-                                <Text style={s.toolSub}>Plan your day</Text>
-                            </View>
-                        </Pressable>
-
-                        {/* 2. Study Report */}
-                        <Pressable
-                            onPress={() => setActiveModal("study-report")}
-                            style={({ pressed }) => [
-                                s.toolCard,
-                                pressed && { opacity: 0.85 },
-                            ]}
-                        >
-                            <View style={s.toolIconWrap}>
-                                <Ionicons
-                                    name="bar-chart-outline"
-                                    size={18}
-                                    color={theme.accent}
-                                />
-                            </View>
-                            <View style={s.toolTextCol}>
-                                <Text style={s.toolTitle}>Study Report</Text>
-                                <Text style={s.toolSub}>Review progress</Text>
-                            </View>
-                        </Pressable>
-
-                        {/* 3. Focus Timer */}
-                        <Pressable
-                            onPress={() => setActiveModal("focus-timer")}
-                            style={({ pressed }) => [
-                                s.toolCard,
-                                pressed && { opacity: 0.85 },
-                            ]}
-                        >
-                            <View style={s.toolIconWrap}>
-                                <Ionicons
-                                    name="timer-outline"
-                                    size={18}
-                                    color={theme.accent}
-                                />
-                            </View>
-                            <View style={s.toolTextCol}>
-                                <Text style={s.toolTitle}>Focus Timer</Text>
-                                <Text style={s.toolSub}>25m Pomodoro</Text>
-                            </View>
-                        </Pressable>
-
-                        {/* 4. Study Reminders */}
-                        <Pressable
-                            onPress={() => setActiveModal("study-reminders")}
-                            style={({ pressed }) => [
-                                s.toolCard,
-                                pressed && { opacity: 0.85 },
-                            ]}
-                        >
-                            <View style={s.toolIconWrap}>
-                                <Ionicons
-                                    name="notifications-outline"
-                                    size={18}
-                                    color={theme.accent}
-                                />
-                            </View>
-                            <View style={s.toolTextCol}>
-                                <Text style={s.toolTitle}>Study Reminders</Text>
-                                <Text style={s.toolSub}>Manage alerts</Text>
-                            </View>
-                        </Pressable>
+                            </Pressable>
+                        ))}
                     </View>
                 </View>
             </View>
 
-            {/* SHARED MODALS */}
+            {/* Shared Study Tools Modals */}
             <StudyToolsModals
                 activeModal={activeModal}
                 onClose={() => setActiveModal(null)}
@@ -702,11 +558,14 @@ export default function HomeScreen() {
 function makeStyles(t: AppTheme) {
     return StyleSheet.create({
         container: {
-            gap: 20,
-            maxWidth: 880,
-            alignSelf: "center",
             width: "100%",
+            maxWidth: 900,
+            alignSelf: "center",
+            gap: 24,
+            paddingBottom: 32,
         },
+
+        // ── 1. Welcome Banner ────────────────────────────────────────────────
         bannerCard: {
             backgroundColor: t.surface,
             borderRadius: 14,
@@ -714,7 +573,7 @@ function makeStyles(t: AppTheme) {
             borderColor: t.border,
             borderLeftWidth: 3,
             borderLeftColor: t.accent,
-            padding: 18,
+            padding: 20,
         },
         bannerContent: {
             flexDirection: "row",
@@ -724,7 +583,7 @@ function makeStyles(t: AppTheme) {
         bannerTextCol: {
             flex: 1,
             gap: 4,
-            maxWidth: 540,
+            paddingRight: 12,
         },
         bannerGreeting: {
             color: t.muted,
@@ -733,85 +592,77 @@ function makeStyles(t: AppTheme) {
         },
         bannerHeadline: {
             color: t.text,
-            fontSize: 20,
-            fontWeight: "800",
+            fontSize: 22,
+            fontWeight: "700",
             letterSpacing: -0.3,
         },
         bannerSubtitle: {
-            color: t.textSecondary,
+            color: t.muted,
             fontSize: 13,
             lineHeight: 18,
-            marginBottom: 8,
+            marginTop: 2,
+            marginBottom: 6,
         },
         bannerButton: {
+            alignSelf: "flex-start",
             flexDirection: "row",
             alignItems: "center",
-            alignSelf: "flex-start",
             gap: 6,
             backgroundColor: t.accent,
+            borderRadius: 8,
             paddingHorizontal: 14,
             paddingVertical: 8,
-            borderRadius: 8,
+            marginTop: 4,
         },
         bannerButtonText: {
             color: "#FFFFFF",
-            fontSize: 12,
+            fontSize: 13,
             fontWeight: "700",
         },
         bannerIllustrationWrapper: {
-            marginLeft: 16,
             alignItems: "center",
             justifyContent: "center",
-            opacity: 0.9,
+            width: 86,
+            height: 86,
         },
+
+        // ── Shared Section Styles ───────────────────────────────────────────
         section: {
-            gap: 8,
+            gap: 12,
         },
         sectionHeader: {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
-            paddingHorizontal: 2,
-        },
-        sectionTitleRow: {
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 6,
         },
         sectionTitle: {
-            fontSize: 15,
-            fontWeight: "700",
             color: t.text,
-            letterSpacing: -0.1,
-        },
-        sectionDot: {
-            fontSize: 14,
-            color: t.muted,
-        },
-        sectionSubtitle: {
-            fontSize: 12,
-            fontWeight: "500",
-            color: t.muted,
+            fontSize: 16,
+            fontWeight: "700",
+            letterSpacing: -0.2,
         },
         actionLink: {
             flexDirection: "row",
             alignItems: "center",
-            gap: 2,
+            gap: 4,
             paddingVertical: 2,
-            paddingHorizontal: 4,
         },
         actionLinkText: {
-            fontSize: 12,
-            fontWeight: "600",
             color: t.accent,
+            fontSize: 13,
+            fontWeight: "600",
         },
+
+        // ── Shared Card Surface ─────────────────────────────────────────────
         card: {
             backgroundColor: t.surface,
-            borderRadius: 12,
+            borderRadius: 14,
             borderWidth: 1,
             borderColor: t.border,
-            padding: 14,
+            padding: 16,
         },
+
+        // ── 2. Upcoming Exam ────────────────────────────────────────────────
         examRow: {
             flexDirection: "row",
             alignItems: "center",
@@ -824,48 +675,48 @@ function makeStyles(t: AppTheme) {
             gap: 8,
         },
         subjectPill: {
-            alignSelf: "flex-start",
-            paddingHorizontal: 6,
-            paddingVertical: 2,
-            borderRadius: 5,
             backgroundColor: t.surfaceAlt,
+            paddingHorizontal: 7,
+            paddingVertical: 2,
+            borderRadius: 6,
             borderWidth: 1,
             borderColor: t.border,
         },
         subjectPillText: {
-            fontSize: 10,
-            fontWeight: "700",
             color: t.textSecondary,
+            fontSize: 11,
+            fontWeight: "700",
         },
         examDateText: {
-            fontSize: 12,
             color: t.muted,
+            fontSize: 12,
+            fontWeight: "500",
         },
         examTitle: {
+            color: t.text,
             fontSize: 14,
             fontWeight: "700",
-            color: t.text,
         },
         countdownPill: {
-            paddingHorizontal: 10,
-            paddingVertical: 4,
-            borderRadius: 6,
             backgroundColor: t.surfaceAlt,
+            paddingHorizontal: 10,
+            paddingVertical: 5,
+            borderRadius: 8,
             borderWidth: 1,
             borderColor: t.border,
         },
         countdownUrgent: {
-            borderColor: t.danger + "44",
-            backgroundColor: t.danger + "14",
+            backgroundColor: t.surfaceAlt,
+            borderColor: t.danger,
         },
         countdownSoon: {
-            borderColor: t.warning + "44",
-            backgroundColor: t.warning + "14",
+            backgroundColor: t.surfaceAlt,
+            borderColor: t.warning,
         },
         countdownText: {
+            color: t.muted,
             fontSize: 11,
             fontWeight: "700",
-            color: t.accent,
         },
         countdownTextUrgent: {
             color: t.danger,
@@ -873,144 +724,95 @@ function makeStyles(t: AppTheme) {
         countdownTextSoon: {
             color: t.warning,
         },
-        emptyCard: {
-            backgroundColor: t.surface,
-            borderRadius: 12,
-            borderWidth: 1,
-            borderColor: t.border,
-            padding: 14,
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 12,
-        },
-        emptyCardBody: {
-            flex: 1,
-            gap: 2,
-        },
-        emptyCardTitle: {
-            fontSize: 13,
-            fontWeight: "600",
-            color: t.text,
-        },
-        emptyCardSub: {
-            fontSize: 11,
-            color: t.muted,
-        },
-        emptyCardBtn: {
-            paddingHorizontal: 10,
-            paddingVertical: 6,
-            borderRadius: 6,
-            backgroundColor: t.surfaceAlt,
-            borderWidth: 1,
-            borderColor: t.border,
-        },
-        emptyCardBtnText: {
-            fontSize: 11,
-            fontWeight: "600",
-            color: t.accent,
-        },
-        scheduleContainer: {
-            backgroundColor: t.surface,
-            borderRadius: 12,
-            borderWidth: 1,
-            borderColor: t.border,
-            overflow: "hidden",
-        },
+
+        // ── 3. Today's Timetable ────────────────────────────────────────────
         scheduleRow: {
             flexDirection: "row",
             alignItems: "center",
-            gap: 12,
-            paddingHorizontal: 14,
-            paddingVertical: 12,
+            paddingVertical: 10,
+            gap: 14,
         },
         scheduleDivider: {
             borderBottomWidth: 1,
             borderBottomColor: t.border,
         },
-        scheduleTimeText: {
+        scheduleTime: {
+            color: t.accent,
             fontSize: 12,
             fontWeight: "700",
-            color: t.accent,
-            width: 70,
+            width: 72,
         },
         scheduleTitle: {
+            color: t.text,
             fontSize: 13,
             fontWeight: "600",
-            color: t.text,
         },
-        scheduleLocationRow: {
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 3,
-        },
-        scheduleLocationText: {
-            fontSize: 11,
+        scheduleLocation: {
             color: t.muted,
+            fontSize: 11,
+            marginTop: 2,
         },
-        syllabusContainer: {
-            backgroundColor: t.surface,
-            borderRadius: 12,
-            borderWidth: 1,
-            borderColor: t.border,
-            overflow: "hidden",
-        },
+
+        // ── 4. Syllabus Tracker ─────────────────────────────────────────────
         syllabusRow: {
-            padding: 14,
+            paddingVertical: 10,
             gap: 8,
         },
         syllabusHeaderRow: {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
-            gap: 10,
+            gap: 8,
         },
         syllabusCodeRow: {
             flexDirection: "row",
             alignItems: "center",
             gap: 8,
+            flex: 1,
         },
         syllabusName: {
+            color: t.text,
             fontSize: 13,
             fontWeight: "600",
-            color: t.text,
             flex: 1,
         },
         syllabusPctText: {
+            color: t.accent,
             fontSize: 12,
             fontWeight: "700",
-            color: t.accent,
         },
         progressBarWrapper: {
             width: "100%",
         },
         syllabusTopicsCount: {
-            fontSize: 11,
             color: t.muted,
+            fontSize: 11,
+            fontWeight: "500",
         },
+
+        // ── 5. Four Study Tools Cards ───────────────────────────────────────
         toolsGrid: {
             flexDirection: "row",
             flexWrap: "wrap",
-            gap: 10,
+            gap: 12,
         },
         toolCard: {
             flex: 1,
-            minWidth: Platform.OS === "web" ? 180 : 140,
+            minWidth: Platform.OS === "web" ? 320 : 160,
             flexDirection: "row",
             alignItems: "center",
-            gap: 12,
             backgroundColor: t.surface,
-            borderRadius: 12,
+            borderRadius: 14,
             borderWidth: 1,
             borderColor: t.border,
             padding: 14,
+            gap: 12,
         },
-        toolIconWrap: {
+        toolIconWrapper: {
             width: 36,
             height: 36,
-            borderRadius: 8,
+            borderRadius: 10,
             backgroundColor: t.surfaceAlt,
-            borderWidth: 1,
-            borderColor: t.border,
             alignItems: "center",
             justifyContent: "center",
         },
@@ -1019,13 +821,52 @@ function makeStyles(t: AppTheme) {
             gap: 2,
         },
         toolTitle: {
-            fontSize: 13,
-            fontWeight: "700",
             color: t.text,
+            fontSize: 14,
+            fontWeight: "700",
         },
         toolSub: {
-            fontSize: 11,
             color: t.muted,
+            fontSize: 11,
+        },
+
+        // ── Empty States ────────────────────────────────────────────────────
+        emptyCard: {
+            flexDirection: "row",
+            alignItems: "center",
+            backgroundColor: t.surface,
+            borderRadius: 14,
+            borderWidth: 1,
+            borderColor: t.border,
+            padding: 16,
+            gap: 12,
+        },
+        emptyCardBody: {
+            flex: 1,
+            gap: 2,
+        },
+        emptyCardTitle: {
+            color: t.text,
+            fontSize: 13,
+            fontWeight: "600",
+        },
+        emptyCardSub: {
+            color: t.muted,
+            fontSize: 11,
+            lineHeight: 16,
+        },
+        emptyAction: {
+            paddingVertical: 5,
+            paddingHorizontal: 10,
+            backgroundColor: t.surfaceAlt,
+            borderRadius: 6,
+            borderWidth: 1,
+            borderColor: t.border,
+        },
+        emptyActionText: {
+            color: t.accent,
+            fontSize: 11,
+            fontWeight: "700",
         },
     });
 }

@@ -12,7 +12,7 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import AppShell, { useLayout } from "../../components/AppShell";
 import { useAppTheme } from "../../providers/ThemeProvider";
-import { useAuth } from "../../providers/AuthProvider";
+
 import {
     api,
     type QuizSubjectMeta,
@@ -25,7 +25,7 @@ import type { AppTheme } from "../../constants/theme";
 export default function QuizRevisionHomeScreen() {
     const router = useRouter();
     const { theme } = useAppTheme();
-    const { user, isAuthenticated } = useAuth();
+
     const { isWide } = useLayout();
     const s = useMemo(() => makeStyles(theme), [theme]);
 
@@ -34,7 +34,7 @@ export default function QuizRevisionHomeScreen() {
     const [metaError, setMetaError] = useState<string | null>(null);
     const [subjects, setSubjects] = useState<QuizSubjectMeta[]>([]);
     const [chapters, setChapters] = useState<QuizChapterMeta[]>([]);
-    const [topics, setTopics] = useState<QuizTopicMeta[]>([]);
+    const [, setTopics] = useState<QuizTopicMeta[]>([]);
 
     // User selections
     const [selectedSubjectKey, setSelectedSubjectKey] = useState<number | null>(null);

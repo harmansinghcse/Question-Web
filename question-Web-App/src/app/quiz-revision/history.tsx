@@ -22,7 +22,7 @@ export default function QuizRevisionHistoryScreen() {
 
     const [attempts, setAttempts] = useState<QuizHistoryAttempt[]>([]);
     const [total, setTotal] = useState(0);
-    const [page, setPage] = useState(1);
+
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -35,7 +35,7 @@ export default function QuizRevisionHistoryScreen() {
             const res = await api.getQuizHistory(pageNum, 15);
             setAttempts(res.items || []);
             setTotal(res.total || 0);
-            setPage(pageNum);
+
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to load attempt history.");
         } finally {
@@ -45,7 +45,8 @@ export default function QuizRevisionHistoryScreen() {
     }, []);
 
     useEffect(() => {
-        loadHistory(1);
+        const timer = setTimeout(() => { void loadHistory(1); }, 0);
+        return () => clearTimeout(timer);
     }, [loadHistory]);
 
     const formatDate = (isoString: string) => {

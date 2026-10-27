@@ -3,7 +3,6 @@ import {
     ActivityIndicator,
     Alert,
     Pressable,
-    ScrollView,
     StyleSheet,
     Text,
     View,
@@ -36,29 +35,31 @@ export default function QuizRevisionResultsScreen() {
     // Fetch review details from backend
     useEffect(() => {
         if (!attemptId) {
-            setError("No attempt ID provided.");
-            setLoading(false);
-            return;
+            const timer = setTimeout(() => {
+                setError("No attempt ID provided.");
+                setLoading(false);
+            }, 0);
+            return () => clearTimeout(timer);
         }
 
         let mounted = true;
-        async function fetchReview() {
-            setLoading(true);
-            try {
-                const res = await api.getQuizReview(attemptId!);
+        void api.getQuizReview(attemptId)
+            .then((res) => {
                 if (mounted) {
                     setReviewData(res);
                 }
-            } catch (err) {
+            })
+            .catch((err) => {
                 if (mounted) {
                     setError(err instanceof Error ? err.message : "Failed to load quiz results.");
                 }
-            } finally {
-                if (mounted) setLoading(false);
-            }
-        }
+            })
+            .finally(() => {
+                if (mounted) {
+                    setLoading(false);
+                }
+            });
 
-        fetchReview();
         return () => {
             mounted = false;
         };

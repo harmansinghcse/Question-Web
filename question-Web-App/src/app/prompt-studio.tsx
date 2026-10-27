@@ -37,7 +37,7 @@ import {
 } from "../services/api";
 import { useApiData } from "../hooks/use-api-data";
 import {
-    filterSubjectsForStudent,
+
     parseStudentEmail,
     sortSubjects,
     subjectDisplayName,
@@ -203,7 +203,7 @@ export default function PromptStudioScreen() {
 
     const studentProfile = useMemo(
         () => (user?.email ? parseStudentEmail(user.email) : null),
-        [user?.email],
+        [user],
     );
 
     const sortedSubjects = useMemo(() => {
@@ -247,7 +247,8 @@ export default function PromptStudioScreen() {
     useEffect(() => {
         const list = Array.from(selectedQuestions.values());
         const p = generatePromptString(list, task, answerStyle, customInstruction);
-        setGeneratedPrompt(p);
+        const timer = setTimeout(() => setGeneratedPrompt(p), 0);
+        return () => clearTimeout(timer);
     }, [selectedQuestions, task, answerStyle, customInstruction]);
 
     // Toggle single question
@@ -738,7 +739,7 @@ export default function PromptStudioScreen() {
                             <Text style={styles.emptyIcon}>📋</Text>
                             <Text style={styles.emptyTitle}>No questions selected yet</Text>
                             <Text style={styles.emptyText}>
-                                Tap questions in the "1. Browse" tab to curate questions for your prompt.
+                                Tap questions in the &quot;1. Browse&quot; tab to curate questions for your prompt.
                             </Text>
                             <Pressable onPress={() => setTab("browser")} style={styles.browseButton}>
                                 <Text style={styles.browseButtonText}>Browse Questions →</Text>
