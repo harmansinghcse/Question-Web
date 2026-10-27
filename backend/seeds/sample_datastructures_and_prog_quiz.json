@@ -1,0 +1,99 @@
+{
+  "modelName": "AI-Offline-Generator-v2",
+  "batchId": "BATCH-2026-CSE-DS-PROG-003",
+  "questions": [
+    {
+      "questionType": "MCQ",
+      "quesText": "Which data structure operates on a Last-In First-Out (LIFO) access principle?",
+      "options": {
+        "A": "Queue",
+        "B": "Stack",
+        "C": "Binary Tree",
+        "D": "Linked List"
+      },
+      "correctAnswer": "B",
+      "explanation": "A stack is a linear data structure following the Last-In First-Out (LIFO) principle, where push and pop operations occur at the top.",
+      "difficulty": "EASY",
+      "chapterId": 25
+    },
+    {
+      "questionType": "FILLUPS",
+      "quesText": "The worst-case time complexity of standard Quicksort algorithm is ____.",
+      "correctAnswer": "O(n^2)",
+      "acceptedAnswers": ["O(n^2)", "O(n2)", "quadratic", "O(n*n)", "quadratic time"],
+      "explanation": "Quicksort degrades to O(n^2) when poor pivot elements are chosen (such as an already sorted array with the first or last element as pivot).",
+      "difficulty": "MEDIUM",
+      "chapterId": 27
+    },
+    {
+      "questionType": "TRUE_FALSE",
+      "quesText": "A queue data structure follows the First-In First-Out (FIFO) principle.",
+      "correctAnswer": true,
+      "explanation": "True. In a queue, elements are inserted at the rear (enqueue) and removed from the front (dequeue), maintaining FIFO ordering.",
+      "difficulty": "EASY",
+      "chapterId": 26
+    },
+    {
+      "questionType": "MCQ",
+      "quesText": "What is the minimum number of nodes in a complete binary tree of depth d (root at depth 0)?",
+      "options": {
+        "A": "2^d",
+        "B": "2^(d-1)",
+        "C": "2^d - 1",
+        "D": "2^(d+1) - 1"
+      },
+      "correctAnswer": "A",
+      "explanation": "A complete binary tree of depth d has all levels completely filled up to d-1 (total 2^d - 1 nodes) plus at least 1 node at depth d, giving at least 2^d nodes.",
+      "difficulty": "HARD",
+      "chapterId": 28
+    },
+    {
+      "questionType": "FILLUPS",
+      "quesText": "In a singly linked list, the time complexity to insert a new node at the head is ____.",
+      "correctAnswer": "O(1)",
+      "acceptedAnswers": ["O(1)", "constant", "constant time", "O( 1 )"],
+      "explanation": "Inserting at the head of a singly linked list requires only updating the new node's next pointer and the head pointer, taking constant O(1) time.",
+      "difficulty": "EASY",
+      "chapterId": 24
+    },
+    {
+      "questionType": "TRUE_FALSE",
+      "quesText": "In an undirected graph with V vertices, the maximum number of edges possible without self-loops or multi-edges is V*(V-1).",
+      "correctAnswer": false,
+      "explanation": "False. For an undirected graph without self-loops, each edge connects two distinct vertices, so the maximum number of edges is V*(V-1)/2.",
+      "difficulty": "MEDIUM",
+      "chapterId": 30
+    },
+    {
+      "questionType": "MCQ",
+      "quesText": "In C programming, which format specifier is used with printf to output a floating-point number in exponential (scientific) notation?",
+      "options": {
+        "A": "%f",
+        "B": "%e",
+        "C": "%g",
+        "D": "%x"
+      },
+      "correctAnswer": "B",
+      "explanation": "%e (or %E) formats a floating-point value in scientific notation (e.g., 1.234000e+02).",
+      "difficulty": "EASY",
+      "chapterId": 11
+    },
+    {
+      "questionType": "FILLUPS",
+      "quesText": "In C programming, an uninitialized variable declared with the 'static' storage class is automatically initialized to ____.",
+      "correctAnswer": "0",
+      "acceptedAnswers": ["0", "zero", "null"],
+      "explanation": "Variables with static storage duration are allocated in the BSS segment and initialized to zero by default before program execution begins.",
+      "difficulty": "MEDIUM",
+      "chapterId": 12
+    },
+    {
+      "questionType": "TRUE_FALSE",
+      "quesText": "In C, the expression sizeof(char) is guaranteed by the ISO C standard to always evaluate to 1.",
+      "correctAnswer": true,
+      "explanation": "True. The C standard defines the size of char as 1 by definition (sizeof(char) == 1).",
+      "difficulty": "EASY",
+      "chapterId": 13
+    }
+  ]
+}

@@ -112,64 +112,173 @@ export default function HomeScreen() {
         });
     }, []);
 
-    // ── Nearest Exam ────────────────────────────────────────────────────────
-    const nearestExamInfo = useMemo(() => {
-        if (!exams || exams.length === 0) return null;
-        const sorted = [...exams].sort(
-            (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
-        );
-        const next = sorted[0];
-        const examDate = new Date(next.date);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        examDate.setHours(0, 0, 0, 0);
-        const diffDays = Math.ceil(
-            (examDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
-        );
-
-        let countdownLabel = `${diffDays} days left`;
-        let countdownTone: "urgent" | "soon" | "normal" = "normal";
-        if (diffDays < 0) {
-            countdownLabel = "Concluded";
-        } else if (diffDays === 0) {
-            countdownLabel = "Today";
-            countdownTone = "urgent";
-        } else if (diffDays === 1) {
-            countdownLabel = "Tomorrow";
-            countdownTone = "soon";
-        } else if (diffDays <= 7) {
-            countdownTone = "soon";
-        }
-
-        const formattedDate = new Date(next.date).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
+    // ── Schedule Handlers ───────────────────────────────────────────────────
+    const handleAddClass = async () => {
+        if (!newClassTime.trim() || !newClassTitle.trim()) return;
+        const updated = await studyStorage.addScheduleItem({
+            time: newClassTime.trim(),
+            title: newClassTitle.trim(),
+            location: newClassLocation.trim() || "Online / TBA",
+            type: "lecture",
         });
+        setSchedule(updated);
+        setNewClassTime("");
+        setNewClassTitle("");
+        setNewClassLocation("");
+    };
 
-        return {
-            exam: next,
-            countdownLabel,
-            countdownTone,
-            formattedDate,
-        };
-    }, [exams]);
+    if (!ready || isRestoring) return <View style={s.blank} />;
 
-    // Syllabus Preview (first 3 subjects)
-    const syllabusPreview = useMemo(() => {
-        return subjects.slice(0, 3).map((sub) => {
-            const total = Math.max(1, (sub.credits ?? 3) * 5);
-            const done = completedTopicIds.size > 0 ? Math.min(total, completedTopicIds.size) : 0;
-            const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-            return {
-                subjectKey: sub.subjectKey,
-                code: subjectCode(sub) || sub.subjectId,
-                name: subjectDisplayName(sub),
-                completedCount: done,
-                totalCount: total,
-                percentage: pct,
-            };
-        });
-    }, [subjects, completedTopicIds]);
+    const stats = statsState.status === "success" ? statsState.data : null;
+    const statValue = (n: number | undefined) =>
+        n !== undefined
+            ? n.toLocaleString()
+            : statsState.status === "loading"
+              ? "…"
+              : "0";
+
+    // ── 5 Quick Overview Stat Tiles ─────────────────────────────────────────
+    const statTiles = [
+        {
+            key: "total",
+            label: "Questions",
+            icon: "documents-outline" as const,
+            color: "#6D5EF6",
+            bgColor: "#6D5EF61A",
+            value: stats?.total,
+            onPress: () => openQuestionBank(),
+        },
+        {
+            key: "MCQ",
+            label: "MCQ",
+            icon: "list-outline" as const,
+            color: "#3B82F6",
+            bgColor: "#3B82F61A",
+            value: stats?.byType?.MCQ,
+            onPress: () => openQuestionBank({ type: "MCQ" }),
+        },
+        {
+            key: "FILLUPS",
+            label: "Fill-ups",
+            icon: "create-outline" as const,
+            color: "#F59E0B",
+            bgColor: "#F59E0B1A",
+            value: stats?.byType?.FILLUPS,
+            onPress: () => openQuestionBank({ type: "FILLUPS" }),
+        },
+        {
+            key: "SUBJECTIVE",
+            label: "Subjective",
+            icon: "reader-outline" as const,
+            color: "#F43F5E",
+            bgColor: "#F43F5E1A",
+            value: stats?.byType?.SUBJECTIVE,
+            onPress: () => openQuestionBank({ type: "SUBJECTIVE" }),
+        },
+        {
+            key: "TRUE/FALSE",
+            label: "True / False",
+            icon: "checkmark-circle-outline" as const,
+            color: "#10B981",
+            bgColor: "#10B9811A",
+            value: stats?.byType?.["TRUE/FALSE"],
+            onPress: () => openQuestionBank({ type: "TRUE/FALSE" }),
+        },
+    ];
+
+    // ── 9 Academic Tools Cards ──────────────────────────────────────────────
+    const academicTools = [
+        {
+            id: "syllabus",
+            title: "Syllabus",
+            desc: "Track topics and progress",
+            icon: "book-outline" as const,
+            color: "#8B5CF6",
+            bgColor: "#8B5CF61A",
+            onPress: () => openSyllabus(),
+        },
+        {
+            id: "revision",
+            title: "Quiz Revision",
+            desc: "MCQ, Fill-ins & True/False quizzes",
+            icon: "flash-outline" as const,
+            color: "#EF4444",
+            bgColor: "#EF44441A",
+            onPress: () => router.push("/quiz-revision" as never),
+        },
+        {
+            id: "questions",
+            title: "Question Bank",
+            desc: "Practise questions by subject",
+            icon: "layers-outline" as const,
+            color: "#3B82F6",
+            bgColor: "#3B82F61A",
+            onPress: () => openQuestionBank(),
+        },
+        {
+            id: "timetable",
+            title: "Timetable",
+            desc: "Classes & exams schedule",
+            icon: "calendar-outline" as const,
+            color: "#10B981",
+            bgColor: "#10B9811A",
+            onPress: () => setActiveModal("timetable"),
+        },
+        {
+            id: "resources",
+            title: "Resources",
+            desc: "Notes, PDFs and more",
+            icon: "folder-outline" as const,
+            color: "#F59E0B",
+            bgColor: "#F59E0B1A",
+            onPress: () => router.push("/resources" as never),
+        },
+        {
+            id: "planner",
+            title: "Daily Planner",
+            desc: "Plan your study day",
+            icon: "list-outline" as const,
+            color: "#F43F5E",
+            bgColor: "#F43F5E1A",
+            onPress: () => setActiveModal("daily-planner"),
+        },
+        {
+            id: "timer",
+            title: "Focus Timer",
+            desc: "Stay focused and productive",
+            icon: "timer-outline" as const,
+            color: "#8B5CF6",
+            bgColor: "#8B5CF61A",
+            onPress: () => setActiveModal("focus-timer"),
+        },
+        {
+            id: "exams",
+            title: "Upcoming Exams",
+            desc: "View exam dates and countdowns",
+            icon: "alarm-outline" as const,
+            color: "#F97316",
+            bgColor: "#F973161A",
+            onPress: () => setActiveModal("upcoming-exams"),
+        },
+        {
+            id: "report",
+            title: "Study Report",
+            desc: "Review weekly study progress",
+            icon: "bar-chart-outline" as const,
+            color: "#6366F1",
+            bgColor: "#6366F11A",
+            onPress: () => setActiveModal("study-report"),
+        },
+        {
+            id: "reminders",
+            title: "Study Reminders",
+            desc: "Manage study reminders",
+            icon: "notifications-outline" as const,
+            color: "#EC4899",
+            bgColor: "#EC48991A",
+            onPress: () => setActiveModal("study-reminders"),
+        },
+    ];
 
     return (
         <AppShell active="home">

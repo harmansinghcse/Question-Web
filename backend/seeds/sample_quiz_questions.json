@@ -1,0 +1,78 @@
+{
+  "modelName": "AI-Offline-Generator-v2",
+  "batchId": "BATCH-2026-CSE-ALL-TYPES-002",
+  "questions": [
+    {
+      "questionType": "MCQ",
+      "quesText": "In Von Neumann architecture, which unit is responsible for executing arithmetic operations and logical decisions?",
+      "options": {
+        "A": "Control Unit (CU)",
+        "B": "Arithmetic Logic Unit (ALU)",
+        "C": "Memory Address Register (MAR)",
+        "D": "Instruction Register (IR)"
+      },
+      "correctAnswer": "B",
+      "explanation": "The Arithmetic Logic Unit (ALU) performs fundamental arithmetic operations (addition, subtraction) and bitwise/logical comparisons in the CPU.",
+      "difficulty": "EASY",
+      "chapterId": 1,
+      "topicIds": [2, 6]
+    },
+    {
+      "questionType": "FILLUPS",
+      "quesText": "The average time complexity of searching an element in a balanced Binary Search Tree is ____.",
+      "correctAnswer": "O(log n)",
+      "acceptedAnswers": ["O(log n)", "O(logn)", "logarithmic time", "logarithmic", "log n"],
+      "explanation": "In a balanced BST (such as an AVL or Red-Black Tree), each comparison cuts the remaining search space in half, resulting in O(log n) time complexity.",
+      "difficulty": "MEDIUM",
+      "chapterId": 1,
+      "topicIds": [2]
+    },
+    {
+      "questionType": "TRUE_FALSE",
+      "quesText": "Von Neumann architecture uses separate physical memory spaces and buses for instructions and data.",
+      "correctAnswer": false,
+      "explanation": "False. Harvard architecture uses separate memory spaces and buses for instructions and data. Von Neumann architecture shares a single memory space and bus system for both.",
+      "difficulty": "MEDIUM",
+      "chapterId": 1,
+      "topicIds": [2]
+    },
+    {
+      "questionType": "FILLUPS",
+      "quesText": "In digital number systems, the base or radix of the hexadecimal number system is ____.",
+      "correctAnswer": "16",
+      "acceptedAnswers": ["16", "sixteen"],
+      "explanation": "The hexadecimal number system uses base 16, comprising digits 0-9 and letters A-F.",
+      "difficulty": "EASY",
+      "chapterId": 2,
+      "topicIds": [12]
+    },
+    {
+      "questionType": "TRUE_FALSE",
+      "quesText": "The two's complement representation of a negative integer can be obtained by taking its one's complement and adding 1.",
+      "correctAnswer": true,
+      "explanation": "True. In binary arithmetic, Two's Complement = One's Complement + 1.",
+      "difficulty": "EASY",
+      "chapterId": 2,
+      "topicIds": [15]
+    },
+    {
+      "questionType": "FILLUPS",
+      "quesText": "In standard flowchart notation, an oval or rounded rectangle represents a ____ symbol.",
+      "correctAnswer": "Terminal",
+      "acceptedAnswers": ["Terminal", "Start / Stop", "Start/Stop", "Start or Stop", "Terminator"],
+      "explanation": "An oval or rounded rectangle indicates the start or end (terminator) point of an algorithm in a flowchart.",
+      "difficulty": "EASY",
+      "chapterId": 3,
+      "topicIds": [18]
+    },
+    {
+      "questionType": "TRUE_FALSE",
+      "quesText": "A recursive function without a base case will eventually trigger a stack overflow error at runtime.",
+      "correctAnswer": true,
+      "explanation": "True. Each recursive call consumes a call stack frame. Without a terminating base case, the stack memory is exhausted.",
+      "difficulty": "EASY",
+      "chapterId": 3,
+      "topicIds": [24]
+    }
+  ]
+}

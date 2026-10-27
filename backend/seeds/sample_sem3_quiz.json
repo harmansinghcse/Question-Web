@@ -1,0 +1,99 @@
+{
+  "modelName": "AI-Offline-Generator-v2",
+  "batchId": "BATCH-2026-CSE-SEM3-004",
+  "questions": [
+    {
+      "questionType": "MCQ",
+      "quesText": "In relational database design, which normal form eliminates transitive functional dependencies?",
+      "options": {
+        "A": "First Normal Form (1NF)",
+        "B": "Second Normal Form (2NF)",
+        "C": "Third Normal Form (3NF)",
+        "D": "Boyce-Codd Normal Form (BCNF)"
+      },
+      "correctAnswer": "C",
+      "explanation": "A relation is in Third Normal Form (3NF) if it is in 2NF and no non-prime attribute is transitively dependent on the primary key.",
+      "difficulty": "EASY",
+      "chapterId": 92
+    },
+    {
+      "questionType": "FILLUPS",
+      "quesText": "In SQL, the command used to remove all records from a table without logging individual row deletions is ____.",
+      "correctAnswer": "TRUNCATE",
+      "acceptedAnswers": ["TRUNCATE", "TRUNCATE TABLE", "truncate"],
+      "explanation": "The TRUNCATE command is a DDL operation that deallocates data pages rather than logging row deletions, making it much faster than DELETE.",
+      "difficulty": "EASY",
+      "chapterId": 95
+    },
+    {
+      "questionType": "TRUE_FALSE",
+      "quesText": "In ACID transaction properties, Atomicity ensures that either all operations of a transaction succeed, or none take effect.",
+      "correctAnswer": true,
+      "explanation": "True. The all-or-nothing property of transactions is known as Atomicity.",
+      "difficulty": "EASY",
+      "chapterId": 94
+    },
+    {
+      "questionType": "MCQ",
+      "quesText": "In computer architecture, the technique of fetching the next instruction while the current instruction is being executed is called:",
+      "options": {
+        "A": "Pipelining",
+        "B": "Multithreading",
+        "C": "DMA transfer",
+        "D": "Vector processing"
+      },
+      "correctAnswer": "A",
+      "explanation": "Instruction pipelining overlaps the execution phases of consecutive instructions to increase instruction throughput.",
+      "difficulty": "EASY",
+      "chapterId": 88
+    },
+    {
+      "questionType": "FILLUPS",
+      "quesText": "The fastest and smallest memory unit located directly inside the CPU processor chip is called a ____.",
+      "correctAnswer": "register",
+      "acceptedAnswers": ["register", "CPU register", "processor register", "registers"],
+      "explanation": "Registers reside directly on the processor core and provide the fastest data access times in the computer memory hierarchy.",
+      "difficulty": "EASY",
+      "chapterId": 82
+    },
+    {
+      "questionType": "TRUE_FALSE",
+      "quesText": "SRAM (Static RAM) requires periodic electrical refresh cycles to retain stored data.",
+      "correctAnswer": false,
+      "explanation": "False. DRAM requires periodic refreshing because it stores charge in capacitors, whereas SRAM uses flip-flops and retains data as long as power is supplied without refresh cycles.",
+      "difficulty": "MEDIUM",
+      "chapterId": 86
+    },
+    {
+      "questionType": "MCQ",
+      "quesText": "Which algorithmic design paradigm does the 0/1 Knapsack problem typically use for an optimal polynomial-time solution?",
+      "options": {
+        "A": "Greedy Approach",
+        "B": "Dynamic Programming",
+        "C": "Divide and Conquer",
+        "D": "Backtracking"
+      },
+      "correctAnswer": "B",
+      "explanation": "The 0/1 Knapsack problem exhibits overlapping subproblems and optimal substructure, making Dynamic Programming the standard approach to find the optimal solution in O(nW) pseudo-polynomial time.",
+      "difficulty": "MEDIUM",
+      "chapterId": 101
+    },
+    {
+      "questionType": "FILLUPS",
+      "quesText": "In algorithm analysis, the time complexity of Merge Sort in all cases (worst, average, and best) is ____.",
+      "correctAnswer": "O(n log n)",
+      "acceptedAnswers": ["O(n log n)", "O(nlogn)", "O(n*log n)", "linearithmic"],
+      "explanation": "Merge sort divides the list into halves and merges them in linear time at each of the log n levels, resulting in O(n log n) time in all cases.",
+      "difficulty": "EASY",
+      "chapterId": 99
+    },
+    {
+      "questionType": "TRUE_FALSE",
+      "quesText": "Dijkstra's shortest path algorithm produces correct results even when the graph contains negative weight edges.",
+      "correctAnswer": false,
+      "explanation": "False. Dijkstra's greedy approach fails on graphs with negative edge weights; the Bellman-Ford algorithm must be used instead.",
+      "difficulty": "MEDIUM",
+      "chapterId": 100
+    }
+  ]
+}

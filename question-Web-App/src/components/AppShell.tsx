@@ -20,9 +20,7 @@ type IconName = React.ComponentProps<typeof Ionicons>["name"];
 
 export type NavKey =
     | "home"
-    | "learn"
-    | "prompt"
-    | "tools"
+    | "revision"
     | "questions"
     | "syllabus"
     | "resources"
@@ -45,9 +43,17 @@ const NAV_ITEMS: {
         path: "/",
     },
     {
-        key: "learn",
-        label: "Learn",
-        short: "Learn",
+        key: "revision",
+        label: "Quiz Revision",
+        short: "Revision",
+        icon: "flash-outline",
+        iconActive: "flash",
+        path: "/quiz-revision",
+    },
+    {
+        key: "questions",
+        label: "Question Bank",
+        short: "Questions",
         icon: "library-outline",
         iconActive: "library",
         path: "/learn",

@@ -13,6 +13,7 @@ import { QuestionsModule } from './questions/questions.module';
 import { SourcesModule } from './sources/sources.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
+import { QuizModule } from './quiz/quiz.module';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -74,6 +75,7 @@ import * as path from 'path';
     SourcesModule,
     UsersModule,
     AuthModule,
+    QuizModule,
   ],
   controllers: [AppController],
   providers: [AppService],

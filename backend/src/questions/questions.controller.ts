@@ -5,10 +5,12 @@ import {
   Param,
   ParseIntPipe,
   Post,
+  Query,
 } from '@nestjs/common';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { CloudinaryService } from './cloudinary.service';
 import type { CloudinarySignatureResponse } from './cloudinary.service';
+import { FilterQuestionsDto } from './dto/filter-questions.dto';
 import { QuestionsService } from './questions.service';
 import type {
   CreatedQuestion,
@@ -29,8 +31,10 @@ export class QuestionsController {
   }
 
   @Get()
-  findAll(): Promise<QuestionWithTopics[]> {
-    return this.questionsService.findAll();
+  findAll(
+    @Query() query?: FilterQuestionsDto,
+  ): Promise<QuestionWithTopics[]> {
+    return this.questionsService.findAll(query);
   }
 
   @Get(':id')

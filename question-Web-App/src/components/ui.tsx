@@ -577,11 +577,8 @@ export function QuestionCard({
     };
 
     return (
-        <Pressable
-            onPress={openDetail}
-            accessibilityRole="button"
-            accessibilityLabel={`Question #${question.quesId}: ${question.quesText.slice(0, 50)}`}
-            style={({ pressed }) => ({
+        <View
+            style={{
                 backgroundColor: theme.surface,
                 borderWidth: 1,
                 borderColor: theme.border,
@@ -590,8 +587,7 @@ export function QuestionCard({
                 borderRadius: 12,
                 padding: 16,
                 gap: 12,
-                opacity: pressed ? 0.92 : 1,
-            })}
+            }}
         >
             {/* Top metadata row */}
             <View
@@ -623,12 +619,17 @@ export function QuestionCard({
                         />
                     ) : null}
                 </View>
-                <View
-                    style={{
+                <Pressable
+                    onPress={openDetail}
+                    accessibilityRole="button"
+                    accessibilityLabel={`View Question #${question.quesId}`}
+                    hitSlop={8}
+                    style={({ pressed }) => ({
                         flexDirection: "row",
                         alignItems: "center",
                         gap: 4,
-                    }}
+                        opacity: pressed ? 0.7 : 1,
+                    })}
                 >
                     <Text
                         style={{
@@ -644,19 +645,28 @@ export function QuestionCard({
                         size={13}
                         color={theme.muted}
                     />
-                </View>
+                </Pressable>
             </View>
 
-            {/* Question body */}
-            <View
-                style={
-                    isLong && !expanded
-                        ? { maxHeight: COLLAPSED_HEIGHT, overflow: "hidden" }
-                        : undefined
-                }
+            {/* Question body (clickable to open detail) */}
+            <Pressable
+                onPress={openDetail}
+                accessibilityRole="button"
+                accessibilityLabel={`Question #${question.quesId}: ${question.quesText.slice(0, 50)}`}
+                style={({ pressed }) => [
+                    pressed && { opacity: 0.85 },
+                ]}
             >
-                <MarkdownText>{question.quesText}</MarkdownText>
-            </View>
+                <View
+                    style={
+                        isLong && !expanded
+                            ? { maxHeight: COLLAPSED_HEIGHT, overflow: "hidden" }
+                            : undefined
+                    }
+                >
+                    <MarkdownText>{question.quesText}</MarkdownText>
+                </View>
+            </Pressable>
 
             {isLong && (
                 <Pressable
@@ -742,7 +752,7 @@ export function QuestionCard({
                     />
                 </Pressable>
             </View>
-        </Pressable>
+        </View>
     );
 }
 

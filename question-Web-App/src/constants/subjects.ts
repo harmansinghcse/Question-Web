@@ -1,5 +1,5 @@
 import type { Subject } from '../services/api';
-import { parseStudentEmail, StudentProfile } from '../utils/student-profile';
+import { parseStudentEmail, type StudentProfile } from '../utils/student-profile';
 
 export { parseStudentEmail, type StudentProfile };
 
