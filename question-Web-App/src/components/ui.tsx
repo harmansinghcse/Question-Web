@@ -772,3 +772,37 @@ export function Card({ children }: { children: ReactNode }) {
         </View>
     );
 }
+
+
+export function ProgressBar({
+    progress,
+    color,
+    height = 6,
+}: {
+    progress: number;
+    color?: string;
+    height?: number;
+}) {
+    const { theme } = useAppTheme();
+    const clamped = Math.max(0, Math.min(100, Math.round(progress)));
+    return (
+        <View
+            style={{
+                height,
+                backgroundColor: theme.surfaceAlt,
+                borderRadius: height / 2,
+                overflow: 'hidden',
+                width: '100%',
+            }}
+        >
+            <View
+                style={{
+                    height: '100%',
+                    width: `${clamped}%`,
+                    backgroundColor: color ?? theme.accent,
+                    borderRadius: height / 2,
+                }}
+            />
+        </View>
+    );
+}

@@ -1,4 +1,3 @@
-
 export type ThemeMode = 'light' | 'dark';
 
 export type AppTheme = {
@@ -8,6 +7,7 @@ export type AppTheme = {
   surface: string;
   surfaceAlt: string;
   surfaceElevated: string;
+  card: string;
   // Text
   text: string;
   textSecondary: string;
@@ -20,7 +20,9 @@ export type AppTheme = {
   accentDeep: string;
   accentSoft: string;
   accentMuted: string;
-  // Sidebar (always dark)
+  primaryLight: string;
+  secondaryAccent: string;
+  // Sidebar
   sidebarBg: string;
   sidebarText: string;
   sidebarMuted: string;
@@ -30,6 +32,13 @@ export type AppTheme = {
   success: string;
   warning: string;
   danger: string;
+  // Gradients
+  gradients: {
+    primary: [string, string];
+    purpleBlue: [string, string];
+    blue: [string, string];
+    warm: [string, string];
+  };
   // Typography scale (font-size numbers)
   fontSize: {
     xs: number;
@@ -91,53 +100,71 @@ const SHARED_SCALE = {
 export const themes: Record<ThemeMode, AppTheme> = {
   dark: {
     mode: 'dark',
-    background: '#11121F',
-    surface: '#1C1D2D',
-    surfaceAlt: '#242537',
-    surfaceElevated: '#2C2D42',
-    text: '#F0EEFF',
-    textSecondary: '#C4BFDD',
-    muted: '#8880A8',
-    border: '#2E2D44',
-    borderStrong: '#403E58',
-    accent: '#7654E8',
-    accentDeep: '#4930B9',
-    accentSoft: '#2D2158',
-    accentMuted: '#3D2D70',
-    sidebarBg: '#0D0E1A',
-    sidebarText: '#E8E4FF',
-    sidebarMuted: '#6E6888',
-    sidebarActiveBg: '#7654E8',
-    sidebarBorder: '#1C1B2E',
-    success: '#3AC9A0',
-    warning: '#F0B45A',
-    danger: '#EF6090',
+    background: '#0B1220',
+    surface: '#111827',
+    surfaceAlt: '#1E293B',
+    surfaceElevated: '#243248',
+    card: '#1E293B',
+    text: '#F8FAFC',
+    textSecondary: '#94A3B8',
+    muted: '#94A3B8',
+    border: '#334155',
+    borderStrong: '#475569',
+    accent: '#8B5CF6',
+    accentDeep: '#7C3AED',
+    accentSoft: '#2D2354',
+    accentMuted: '#3B2D6E',
+    primaryLight: '#A78BFA',
+    secondaryAccent: '#60A5FA',
+    sidebarBg: '#0B1220',
+    sidebarText: '#F8FAFC',
+    sidebarMuted: '#94A3B8',
+    sidebarActiveBg: '#8B5CF6',
+    sidebarBorder: '#1E293B',
+    success: '#22C55E',
+    warning: '#FBBF24',
+    danger: '#FB7185',
+    gradients: {
+      primary: ['#7C3AED', '#A78BFA'],
+      purpleBlue: ['#6366F1', '#8B5CF6'],
+      blue: ['#3B82F6', '#60A5FA'],
+      warm: ['#F59E0B', '#F97316'],
+    },
     ...SHARED_SCALE,
   },
 
   light: {
     mode: 'light',
-    background: '#F6F3FF',
+    background: '#FAFAFC',
     surface: '#FFFFFF',
-    surfaceAlt: '#EEE8FF',
-    surfaceElevated: '#F9F7FF',
-    text: '#17172A',
-    textSecondary: '#3D3860',
-    muted: '#77758F',
-    border: '#E6E1F0',
-    borderStrong: '#CEC7E8',
-    accent: '#6845E8',
-    accentDeep: '#4930B9',
-    accentSoft: '#EEE8FF',
-    accentMuted: '#DDD5FF',
-    sidebarBg: '#17172A',
-    sidebarText: '#EEE8FF',
-    sidebarMuted: '#7B7895',
-    sidebarActiveBg: '#6845E8',
-    sidebarBorder: '#252438',
-    success: '#168D6C',
-    warning: '#B87516',
-    danger: '#D74778',
+    surfaceAlt: '#F4F6FB',
+    surfaceElevated: '#FFFFFF',
+    card: '#F4F6FB',
+    text: '#0F172A',
+    textSecondary: '#64748B',
+    muted: '#64748B',
+    border: '#E5E7EB',
+    borderStrong: '#D1D5DB',
+    accent: '#6D5EF6',
+    accentDeep: '#5B4DE0',
+    accentSoft: '#EDE9FF',
+    accentMuted: '#DDD6FE',
+    primaryLight: '#EDE9FF',
+    secondaryAccent: '#3B82F6',
+    sidebarBg: '#0B1220',
+    sidebarText: '#F8FAFC',
+    sidebarMuted: '#94A3B8',
+    sidebarActiveBg: '#6D5EF6',
+    sidebarBorder: '#1E293B',
+    success: '#10B981',
+    warning: '#F59E0B',
+    danger: '#F43F5E',
+    gradients: {
+      primary: ['#7C3AED', '#A78BFA'],
+      purpleBlue: ['#6366F1', '#8B5CF6'],
+      blue: ['#3B82F6', '#60A5FA'],
+      warm: ['#F59E0B', '#F97316'],
+    },
     ...SHARED_SCALE,
   },
 };
