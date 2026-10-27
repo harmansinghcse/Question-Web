@@ -1,0 +1,6368 @@
+SUBJECT: Introduction to Computer Science
+Subject Key: 1
+Subject ID: CS101
+Semester: 1
+
+  CHAPTER: Introduction to Computer and Its Architecture
+  Chapter Number: 1
+  Chapter ID: 1
+
+    TOPIC: Introduction and Characteristics
+    Topic ID: 1
+
+    TOPIC: Computer Architecture
+    Topic ID: 2
+
+    TOPIC: Generations
+    Topic ID: 3
+
+    TOPIC: Classifications
+    Topic ID: 4
+
+    TOPIC: Applications
+    Topic ID: 5
+
+    TOPIC: Central Processing Unit and Memory
+    Topic ID: 6
+
+    TOPIC: Communication between Various Units
+    Topic ID: 7
+
+    TOPIC: Processor Speed
+    Topic ID: 8
+
+    TOPIC: Multiprocessor System
+    Topic ID: 9
+
+    TOPIC: Peripheral Buses
+    Topic ID: 10
+
+    TOPIC: Motherboard Demonstration
+    Topic ID: 11
+
+  CHAPTER: Number Systems
+  Chapter Number: 2
+  Chapter ID: 2
+
+    TOPIC: Introduction and Types of Number System
+    Topic ID: 12
+
+    TOPIC: Conversion between Number Systems
+    Topic ID: 13
+
+    TOPIC: Arithmetic Operations in Different Number Systems
+    Topic ID: 14
+
+    TOPIC: Signed and Unsigned Number System
+    Topic ID: 15
+
+  CHAPTER: Computational Problem Solving
+  Chapter Number: 3
+  Chapter ID: 3
+
+    TOPIC: Program Development Cycle
+    Topic ID: 16
+
+    TOPIC: Pseudocode
+    Topic ID: 17
+
+    TOPIC: Flowchart
+    Topic ID: 18
+
+    TOPIC: Representing Information as Bits
+    Topic ID: 19
+
+    TOPIC: Binary System
+    Topic ID: 20
+
+    TOPIC: Storing Integers
+    Topic ID: 21
+
+    TOPIC: Storing Fractions
+    Topic ID: 22
+
+    TOPIC: Examples of Computational Problems
+    Topic ID: 23
+
+    TOPIC: Iterative and Recursive Approaches to Solve Computational Problems
+    Topic ID: 24
+
+    TOPIC: Easy and Hard Computational Problems
+    Topic ID: 25
+
+  CHAPTER: Memory and Various Input and Output Devices
+  Chapter Number: 4
+  Chapter ID: 4
+
+    TOPIC: Introduction to Memory
+    Topic ID: 26
+
+    TOPIC: Input and Output Devices
+    Topic ID: 27
+
+    TOPIC: Memory Hierarchy
+    Topic ID: 28
+
+    TOPIC: Primary Memory and Its Types
+    Topic ID: 29
+
+    TOPIC: Secondary Memory
+    Topic ID: 30
+
+    TOPIC: Classification of Secondary Memory
+    Topic ID: 31
+
+    TOPIC: Various Secondary Storage Devices and Their Functioning
+    Topic ID: 32
+
+  CHAPTER: Introduction to System Softwares and Programming Languages
+  Chapter Number: 5
+  Chapter ID: 5
+
+    TOPIC: Classification of Computer Languages
+    Topic ID: 33
+
+    TOPIC: Introduction to Operating System
+    Topic ID: 34
+
+    TOPIC: Evolution of Operating Systems
+    Topic ID: 35
+
+    TOPIC: Types and Functions of Operating Systems
+    Topic ID: 36
+
+    TOPIC: Unix Commands
+    Topic ID: 37
+
+    TOPIC: Evolution and Classification of Programming Languages
+    Topic ID: 38
+
+    TOPIC: Features and Selection of Good Programming Language
+    Topic ID: 39
+
+    TOPIC: Development of Program
+    Topic ID: 40
+
+    TOPIC: Algorithm and Flowchart
+    Topic ID: 41
+
+    TOPIC: Program Testing and Debugging
+    Topic ID: 42
+
+    TOPIC: Program Documentation and Paradigms
+    Topic ID: 43
+
+    TOPIC: Characteristics of Good Program
+    Topic ID: 44
+
+    TOPIC: Classification of Computer Languages
+    Topic ID: 45
+
+    TOPIC: Introduction to Operating System
+    Topic ID: 46
+
+    TOPIC: Evolution of Operating Systems
+    Topic ID: 47
+
+    TOPIC: Types and Functions of Operating Systems
+    Topic ID: 48
+
+    TOPIC: Unix Commands
+    Topic ID: 49
+
+    TOPIC: Evolution and Classification of Programming Languages
+    Topic ID: 50
+
+    TOPIC: Features and Selection of Good Programming Language
+    Topic ID: 51
+
+    TOPIC: Development of Program
+    Topic ID: 52
+
+    TOPIC: Algorithm and Flowchart
+    Topic ID: 53
+
+    TOPIC: Program Testing and Debugging
+    Topic ID: 54
+
+    TOPIC: Program Documentation and Paradigms
+    Topic ID: 55
+
+    TOPIC: Characteristics of Good Program
+    Topic ID: 56
+
+  CHAPTER: WINDOWS OPERATING SYSTEM AND ITS ENVIRONMENT
+  Chapter Number: 6
+  Chapter ID: 6
+
+    TOPIC: Introduction to GUI-Based Operating Systems
+    Topic ID: 57
+
+    TOPIC: Configuration
+    Topic ID: 58
+
+    TOPIC: Setup
+    Topic ID: 59
+
+    TOPIC: Services
+    Topic ID: 60
+
+    TOPIC: Network Configuration
+    Topic ID: 61
+
+    TOPIC: Introduction to GUI-Based Operating Systems
+    Topic ID: 62
+
+    TOPIC: Configuration
+    Topic ID: 63
+
+    TOPIC: Setup
+    Topic ID: 64
+
+    TOPIC: Services
+    Topic ID: 65
+
+    TOPIC: Network Configuration
+    Topic ID: 66
+
+  CHAPTER: LINUX OPERATING SYSTEM AND ITS ENVIRONMENT
+  Chapter Number: 7
+  Chapter ID: 7
+
+    TOPIC: Introduction to Linux Operating System
+    Topic ID: 67
+
+    TOPIC: Configuration
+    Topic ID: 68
+
+    TOPIC: Setup
+    Topic ID: 69
+
+    TOPIC: Navigating File System
+    Topic ID: 70
+
+    TOPIC: File Permissions (R/W/X)
+    Topic ID: 71
+
+    TOPIC: Access Control and Super User (sudo) Privileges
+    Topic ID: 72
+
+    TOPIC: Scripting Basics
+    Topic ID: 73
+
+    TOPIC: Bash Shell and Scripting
+    Topic ID: 74
+
+    TOPIC: Network Configuration
+    Topic ID: 75
+
+  CHAPTER: DEBUGGING TOOLS AND COMPILER OPTION
+  Chapter Number: 8
+  Chapter ID: 8
+
+    TOPIC: Different Debugging Tools
+    Topic ID: 76
+
+    TOPIC: Debugging Commands
+    Topic ID: 77
+
+    TOPIC: Memory Dump
+    Topic ID: 78
+
+    TOPIC: Register and Variable Tracking
+    Topic ID: 79
+
+    TOPIC: Instruction-Level Debugging
+    Topic ID: 80
+
+    TOPIC: Compiler Options
+    Topic ID: 81
+
+    TOPIC: Profile Generation
+    Topic ID: 82
+
+  CHAPTER: DATA COMMUNICATION, COMPUTER NETWORK AND INTERNET BASICS
+  Chapter Number: 9
+  Chapter ID: 9
+
+    TOPIC: Data Communication and Transmission Media
+    Topic ID: 83
+
+    TOPIC: Multiplexing and Switching
+    Topic ID: 84
+
+    TOPIC: Computer Network and Network Topology
+    Topic ID: 85
+
+    TOPIC: Communication Protocols and Network Devices
+    Topic ID: 86
+
+    TOPIC: Evolution and Basic Internet Terms
+    Topic ID: 87
+
+    TOPIC: Getting Connected to Internet
+    Topic ID: 88
+
+    TOPIC: Internet Application
+    Topic ID: 89
+
+    TOPIC: Email and Its Working
+    Topic ID: 90
+
+    TOPIC: Searching the Web
+    Topic ID: 91
+
+    TOPIC: Languages of Internet
+    Topic ID: 92
+
+    TOPIC: Internet and Viruses
+    Topic ID: 93
+
+  CHAPTER: SYSTEM AND NETWORK SECURITY BASICS
+  Chapter Number: 10
+  Chapter ID: 10
+
+    TOPIC: Security Services
+    Topic ID: 94
+
+    TOPIC: Security Attacks
+    Topic ID: 95
+
+    TOPIC: Security Mechanisms
+    Topic ID: 96
+
+    TOPIC: Authentication
+    Topic ID: 97
+
+    TOPIC: Password Strengths and Entropy
+    Topic ID: 98
+
+    TOPIC: Access Control Mechanisms
+    Topic ID: 99
+
+    TOPIC: Read/Write/Execute Permissions
+    Topic ID: 100
+
+    TOPIC: Super User/Administrator Privileges
+    Topic ID: 101
+
+    TOPIC: Introduction to HTTPS
+    Topic ID: 102
+
+    TOPIC: Digital Certificates
+    Topic ID: 103
+
+SUBJECT: Introduction to Programming
+Subject Key: 3
+Subject ID: CS103
+Semester: 1
+
+  CHAPTER: Overview of C Programming Language
+  Chapter Number: 1
+  Chapter ID: 11
+
+    TOPIC: History of C
+    Topic ID: 104
+
+    TOPIC: Importance of C
+    Topic ID: 105
+
+    TOPIC: Basic Structure of a C Program
+    Topic ID: 106
+
+    TOPIC: Compiling a C Program
+    Topic ID: 107
+
+    TOPIC: Running a C Program
+    Topic ID: 108
+
+    TOPIC: Sample Programs
+    Topic ID: 109
+
+  CHAPTER: Constants, Variables, and Data Types
+  Chapter Number: 2
+  Chapter ID: 12
+
+    TOPIC: Character Set in C
+    Topic ID: 110
+
+    TOPIC: Keywords and Identifiers
+    Topic ID: 111
+
+    TOPIC: Constants and Strings
+    Topic ID: 112
+
+    TOPIC: Operators
+    Topic ID: 113
+
+    TOPIC: Special Symbols
+    Topic ID: 114
+
+    TOPIC: Variables and Data Types
+    Topic ID: 115
+
+    TOPIC: Primary and User-Defined Data Types
+    Topic ID: 116
+
+    TOPIC: Variable Declaration and Initialization
+    Topic ID: 117
+
+    TOPIC: Assigning Values to Variables
+    Topic ID: 118
+
+    TOPIC: Symbolic Constants
+    Topic ID: 119
+
+    TOPIC: Constant Variables
+    Topic ID: 120
+
+  CHAPTER: Operators and Expressions
+  Chapter Number: 3
+  Chapter ID: 13
+
+    TOPIC: Arithmetic Operators
+    Topic ID: 121
+
+    TOPIC: Relational and Logical Operators
+    Topic ID: 122
+
+    TOPIC: Assignment Operators
+    Topic ID: 123
+
+    TOPIC: Increment and Decrement Operators
+    Topic ID: 124
+
+    TOPIC: Conditional Operator
+    Topic ID: 125
+
+    TOPIC: Bitwise and Comma Operators
+    Topic ID: 126
+
+    TOPIC: sizeof Operator
+    Topic ID: 127
+
+    TOPIC: Operators Used with Pointers and Structures
+    Topic ID: 128
+
+    TOPIC: Arithmetic Expressions
+    Topic ID: 129
+
+    TOPIC: Evaluation of Arithmetic Expressions in C
+    Topic ID: 130
+
+    TOPIC: Operator Precedence and Associativity
+    Topic ID: 131
+
+    TOPIC: Implicit and Explicit Type Conversion
+    Topic ID: 132
+
+  CHAPTER: Library Functions: Input, Output, Mathematics, Date and Time
+  Chapter Number: 4
+  Chapter ID: 14
+
+    TOPIC: Reading Characters from Keyboard
+    Topic ID: 133
+
+    TOPIC: Printing Characters on Screen
+    Topic ID: 134
+
+    TOPIC: Reading Strings from Keyboard
+    Topic ID: 135
+
+    TOPIC: Printing Strings on Screen
+    Topic ID: 136
+
+    TOPIC: Formatted Input and Output
+    Topic ID: 137
+
+    TOPIC: Time Functions: difftime, clock and time
+    Topic ID: 138
+
+    TOPIC: Mathematical Library Functions
+    Topic ID: 139
+
+    TOPIC: abs and fmod Functions
+    Topic ID: 140
+
+    TOPIC: remainder Function
+    Topic ID: 141
+
+    TOPIC: log and log2 Functions
+    Topic ID: 142
+
+    TOPIC: pow and sqrt Functions
+    Topic ID: 143
+
+    TOPIC: ceil and floor Functions
+    Topic ID: 144
+
+  CHAPTER: Decision Making and Branching
+  Chapter Number: 5
+  Chapter ID: 15
+
+    TOPIC: Decision Making in C
+    Topic ID: 145
+
+    TOPIC: if Statement
+    Topic ID: 146
+
+    TOPIC: Nested if Statement
+    Topic ID: 147
+
+    TOPIC: else-if Ladder
+    Topic ID: 148
+
+    TOPIC: switch Statement
+    Topic ID: 149
+
+    TOPIC: Conditional Operator Statement
+    Topic ID: 150
+
+    TOPIC: goto Statement
+    Topic ID: 151
+
+    TOPIC: Decision Making with Logical Operators
+    Topic ID: 152
+
+    TOPIC: Sample Programs on Branching
+    Topic ID: 153
+
+  CHAPTER: Decision Making and Looping
+  Chapter Number: 6
+  Chapter ID: 16
+
+    TOPIC: Introduction to Loops
+    Topic ID: 154
+
+    TOPIC: while Loop
+    Topic ID: 155
+
+    TOPIC: do-while Loop
+    Topic ID: 156
+
+    TOPIC: for Loop
+    Topic ID: 157
+
+    TOPIC: break Statement
+    Topic ID: 158
+
+    TOPIC: goto Statement in Loops
+    Topic ID: 159
+
+    TOPIC: continue Statement
+    Topic ID: 160
+
+    TOPIC: Sample Programs on Looping
+    Topic ID: 161
+
+  CHAPTER: Arrays and Character Arrays
+  Chapter Number: 7
+  Chapter ID: 17
+
+    TOPIC: Introduction to Arrays
+    Topic ID: 162
+
+    TOPIC: One-Dimensional Arrays
+    Topic ID: 163
+
+    TOPIC: Declaration and Initialization of One-Dimensional Arrays
+    Topic ID: 164
+
+    TOPIC: Two-Dimensional Arrays
+    Topic ID: 165
+
+    TOPIC: Declaration and Initialization of Two-Dimensional Arrays
+    Topic ID: 166
+
+    TOPIC: Multidimensional Arrays
+    Topic ID: 167
+
+    TOPIC: Sample Programs on Arrays
+    Topic ID: 168
+
+    TOPIC: Declaration and Initialization of Strings
+    Topic ID: 169
+
+    TOPIC: Arithmetic Operations on Characters
+    Topic ID: 170
+
+    TOPIC: strlen Function
+    Topic ID: 171
+
+    TOPIC: strcat Function
+    Topic ID: 172
+
+    TOPIC: strcpy Function
+    Topic ID: 173
+
+    TOPIC: strstr Function
+    Topic ID: 174
+
+    TOPIC: strcmp Function
+    Topic ID: 175
+
+  CHAPTER: Functions
+  Chapter Number: 8
+  Chapter ID: 18
+
+    TOPIC: Function Declaration
+    Topic ID: 176
+
+    TOPIC: Function Definition and Function Calls
+    Topic ID: 177
+
+    TOPIC: Functions Without Arguments and Return Values
+    Topic ID: 178
+
+    TOPIC: Functions with Arguments and Without Return Values
+    Topic ID: 179
+
+    TOPIC: Functions Without Arguments and with Return Values
+    Topic ID: 180
+
+    TOPIC: Functions with Arguments and Return Values
+    Topic ID: 181
+
+    TOPIC: Recursive Functions
+    Topic ID: 182
+
+    TOPIC: Passing Arrays to Functions
+    Topic ID: 183
+
+    TOPIC: Call by Value
+    Topic ID: 184
+
+    TOPIC: Call by Reference
+    Topic ID: 185
+
+    TOPIC: Scope and Lifetime of Variables
+    Topic ID: 186
+
+    TOPIC: Local and Global Variables
+    Topic ID: 187
+
+    TOPIC: Static and Register Variables
+    Topic ID: 188
+
+  CHAPTER: Structures and Unions
+  Chapter Number: 9
+  Chapter ID: 19
+
+    TOPIC: Structure Template
+    Topic ID: 189
+
+    TOPIC: Structure Variable Declaration and Initialization
+    Topic ID: 190
+
+    TOPIC: Structure Variable Assignment
+    Topic ID: 191
+
+    TOPIC: Accessing Structure Variables
+    Topic ID: 192
+
+    TOPIC: Arrays as Structure Members
+    Topic ID: 193
+
+    TOPIC: Arrays of Structures
+    Topic ID: 194
+
+    TOPIC: Passing Structure Members to Functions
+    Topic ID: 195
+
+    TOPIC: Unions
+    Topic ID: 196
+
+    TOPIC: Structures versus Unions
+    Topic ID: 197
+
+    TOPIC: Bit Fields
+    Topic ID: 198
+
+  CHAPTER: Pointers and Memory Management
+  Chapter Number: 10
+  Chapter ID: 20
+
+    TOPIC: Declaration and Initialization of Pointers
+    Topic ID: 199
+
+    TOPIC: Accessing Memory through Pointers
+    Topic ID: 200
+
+    TOPIC: Dynamic Memory Allocation
+    Topic ID: 201
+
+    TOPIC: malloc Function
+    Topic ID: 202
+
+    TOPIC: calloc Function
+    Topic ID: 203
+
+    TOPIC: free Function
+    Topic ID: 204
+
+    TOPIC: Accessing Dynamically Allocated Memory
+    Topic ID: 205
+
+    TOPIC: Pointers with Arrays
+    Topic ID: 206
+
+    TOPIC: Returning Multiple Values Using Pointers
+    Topic ID: 207
+
+    TOPIC: Linked List Implementation in C
+    Topic ID: 208
+
+  CHAPTER: File Management
+  Chapter Number: 11
+  Chapter ID: 21
+
+    TOPIC: Opening and Closing Files
+    Topic ID: 209
+
+    TOPIC: File Opening Modes: Read, Write and Append
+    Topic ID: 210
+
+    TOPIC: Input and Output Operations on Files
+    Topic ID: 211
+
+    TOPIC: fseek Function
+    Topic ID: 212
+
+    TOPIC: ftell Function
+    Topic ID: 213
+
+    TOPIC: rewind Function
+    Topic ID: 214
+
+  CHAPTER: Preprocessor Directives
+  Chapter Number: 12
+  Chapter ID: 22
+
+    TOPIC: Macro Substitution
+    Topic ID: 215
+
+    TOPIC: Importing Header Files
+    Topic ID: 216
+
+    TOPIC: Compiler Control Directives
+    Topic ID: 217
+
+SUBJECT: Electrical Network Analysis
+Subject Key: 43
+Subject ID: EE103
+Semester: 1
+
+  CHAPTER: AC Fundamentals and Circuits
+  Chapter Number: 1
+  Chapter ID: 50
+
+    TOPIC: Alternating Voltages and Currents
+    Topic ID: 675
+
+    TOPIC: Purely Resistive, Inductive and Capacitive Circuits
+    Topic ID: 676
+
+    TOPIC: R-L, R-C and R-L-C Series Circuits
+    Topic ID: 677
+
+    TOPIC: Impedance and Admittance
+    Topic ID: 678
+
+    TOPIC: Circuits in Parallel
+    Topic ID: 679
+
+    TOPIC: Series and Parallel Resonance
+    Topic ID: 680
+
+    TOPIC: Complex Algebra and Its Application to Circuit Analysis
+    Topic ID: 681
+
+    TOPIC: Circuit Transient
+    Topic ID: 682
+
+    TOPIC: Initial and Final Value Theorem
+    Topic ID: 683
+
+    TOPIC: DC and Induction Machines
+    Topic ID: 684
+
+    TOPIC: Electrical Measurements
+    Topic ID: 685
+
+    TOPIC: Power System
+    Topic ID: 686
+
+  CHAPTER: Polyphase Circuits and Transformers
+  Chapter Number: 2
+  Chapter ID: 51
+
+    TOPIC: Balanced Three Phase Systems
+    Topic ID: 687
+
+    TOPIC: Star and Mesh Connections
+    Topic ID: 688
+
+    TOPIC: Relation between Line and Phase Quantities
+    Topic ID: 689
+
+    TOPIC: Measurement of Power
+    Topic ID: 690
+
+    TOPIC: Principle and Construction of Transformer
+    Topic ID: 691
+
+    TOPIC: Transformer on No-Load and with Load
+    Topic ID: 692
+
+    TOPIC: Transformer Phasor Diagram under No-Load and Loaded Conditions
+    Topic ID: 693
+
+    TOPIC: Transformer Equivalent Circuit
+    Topic ID: 694
+
+    TOPIC: Open Circuit and Short Circuit Tests
+    Topic ID: 695
+
+    TOPIC: Transformer Efficiency
+    Topic ID: 696
+
+    TOPIC: Voltage Regulation
+    Topic ID: 697
+
+  CHAPTER: Network Concepts
+  Chapter Number: 3
+  Chapter ID: 52
+
+    TOPIC: Network Element Symbols and Conventions
+    Topic ID: 698
+
+    TOPIC: Active Element Conventions
+    Topic ID: 699
+
+    TOPIC: Current and Voltage Conventions
+    Topic ID: 700
+
+    TOPIC: Loops and Meshes
+    Topic ID: 701
+
+    TOPIC: Nodes
+    Topic ID: 702
+
+    TOPIC: Coupled Circuits and Dot Conventions
+    Topic ID: 703
+
+  CHAPTER: Mesh Current and Node Voltage Network Analysis
+  Chapter Number: 4
+  Chapter ID: 53
+
+    TOPIC: Kirchhoff's Voltage Law
+    Topic ID: 704
+
+    TOPIC: Kirchhoff's Current Law
+    Topic ID: 705
+
+    TOPIC: Mesh Current and Nodal Voltage
+    Topic ID: 706
+
+    TOPIC: Choice of Mesh Currents or Nodal Voltages
+    Topic ID: 707
+
+    TOPIC: Self and Mutual Inductances
+    Topic ID: 708
+
+    TOPIC: Mesh Equation in Impedance Matrix Form by Inspection
+    Topic ID: 709
+
+    TOPIC: Solution of Linear Mesh Equations
+    Topic ID: 710
+
+    TOPIC: Nodal Equations in Admittance Matrix Form by Inspection
+    Topic ID: 711
+
+    TOPIC: Solution of Linear Nodal Equations
+    Topic ID: 712
+
+  CHAPTER: Network Theorems and Graph
+  Chapter Number: 5
+  Chapter ID: 54
+
+    TOPIC: Linearity and Superposition
+    Topic ID: 713
+
+    TOPIC: Independent and Dependent Sources
+    Topic ID: 714
+
+    TOPIC: Source Transformations
+    Topic ID: 715
+
+    TOPIC: Thevenin Theorem
+    Topic ID: 716
+
+    TOPIC: Norton Theorem
+    Topic ID: 717
+
+    TOPIC: Reciprocity Theorem
+    Topic ID: 718
+
+    TOPIC: Maximum Power Transfer Theorem
+    Topic ID: 719
+
+    TOPIC: Applications of Network Theorems in Circuit Analysis
+    Topic ID: 720
+
+    TOPIC: Duality and Dual of a Planar Network
+    Topic ID: 721
+
+    TOPIC: Fundamental Concepts of Graphs
+    Topic ID: 722
+
+    TOPIC: Paths and Circuits Connections
+    Topic ID: 723
+
+    TOPIC: Tree of a Graph
+    Topic ID: 724
+
+    TOPIC: Cut Sets and Tie Sets
+    Topic ID: 725
+
+    TOPIC: Non-Separable Planar and Dual Graphs
+    Topic ID: 726
+
+    TOPIC: Matrices of Oriented Graphs
+    Topic ID: 727
+
+    TOPIC: Incidence, Tie Set and Cut Set Matrices
+    Topic ID: 728
+
+    TOPIC: Complete Analysis Using Tie Set and Cut Set Matrices
+    Topic ID: 729
+
+  CHAPTER: Wave Form Analysis by Fourier Series
+  Chapter Number: 6
+  Chapter ID: 55
+
+    TOPIC: Trigonometric Form of Fourier Series
+    Topic ID: 730
+
+    TOPIC: Complex Exponential Form of Fourier Series
+    Topic ID: 731
+
+    TOPIC: Frequency Spectra of Periodic Wave Forms
+    Topic ID: 732
+
+    TOPIC: Fourier Integral
+    Topic ID: 733
+
+    TOPIC: Continuous Frequency Spectra
+    Topic ID: 734
+
+    TOPIC: Fourier Transform
+    Topic ID: 735
+
+    TOPIC: Relationship between Fourier and Laplace Transforms
+    Topic ID: 736
+
+  CHAPTER: Network Functions and Two Port Parameters
+  Chapter Number: 7
+  Chapter ID: 56
+
+    TOPIC: Poles and Zeros of a Function
+    Topic ID: 737
+
+    TOPIC: Physical and Analytical Concepts
+    Topic ID: 738
+
+    TOPIC: Terminals and Terminal Pairs
+    Topic ID: 739
+
+    TOPIC: Driving Point Immittances
+    Topic ID: 740
+
+    TOPIC: Transfer Functions
+    Topic ID: 741
+
+    TOPIC: Impedance and Admittance Parameters
+    Topic ID: 742
+
+    TOPIC: Hybrid Parameters
+    Topic ID: 743
+
+    TOPIC: Transmission Line Parameters for Four-Terminal Networks
+    Topic ID: 744
+
+    TOPIC: Image Impedance
+    Topic ID: 745
+
+    TOPIC: Symmetrical and Unsymmetrical Pi, T and Ladder Networks
+    Topic ID: 746
+
+SUBJECT: English and Professional Communication
+Subject Key: 45
+Subject ID: HS110
+Semester: 1
+
+  [No chapters]
+
+SUBJECT: Fundamentals of Engineering Mathematic
+Subject Key: 47
+Subject ID: MA105
+Semester: 1
+
+  CHAPTER: Differential Calculus
+  Chapter Number: 1
+  Chapter ID: 40
+
+    TOPIC: Differentiation of Hyperbolic and Inverse Hyperbolic Functions
+    Topic ID: 485
+
+    TOPIC: Successive Differentiation
+    Topic ID: 486
+
+    TOPIC: Standard Forms
+    Topic ID: 487
+
+    TOPIC: Leibnitz Theorem and Applications
+    Topic ID: 488
+
+    TOPIC: Power Series
+    Topic ID: 489
+
+    TOPIC: Expansion of Functions
+    Topic ID: 490
+
+    TOPIC: Taylor and Maclaurin Series
+    Topic ID: 491
+
+    TOPIC: Curvature
+    Topic ID: 492
+
+    TOPIC: Radius of Curvature for Cartesian Curve with Application
+    Topic ID: 493
+
+  CHAPTER: Partial Differential Calculus
+  Chapter Number: 2
+  Chapter ID: 41
+
+    TOPIC: Partial Differentiation
+    Topic ID: 494
+
+    TOPIC: Euler Theorem for Homogeneous Function
+    Topic ID: 495
+
+    TOPIC: Modified Euler Theorem
+    Topic ID: 496
+
+    TOPIC: Taylor and Maclaurin Series for Two Variables
+    Topic ID: 497
+
+    TOPIC: Tangent Plane and Normal Line
+    Topic ID: 498
+
+    TOPIC: Error and Approximation
+    Topic ID: 499
+
+    TOPIC: Jacobians and Their Properties
+    Topic ID: 500
+
+    TOPIC: Extreme Values of Function of Two Variables
+    Topic ID: 501
+
+    TOPIC: Lagrange Method of Undetermined Multipliers
+    Topic ID: 502
+
+  CHAPTER: Curve Tracing
+  Chapter Number: 3
+  Chapter ID: 42
+
+    TOPIC: Cartesian Form of Standard Curves
+    Topic ID: 503
+
+    TOPIC: Polar Form of Standard Curves
+    Topic ID: 504
+
+    TOPIC: Parametric Form of Standard Curves
+    Topic ID: 505
+
+  CHAPTER: Ordinary Differential Equation
+  Chapter Number: 4
+  Chapter ID: 43
+
+    TOPIC: First-Order First-Degree Differential Equations
+    Topic ID: 506
+
+    TOPIC: Exact Differential Equations and Integrating Factors
+    Topic ID: 507
+
+    TOPIC: First-Order Higher-Degree ODEs
+    Topic ID: 508
+
+    TOPIC: Equations Solvable for p, y and x
+    Topic ID: 509
+
+    TOPIC: Higher-Order Homogeneous Equations
+    Topic ID: 510
+
+    TOPIC: Complementary Functions
+    Topic ID: 511
+
+    TOPIC: Particular Integrals
+    Topic ID: 512
+
+    TOPIC: Linear Differential Equations with Variable Coefficients
+    Topic ID: 513
+
+    TOPIC: Cauchy-Euler and Legendre Equations with Variable Coefficients
+    Topic ID: 514
+
+    TOPIC: Method of Variation of Parameters
+    Topic ID: 515
+
+  CHAPTER: Application of Differential Equation (Mathematical Modelling)
+  Chapter Number: 5
+  Chapter ID: 44
+
+    TOPIC: Mathematical Modelling of Real-World Problems
+    Topic ID: 516
+
+    TOPIC: Engineering System Models
+    Topic ID: 517
+
+    TOPIC: Electrical Network Models (LCR)
+    Topic ID: 518
+
+    TOPIC: Epidemic Spread Models (SI, SIS, SIR)
+    Topic ID: 519
+
+    TOPIC: Newton Law of Cooling
+    Topic ID: 520
+
+    TOPIC: Compartment Modelling
+    Topic ID: 521
+
+    TOPIC: Bending of Beam Models
+    Topic ID: 522
+
+SUBJECT: Innovation, Incubation and Entrepreneurship
+Subject Key: 49
+Subject ID: MG110
+Semester: 1
+
+  CHAPTER: Concepts of Entrepreneurship
+  Chapter Number: 1
+  Chapter ID: 211
+
+    TOPIC: Definitions, Traits, and Types of Entrepreneurship
+    Topic ID: 2584
+
+    TOPIC: Problems for Small Scale Enterprises and Industrial Sickness
+    Topic ID: 2585
+
+  CHAPTER: Functional Management Area in Entrepreneurship
+  Chapter Number: 2
+  Chapter ID: 212
+
+    TOPIC: Marketing, Operations, HR, and Financial Strategy for Startups
+    Topic ID: 2586
+
+  CHAPTER: Project Planning
+  Chapter Number: 3
+  Chapter ID: 213
+
+    TOPIC: Business Idea Search and Product Innovation
+    Topic ID: 2587
+
+    TOPIC: Feasibility Analysis and Business Plan Development
+    Topic ID: 2588
+
+  CHAPTER: Protection of Innovation Through IPR
+  Chapter Number: 4
+  Chapter ID: 214
+
+    TOPIC: Introduction to Patents, Trademarks, and Copyrights
+    Topic ID: 2589
+
+  CHAPTER: Innovation and Incubation
+  Chapter Number: 5
+  Chapter ID: 215
+
+    TOPIC: Green Technology and Grassroots Innovations
+    Topic ID: 2590
+
+    TOPIC: Technology Business Incubators (TBI) Process
+    Topic ID: 2591
+
+  CHAPTER: Sources of Information and Support for Entrepreneurship
+  Chapter Number: 6
+  Chapter ID: 216
+
+    TOPIC: State and Central Level Institutional Support Agencies
+    Topic ID: 2592
+
+SUBJECT: Data Structures
+Subject Key: 2
+Subject ID: CS102
+Semester: 2
+
+  CHAPTER: Introduction to Data Structures
+  Chapter Number: 1
+  Chapter ID: 23
+
+    TOPIC: Information and Meaning
+    Topic ID: 231
+
+    TOPIC: Abstract Data Types (ADTs)
+    Topic ID: 232
+
+    TOPIC: Internal Representation of Primitive Data Structures
+    Topic ID: 233
+
+    TOPIC: Arrays
+    Topic ID: 234
+
+    TOPIC: Strings
+    Topic ID: 235
+
+    TOPIC: Structures
+    Topic ID: 236
+
+    TOPIC: Pointers
+    Topic ID: 237
+
+  CHAPTER: Linear Lists
+  Chapter Number: 2
+  Chapter ID: 24
+
+    TOPIC: Sequential Representation of Linear Lists
+    Topic ID: 238
+
+    TOPIC: Linked Representation of Linear Lists
+    Topic ID: 239
+
+    TOPIC: Insertion, Deletion and Search in Sequential Lists
+    Topic ID: 240
+
+    TOPIC: Insertion, Deletion and Search in Linked Lists
+    Topic ID: 241
+
+    TOPIC: Doubly Linked Lists
+    Topic ID: 242
+
+    TOPIC: Circular Lists
+    Topic ID: 243
+
+    TOPIC: Lists in Standard Template Library (STL)
+    Topic ID: 244
+
+    TOPIC: Applications of Lists
+    Topic ID: 245
+
+  CHAPTER: Stacks
+  Chapter Number: 3
+  Chapter ID: 25
+
+    TOPIC: Sequential Implementation of Stacks
+    Topic ID: 246
+
+    TOPIC: Linked Implementation of Stacks
+    Topic ID: 247
+
+    TOPIC: Recursion
+    Topic ID: 248
+
+    TOPIC: Infix, Prefix and Postfix Expressions
+    Topic ID: 249
+
+    TOPIC: Expression Evaluation
+    Topic ID: 250
+
+    TOPIC: Parenthesis Matching
+    Topic ID: 251
+
+    TOPIC: Towers of Hanoi
+    Topic ID: 252
+
+    TOPIC: Wire Routing in a Circuit
+    Topic ID: 253
+
+    TOPIC: Finding a Path in a Maze
+    Topic ID: 254
+
+  CHAPTER: Queues
+  Chapter Number: 4
+  Chapter ID: 26
+
+    TOPIC: Queue Operations
+    Topic ID: 255
+
+    TOPIC: Circular Queue
+    Topic ID: 256
+
+    TOPIC: Priority Queue
+    Topic ID: 257
+
+    TOPIC: Deque (Double-Ended Queue)
+    Topic ID: 258
+
+    TOPIC: Applications of Queues
+    Topic ID: 259
+
+    TOPIC: Simulation of Time-Sharing Operating Systems
+    Topic ID: 260
+
+    TOPIC: Continuous Network Monitoring Systems
+    Topic ID: 261
+
+  CHAPTER: Sorting and Searching
+  Chapter Number: 5
+  Chapter ID: 27
+
+    TOPIC: Sorting Methods
+    Topic ID: 262
+
+    TOPIC: Bubble Sort
+    Topic ID: 263
+
+    TOPIC: Selection Sort
+    Topic ID: 264
+
+    TOPIC: Quick Sort
+    Topic ID: 265
+
+    TOPIC: Radix Sort
+    Topic ID: 266
+
+    TOPIC: Bucket Sort
+    Topic ID: 267
+
+    TOPIC: Dictionaries
+    Topic ID: 268
+
+    TOPIC: Hashing
+    Topic ID: 269
+
+    TOPIC: Collision Resolution Techniques
+    Topic ID: 270
+
+    TOPIC: Searching Methods
+    Topic ID: 271
+
+    TOPIC: Linear Search
+    Topic ID: 272
+
+    TOPIC: Binary Search
+    Topic ID: 273
+
+    TOPIC: Character Strings and String Operations
+    Topic ID: 274
+
+  CHAPTER: Trees
+  Chapter Number: 6
+  Chapter ID: 28
+
+    TOPIC: Binary Trees and Their Properties
+    Topic ID: 275
+
+    TOPIC: Tree Terminology
+    Topic ID: 276
+
+    TOPIC: Sequential Implementation of Trees
+    Topic ID: 277
+
+    TOPIC: Linked Implementation of Trees
+    Topic ID: 278
+
+    TOPIC: Tree Traversal Methods and Algorithms
+    Topic ID: 279
+
+    TOPIC: Complete Binary Trees
+    Topic ID: 280
+
+    TOPIC: General Trees
+    Topic ID: 281
+
+    TOPIC: AVL Trees
+    Topic ID: 282
+
+    TOPIC: Threaded Trees
+    Topic ID: 283
+
+    TOPIC: Arithmetic Expression Evaluation Using Trees
+    Topic ID: 284
+
+    TOPIC: Infix, Prefix and Postfix Conversion
+    Topic ID: 285
+
+    TOPIC: Heaps as Priority Queues
+    Topic ID: 286
+
+    TOPIC: Heap Implementation
+    Topic ID: 287
+
+    TOPIC: Heap Insertion and Deletion
+    Topic ID: 288
+
+    TOPIC: Heapsort
+    Topic ID: 289
+
+    TOPIC: Heaps in Huffman Coding
+    Topic ID: 290
+
+    TOPIC: Tournament Trees
+    Topic ID: 291
+
+    TOPIC: Bin Packing
+    Topic ID: 292
+
+  CHAPTER: Multiway Trees
+  Chapter Number: 7
+  Chapter ID: 29
+
+    TOPIC: Issues in Large Dictionaries
+    Topic ID: 293
+
+    TOPIC: M-Way Search Trees
+    Topic ID: 294
+
+    TOPIC: B-Trees
+    Topic ID: 295
+
+    TOPIC: B-Tree Search Operations
+    Topic ID: 296
+
+    TOPIC: B-Tree Insertion Operations
+    Topic ID: 297
+
+    TOPIC: B-Tree Deletion Operations
+    Topic ID: 298
+
+    TOPIC: Height of a B-Tree
+    Topic ID: 299
+
+    TOPIC: 2-3 Trees
+    Topic ID: 300
+
+    TOPIC: Sets and Multisets in STL
+    Topic ID: 301
+
+  CHAPTER: Graphs
+  Chapter Number: 8
+  Chapter ID: 30
+
+    TOPIC: Graph Definition and Terminology
+    Topic ID: 302
+
+    TOPIC: Directed and Undirected Graphs
+    Topic ID: 303
+
+    TOPIC: Graph Properties
+    Topic ID: 304
+
+    TOPIC: Connectivity in Graphs
+    Topic ID: 305
+
+    TOPIC: Applications of Graphs
+    Topic ID: 306
+
+    TOPIC: Adjacency Matrix
+    Topic ID: 307
+
+    TOPIC: Linked Adjacency Chains
+    Topic ID: 308
+
+    TOPIC: Graph Traversal
+    Topic ID: 309
+
+    TOPIC: Breadth-First Search (BFS)
+    Topic ID: 310
+
+    TOPIC: Depth-First Search (DFS)
+    Topic ID: 311
+
+    TOPIC: Spanning Trees
+    Topic ID: 312
+
+    TOPIC: Shortest Paths
+    Topic ID: 313
+
+    TOPIC: Transitive Closure
+    Topic ID: 314
+
+    TOPIC: Activity Networks
+    Topic ID: 315
+
+    TOPIC: Topological Sort
+    Topic ID: 316
+
+    TOPIC: Critical Paths
+    Topic ID: 317
+
+SUBJECT: Web Programming and Python
+Subject Key: 4
+Subject ID: CS104
+Semester: 2
+
+  CHAPTER: Introduction
+  Chapter Number: 1
+  Chapter ID: 31
+
+    TOPIC: Basics of Internet
+    Topic ID: 358
+
+    TOPIC: World Wide Web (WWW)
+    Topic ID: 359
+
+    TOPIC: HTTP Protocol
+    Topic ID: 360
+
+    TOPIC: Uniform Resource Locator (URL)
+    Topic ID: 361
+
+    TOPIC: Web Server
+    Topic ID: 362
+
+    TOPIC: Different Types of Web Servers
+    Topic ID: 363
+
+    TOPIC: Domain Name Server (DNS)
+    Topic ID: 364
+
+    TOPIC: Web Server Configuration
+    Topic ID: 365
+
+    TOPIC: Internet Browser
+    Topic ID: 366
+
+    TOPIC: Web Documents and Mark-Up Languages
+    Topic ID: 367
+
+    TOPIC: Hypertext Mark-Up Language (HTML)
+    Topic ID: 368
+
+    TOPIC: Hypermedia
+    Topic ID: 369
+
+    TOPIC: Website Organization
+    Topic ID: 370
+
+    TOPIC: Content Organization
+    Topic ID: 371
+
+    TOPIC: Web Servers on Different Operating Systems
+    Topic ID: 372
+
+    TOPIC: Web Applications
+    Topic ID: 373
+
+    TOPIC: Web Interface
+    Topic ID: 374
+
+    TOPIC: Web Standards and Accessible Design
+    Topic ID: 375
+
+  CHAPTER: Static and Dynamic Web Pages, Style Sheets and Web Publishing
+  Chapter Number: 2
+  Chapter ID: 32
+
+    TOPIC: Web Pages and Static Web Pages
+    Topic ID: 376
+
+    TOPIC: HTML Tags
+    Topic ID: 377
+
+    TOPIC: Font Styles, Types, Sizes and Colours
+    Topic ID: 378
+
+    TOPIC: HTML Tables, Lists, Images, Graphics and Menus
+    Topic ID: 379
+
+    TOPIC: HTML Forms and Input Text Boxes
+    Topic ID: 380
+
+    TOPIC: Drop-Down Menus
+    Topic ID: 381
+
+    TOPIC: Name Variables
+    Topic ID: 382
+
+    TOPIC: Cookie Management
+    Topic ID: 383
+
+    TOPIC: Session Management
+    Topic ID: 384
+
+    TOPIC: Animation
+    Topic ID: 385
+
+    TOPIC: Structuring Web Pages
+    Topic ID: 386
+
+    TOPIC: Image Mapping and Links
+    Topic ID: 387
+
+    TOPIC: Frames and Web Page Structuring Using Frames
+    Topic ID: 388
+
+    TOPIC: Multimedia Handling
+    Topic ID: 389
+
+    TOPIC: Linking Web Pages
+    Topic ID: 390
+
+    TOPIC: Dynamic Web Pages and Scripting
+    Topic ID: 391
+
+    TOPIC: Scripting Languages
+    Topic ID: 392
+
+    TOPIC: Dynamic Pages and Form Validation
+    Topic ID: 393
+
+    TOPIC: Validation of Input Text Boxes
+    Topic ID: 394
+
+    TOPIC: Accessing Name-Value Pairs
+    Topic ID: 395
+
+    TOPIC: Cookie Management Through Scripting
+    Topic ID: 396
+
+    TOPIC: Session Management Through Scripting
+    Topic ID: 397
+
+    TOPIC: Animation Through Scripting
+    Topic ID: 398
+
+    TOPIC: Dynamic Image Mapping Through Scripting
+    Topic ID: 399
+
+    TOPIC: Link Handling Through Scripting
+    Topic ID: 400
+
+    TOPIC: Multimedia Handling Through Scripting
+    Topic ID: 401
+
+    TOPIC: Web Page Designing Using Style Sheets
+    Topic ID: 402
+
+    TOPIC: Different Types of Style Sheets
+    Topic ID: 403
+
+    TOPIC: Defining Different Styles
+    Topic ID: 404
+
+    TOPIC: Importing and Exporting Style Sheets
+    Topic ID: 405
+
+    TOPIC: Cascading Style Sheets (CSS)
+    Topic ID: 406
+
+    TOPIC: Web Hosting and Publishing
+    Topic ID: 407
+
+    TOPIC: Steps of Web Hosting and Publishing
+    Topic ID: 408
+
+    TOPIC: Document Interchange Standards
+    Topic ID: 409
+
+    TOPIC: Website Evaluation
+    Topic ID: 410
+
+    TOPIC: Components of Web Publishing
+    Topic ID: 411
+
+    TOPIC: Document Management
+    Topic ID: 412
+
+    TOPIC: Search Engines
+    Topic ID: 413
+
+    TOPIC: Website Registration on Search Engines
+    Topic ID: 414
+
+    TOPIC: Publishing Tools
+    Topic ID: 415
+
+  CHAPTER: Python Programming
+  Chapter Number: 3
+  Chapter ID: 33
+
+    TOPIC: Variables, Keywords and Expressions in Python
+    Topic ID: 416
+
+    TOPIC: Python Data Types
+    Topic ID: 417
+
+    TOPIC: Operators and Operands
+    Topic ID: 418
+
+    TOPIC: Assignments and Order of Operations
+    Topic ID: 419
+
+    TOPIC: Controlling Statements
+    Topic ID: 420
+
+    TOPIC: Branching and Loops
+    Topic ID: 421
+
+    TOPIC: Functions and Definitions
+    Topic ID: 422
+
+    TOPIC: Function Arguments and Return Values
+    Topic ID: 423
+
+    TOPIC: Variable Scope
+    Topic ID: 424
+
+    TOPIC: Recursive Functions
+    Topic ID: 425
+
+    TOPIC: Modules and Import
+    Topic ID: 426
+
+    TOPIC: Strings, Tuples and Lists
+    Topic ID: 427
+
+    TOPIC: Exception Handling Using try/except
+    Topic ID: 428
+
+    TOPIC: Standard Exceptions
+    Topic ID: 429
+
+    TOPIC: Exceptions as Control Flow Mechanisms
+    Topic ID: 430
+
+    TOPIC: Object-Oriented Programming in Python
+    Topic ID: 431
+
+    TOPIC: Classes and Abstract Data Types
+    Topic ID: 432
+
+    TOPIC: Inheritance
+    Topic ID: 433
+
+    TOPIC: Encapsulation
+    Topic ID: 434
+
+    TOPIC: Debugging Python Programs
+    Topic ID: 435
+
+    TOPIC: Syntax, Runtime and Semantic Errors
+    Topic ID: 436
+
+    TOPIC: Test Cases
+    Topic ID: 437
+
+    TOPIC: Reading Files and Iterating Over Lines
+    Topic ID: 438
+
+    TOPIC: Finding Files in the File System
+    Topic ID: 439
+
+    TOPIC: Writing Data to Files
+    Topic ID: 440
+
+    TOPIC: CSV Format
+    Topic ID: 441
+
+    TOPIC: Reading and Writing CSV Files
+    Topic ID: 442
+
+    TOPIC: Dictionaries and Dictionary Operations
+    Topic ID: 443
+
+    TOPIC: Aliasing and Copying Dictionaries
+    Topic ID: 444
+
+    TOPIC: Dictionary Accumulation
+    Topic ID: 445
+
+    TOPIC: Modules and Packages
+    Topic ID: 446
+
+SUBJECT: Digital Electronics and Logic Design
+Subject Key: 42
+Subject ID: EC106
+Semester: 2
+
+  CHAPTER: PN Diode and Transistor
+  Chapter Number: 1
+  Chapter ID: 68
+
+    TOPIC: PN Diode Theory
+    Topic ID: 1117
+
+    TOPIC: PN Characteristics and Breakdown Region
+    Topic ID: 1118
+
+    TOPIC: PN Diode as Rectifier
+    Topic ID: 1119
+
+    TOPIC: Zener Diode Theory
+    Topic ID: 1120
+
+    TOPIC: Zener Voltage Regulator
+    Topic ID: 1121
+
+    TOPIC: Diode as Clamper and Clipper
+    Topic ID: 1122
+
+    TOPIC: Photodiode Theory
+    Topic ID: 1123
+
+    TOPIC: LED Theory
+    Topic ID: 1124
+
+    TOPIC: 7-Segment LED and Multicolour LED
+    Topic ID: 1125
+
+    TOPIC: LASER Diode Theory and Applications
+    Topic ID: 1126
+
+    TOPIC: Bipolar Junction Transistor Theory
+    Topic ID: 1127
+
+    TOPIC: Transistor Symbols and Terminals
+    Topic ID: 1128
+
+    TOPIC: Common Collector, Emitter and Base Configurations
+    Topic ID: 1129
+
+    TOPIC: Transistor Biasing Techniques
+    Topic ID: 1130
+
+    TOPIC: Transistor Amplifier
+    Topic ID: 1131
+
+    TOPIC: Introduction to FET Transistor
+    Topic ID: 1132
+
+  CHAPTER: Waveshaping Circuits and Operational Amplifier
+  Chapter Number: 2
+  Chapter ID: 69
+
+    TOPIC: Linear Wave Shaping Circuits
+    Topic ID: 1133
+
+    TOPIC: RC High-Pass and Low-Pass Circuits
+    Topic ID: 1134
+
+    TOPIC: RC Integrator and Differentiator Circuits
+    Topic ID: 1135
+
+    TOPIC: Nonlinear Wave Shaping Circuits
+    Topic ID: 1136
+
+    TOPIC: Two-Level Diode Clipper Circuits
+    Topic ID: 1137
+
+    TOPIC: Clamping Circuits
+    Topic ID: 1138
+
+    TOPIC: Operational Amplifier Block Diagram and Symbol
+    Topic ID: 1139
+
+    TOPIC: 741 Op-Amp Package, Pinouts and Specifications
+    Topic ID: 1140
+
+    TOPIC: Inverting and Non-Inverting Amplifiers
+    Topic ID: 1141
+
+    TOPIC: Voltage Follower Circuit
+    Topic ID: 1142
+
+    TOPIC: Multistage Op-Amp Circuit
+    Topic ID: 1143
+
+    TOPIC: Op-Amp Averaging Amplifier
+    Topic ID: 1144
+
+    TOPIC: Op-Amp Subtractor
+    Topic ID: 1145
+
+  CHAPTER: Boolean Algebra and Switching Functions
+  Chapter Number: 3
+  Chapter ID: 70
+
+    TOPIC: Basic Logic Operations and Logic Gates
+    Topic ID: 1146
+
+    TOPIC: Truth Tables
+    Topic ID: 1147
+
+    TOPIC: Postulates and Theorems of Boolean Algebra
+    Topic ID: 1148
+
+    TOPIC: SOP and POS Forms
+    Topic ID: 1149
+
+    TOPIC: K-Map Simplification
+    Topic ID: 1150
+
+    TOPIC: Quine-McCluskey Tabular Method
+    Topic ID: 1151
+
+    TOPIC: Synthesis of Combinational Logic Circuits
+    Topic ID: 1152
+
+  CHAPTER: Combinational Logic Circuit Using MSI Integrated Circuits
+  Chapter Number: 4
+  Chapter ID: 71
+
+    TOPIC: Binary Parallel Adder and BCD Adder
+    Topic ID: 1153
+
+    TOPIC: Encoder and Priority Encoder
+    Topic ID: 1154
+
+    TOPIC: Decoder
+    Topic ID: 1155
+
+    TOPIC: Multiplexer and Demultiplexer
+    Topic ID: 1156
+
+    TOPIC: Boolean Functions Using Decoders and Multiplexers
+    Topic ID: 1157
+
+    TOPIC: Arithmetic and Logic Unit
+    Topic ID: 1158
+
+    TOPIC: BCD-to-7-Segment Decoder and Displays
+    Topic ID: 1159
+
+    TOPIC: RAM, ROM and EPROM
+    Topic ID: 1160
+
+    TOPIC: PLA and PAL
+    Topic ID: 1161
+
+  CHAPTER: Introduction to Sequential Logic Circuits
+  Chapter Number: 5
+  Chapter ID: 72
+
+    TOPIC: Basic Concepts of Sequential Circuits
+    Topic ID: 1162
+
+    TOPIC: SR Flip-Flop Using NAND or NOR Gates
+    Topic ID: 1163
+
+    TOPIC: JK Flip-Flop Race Condition
+    Topic ID: 1164
+
+    TOPIC: Clocked Flip-Flops
+    Topic ID: 1165
+
+    TOPIC: D-Type and Toggle Flip-Flops
+    Topic ID: 1166
+
+    TOPIC: Truth Tables and Excitation Tables for Flip-Flops
+    Topic ID: 1167
+
+    TOPIC: Master-Slave Configuration
+    Topic ID: 1168
+
+    TOPIC: Edge-Triggered and Level-Triggered Flip-Flops
+    Topic ID: 1169
+
+    TOPIC: Elimination of Switch Bounce Using Flip-Flops
+    Topic ID: 1170
+
+    TOPIC: Flip-Flops with Preset and Clear
+    Topic ID: 1171
+
+  CHAPTER: Sequential Logic Circuit Design
+  Chapter Number: 6
+  Chapter ID: 73
+
+    TOPIC: Basic Concepts of Counters and Registers
+    Topic ID: 1172
+
+    TOPIC: Binary Counters
+    Topic ID: 1173
+
+    TOPIC: BCD Counters
+    Topic ID: 1174
+
+    TOPIC: Up-Down Counter
+    Topic ID: 1175
+
+    TOPIC: Johnson Counter
+    Topic ID: 1176
+
+    TOPIC: Modulo-N Counter
+    Topic ID: 1177
+
+    TOPIC: Counter Design Using State Diagrams and Tables
+    Topic ID: 1178
+
+    TOPIC: Sequence Generators
+    Topic ID: 1179
+
+    TOPIC: Shift-Left and Shift-Right Registers
+    Topic ID: 1180
+
+    TOPIC: Registers with Parallel Load
+    Topic ID: 1181
+
+    TOPIC: SIPO and PISO Registers
+    Topic ID: 1182
+
+    TOPIC: Registers Using Different Types of Flip-Flops
+    Topic ID: 1183
+
+  CHAPTER: Register Transfer Logic
+  Chapter Number: 7
+  Chapter ID: 74
+
+    TOPIC: Arithmetic, Logic and Shift Micro-Operations
+    Topic ID: 1184
+
+    TOPIC: Conditional Control Statements
+    Topic ID: 1185
+
+    TOPIC: Fixed-Point and Floating-Point Data
+    Topic ID: 1186
+
+    TOPIC: Arithmetic Shifts
+    Topic ID: 1187
+
+    TOPIC: Instruction Code and Design of a Simple Computer
+    Topic ID: 1188
+
+  CHAPTER: Processor Logic Design
+  Chapter Number: 8
+  Chapter ID: 75
+
+    TOPIC: Processor Organization
+    Topic ID: 1189
+
+    TOPIC: Design of Arithmetic Logic Unit
+    Topic ID: 1190
+
+    TOPIC: Design of Accumulator
+    Topic ID: 1191
+
+  CHAPTER: Control Logic Design
+  Chapter Number: 9
+  Chapter ID: 76
+
+    TOPIC: Control Organization
+    Topic ID: 1192
+
+    TOPIC: Hard-Wired Control
+    Topic ID: 1193
+
+    TOPIC: Microprogrammed Control
+    Topic ID: 1194
+
+    TOPIC: Control of Processor Unit
+    Topic ID: 1195
+
+    TOPIC: PLA Control
+    Topic ID: 1196
+
+SUBJECT: Energy and Environmental Engineering
+Subject Key: 44
+Subject ID: EG110
+Semester: 2
+
+  CHAPTER: Environment and Ecosystems
+  Chapter Number: 1
+  Chapter ID: 77
+
+    TOPIC: Concept, Structure and Functions of Ecosystems
+    Topic ID: 1244
+
+    TOPIC: Producers, Consumers and Decomposers
+    Topic ID: 1245
+
+    TOPIC: Food Chains, Food Webs and Ecological Pyramids
+    Topic ID: 1246
+
+    TOPIC: Energy Flow in Ecosystems
+    Topic ID: 1247
+
+    TOPIC: Biogeochemical Cycles and Hydrologic Cycle
+    Topic ID: 1248
+
+    TOPIC: Components of Environment and Their Relationships
+    Topic ID: 1249
+
+    TOPIC: Impact of Technology on Environment
+    Topic ID: 1250
+
+    TOPIC: Environmental Degradation
+    Topic ID: 1251
+
+    TOPIC: Urban Water Supply, Sewerage and Solid Waste Management
+    Topic ID: 1252
+
+    TOPIC: Closed-Loop Cycle and Sustainability
+    Topic ID: 1253
+
+  CHAPTER: Environmental Pollution
+  Chapter Number: 2
+  Chapter ID: 78
+
+    TOPIC: Water Pollution: Sources, Effects and Control
+    Topic ID: 1254
+
+    TOPIC: Air Pollution: Sources, Effects and Control
+    Topic ID: 1255
+
+    TOPIC: Soil Pollution: Sources, Effects and Control
+    Topic ID: 1256
+
+    TOPIC: Noise Pollution: Sources, Effects and Control
+    Topic ID: 1257
+
+    TOPIC: Thermal and Radioactive Pollution
+    Topic ID: 1258
+
+    TOPIC: Marine Pollution
+    Topic ID: 1259
+
+    TOPIC: Centralized and Decentralized Treatment Systems
+    Topic ID: 1260
+
+    TOPIC: Drinking Water Quality and Standards
+    Topic ID: 1261
+
+    TOPIC: Ambient Air and Noise Standards
+    Topic ID: 1262
+
+  CHAPTER: Global Environmental Issues and Its Management
+  Chapter Number: 3
+  Chapter ID: 79
+
+    TOPIC: Engineering Aspects of Climate Change
+    Topic ID: 1263
+
+    TOPIC: Carbon Credits
+    Topic ID: 1264
+
+    TOPIC: CO2 Sequestration
+    Topic ID: 1265
+
+    TOPIC: Environmental Impact Assessment
+    Topic ID: 1266
+
+    TOPIC: Environmental Audit
+    Topic ID: 1267
+
+    TOPIC: Life Cycle Assessment
+    Topic ID: 1268
+
+  CHAPTER: Basics of Energy and Its Conservation
+  Chapter Number: 4
+  Chapter ID: 80
+
+    TOPIC: Classification of Energy Sources
+    Topic ID: 1269
+
+    TOPIC: Global and National Energy Scenario
+    Topic ID: 1270
+
+    TOPIC: Fossil and Alternate Fuels
+    Topic ID: 1271
+
+    TOPIC: Characterization of Fuels
+    Topic ID: 1272
+
+    TOPIC: Energy Conservation and Management
+    Topic ID: 1273
+
+    TOPIC: Energy Conservation Act
+    Topic ID: 1274
+
+    TOPIC: Company Energy Policy
+    Topic ID: 1275
+
+    TOPIC: Energy Standards and Labelling
+    Topic ID: 1276
+
+    TOPIC: Energy Building Codes
+    Topic ID: 1277
+
+  CHAPTER: Introduction to Energy Conservation Systems
+  Chapter Number: 5
+  Chapter ID: 81
+
+    TOPIC: Energy Conversion Systems: Working Principles and Components
+    Topic ID: 1278
+
+    TOPIC: Power Plants
+    Topic ID: 1279
+
+    TOPIC: Pumps
+    Topic ID: 1280
+
+    TOPIC: Refrigerators and Air Conditioners
+    Topic ID: 1281
+
+    TOPIC: Internal Combustion Engines
+    Topic ID: 1282
+
+    TOPIC: Solar Photovoltaic Cells
+    Topic ID: 1283
+
+    TOPIC: Solar Water Heating Systems
+    Topic ID: 1284
+
+    TOPIC: Biogas Plants
+    Topic ID: 1285
+
+    TOPIC: Wind Turbines
+    Topic ID: 1286
+
+    TOPIC: Fuel Cells
+    Topic ID: 1287
+
+SUBJECT: Indian Value System and Social Consciousness
+Subject Key: 46
+Subject ID: HS120
+Semester: 2
+
+  CHAPTER: Human Values and Consciousness
+  Chapter Number: 1
+  Chapter ID: 64
+
+    TOPIC: Definition and Classification of Values
+    Topic ID: 802
+
+    TOPIC: Hierarchy and Choice of Values
+    Topic ID: 803
+
+    TOPIC: Self-Exploration
+    Topic ID: 804
+
+    TOPIC: Basic Human Aspirations
+    Topic ID: 805
+
+    TOPIC: Right Understanding, Relationship and Physical Facility
+    Topic ID: 806
+
+    TOPIC: Fulfilment of Aspirations
+    Topic ID: 807
+
+    TOPIC: Happiness and Prosperity
+    Topic ID: 808
+
+    TOPIC: Harmony at Various Levels
+    Topic ID: 809
+
+    TOPIC: Concept and Levels of Consciousness
+    Topic ID: 810
+
+    TOPIC: Can We Build a Conscious Machine?
+    Topic ID: 811
+
+    TOPIC: Mind, Matter and Beyond
+    Topic ID: 812
+
+    TOPIC: Holistic Lifestyle and Dealing with Anxiety
+    Topic ID: 813
+
+    TOPIC: Connecting Mind to Brain
+    Topic ID: 814
+
+    TOPIC: Minds, Brains and Programs
+    Topic ID: 815
+
+    TOPIC: Definition and Classification of Values
+    Topic ID: 865
+
+    TOPIC: Hierarchy and Choice of Values
+    Topic ID: 866
+
+    TOPIC: Self-Exploration
+    Topic ID: 867
+
+    TOPIC: Basic Human Aspirations
+    Topic ID: 868
+
+    TOPIC: Right Understanding, Relationship and Physical Facility
+    Topic ID: 869
+
+    TOPIC: Fulfilment of Aspirations
+    Topic ID: 870
+
+    TOPIC: Happiness and Prosperity
+    Topic ID: 871
+
+    TOPIC: Harmony at Various Levels
+    Topic ID: 872
+
+    TOPIC: Concept and Levels of Consciousness
+    Topic ID: 873
+
+    TOPIC: Can We Build a Conscious Machine?
+    Topic ID: 874
+
+    TOPIC: Mind, Matter and Beyond
+    Topic ID: 875
+
+    TOPIC: Holistic Lifestyle and Dealing with Anxiety
+    Topic ID: 876
+
+    TOPIC: Connecting Mind to Brain
+    Topic ID: 877
+
+    TOPIC: Minds, Brains and Programs
+    Topic ID: 878
+
+    TOPIC: Definition and Classification of Values
+    Topic ID: 928
+
+    TOPIC: Hierarchy and Choice of Values
+    Topic ID: 929
+
+    TOPIC: Self-Exploration
+    Topic ID: 930
+
+    TOPIC: Basic Human Aspirations
+    Topic ID: 931
+
+    TOPIC: Right Understanding, Relationship and Physical Facility
+    Topic ID: 932
+
+    TOPIC: Fulfilment of Aspirations
+    Topic ID: 933
+
+    TOPIC: Happiness and Prosperity
+    Topic ID: 934
+
+    TOPIC: Harmony at Various Levels
+    Topic ID: 935
+
+    TOPIC: Concept and Levels of Consciousness
+    Topic ID: 936
+
+    TOPIC: Can We Build a Conscious Machine?
+    Topic ID: 937
+
+    TOPIC: Mind, Matter and Beyond
+    Topic ID: 938
+
+    TOPIC: Holistic Lifestyle and Dealing with Anxiety
+    Topic ID: 939
+
+    TOPIC: Connecting Mind to Brain
+    Topic ID: 940
+
+    TOPIC: Minds, Brains and Programs
+    Topic ID: 941
+
+    TOPIC: Definition and Classification of Values
+    Topic ID: 991
+
+    TOPIC: Hierarchy and Choice of Values
+    Topic ID: 992
+
+    TOPIC: Self-Exploration
+    Topic ID: 993
+
+    TOPIC: Basic Human Aspirations
+    Topic ID: 994
+
+    TOPIC: Right Understanding, Relationship and Physical Facility
+    Topic ID: 995
+
+    TOPIC: Fulfilment of Aspirations
+    Topic ID: 996
+
+    TOPIC: Happiness and Prosperity
+    Topic ID: 997
+
+    TOPIC: Harmony at Various Levels
+    Topic ID: 998
+
+    TOPIC: Concept and Levels of Consciousness
+    Topic ID: 999
+
+    TOPIC: Can We Build a Conscious Machine?
+    Topic ID: 1000
+
+    TOPIC: Mind, Matter and Beyond
+    Topic ID: 1001
+
+    TOPIC: Holistic Lifestyle and Dealing with Anxiety
+    Topic ID: 1002
+
+    TOPIC: Connecting Mind to Brain
+    Topic ID: 1003
+
+    TOPIC: Minds, Brains and Programs
+    Topic ID: 1004
+
+    TOPIC: Definition and Classification of Values
+    Topic ID: 1054
+
+    TOPIC: Hierarchy and Choice of Values
+    Topic ID: 1055
+
+    TOPIC: Self-Exploration
+    Topic ID: 1056
+
+    TOPIC: Basic Human Aspirations
+    Topic ID: 1057
+
+    TOPIC: Right Understanding, Relationship and Physical Facility
+    Topic ID: 1058
+
+    TOPIC: Fulfilment of Aspirations
+    Topic ID: 1059
+
+    TOPIC: Happiness and Prosperity
+    Topic ID: 1060
+
+    TOPIC: Harmony at Various Levels
+    Topic ID: 1061
+
+    TOPIC: Concept and Levels of Consciousness
+    Topic ID: 1062
+
+    TOPIC: Can We Build a Conscious Machine?
+    Topic ID: 1063
+
+    TOPIC: Mind, Matter and Beyond
+    Topic ID: 1064
+
+    TOPIC: Holistic Lifestyle and Dealing with Anxiety
+    Topic ID: 1065
+
+    TOPIC: Connecting Mind to Brain
+    Topic ID: 1066
+
+    TOPIC: Minds, Brains and Programs
+    Topic ID: 1067
+
+  CHAPTER: Indian Culture and Heritage
+  Chapter Number: 2
+  Chapter ID: 65
+
+    TOPIC: Culture and Its Salient Features
+    Topic ID: 816
+
+    TOPIC: Vedic-Upanishadic Culture and Society
+    Topic ID: 817
+
+    TOPIC: Human Aspirations in Vedic-Upanishadic Society
+    Topic ID: 818
+
+    TOPIC: Culture in Ramayana and Mahabharata
+    Topic ID: 819
+
+    TOPIC: Ideal Man and Woman in the Epics
+    Topic ID: 820
+
+    TOPIC: Maitri, Karuna, Seela, Vinaya, Kshama, Santi and Anuraga
+    Topic ID: 821
+
+    TOPIC: Jainism: Soul, Karma and Liberation
+    Topic ID: 822
+
+    TOPIC: Buddhism as a Humanistic Culture
+    Topic ID: 823
+
+    TOPIC: Four Noble Truths of Buddhism
+    Topic ID: 824
+
+    TOPIC: Vedanta and Indian Culture
+    Topic ID: 825
+
+    TOPIC: Culture and Its Salient Features
+    Topic ID: 879
+
+    TOPIC: Vedic-Upanishadic Culture and Society
+    Topic ID: 880
+
+    TOPIC: Human Aspirations in Vedic-Upanishadic Society
+    Topic ID: 881
+
+    TOPIC: Culture in Ramayana and Mahabharata
+    Topic ID: 882
+
+    TOPIC: Ideal Man and Woman in the Epics
+    Topic ID: 883
+
+    TOPIC: Maitri, Karuna, Seela, Vinaya, Kshama, Santi and Anuraga
+    Topic ID: 884
+
+    TOPIC: Jainism: Soul, Karma and Liberation
+    Topic ID: 885
+
+    TOPIC: Buddhism as a Humanistic Culture
+    Topic ID: 886
+
+    TOPIC: Four Noble Truths of Buddhism
+    Topic ID: 887
+
+    TOPIC: Vedanta and Indian Culture
+    Topic ID: 888
+
+    TOPIC: Culture and Its Salient Features
+    Topic ID: 942
+
+    TOPIC: Vedic-Upanishadic Culture and Society
+    Topic ID: 943
+
+    TOPIC: Human Aspirations in Vedic-Upanishadic Society
+    Topic ID: 944
+
+    TOPIC: Culture in Ramayana and Mahabharata
+    Topic ID: 945
+
+    TOPIC: Ideal Man and Woman in the Epics
+    Topic ID: 946
+
+    TOPIC: Maitri, Karuna, Seela, Vinaya, Kshama, Santi and Anuraga
+    Topic ID: 947
+
+    TOPIC: Jainism: Soul, Karma and Liberation
+    Topic ID: 948
+
+    TOPIC: Buddhism as a Humanistic Culture
+    Topic ID: 949
+
+    TOPIC: Four Noble Truths of Buddhism
+    Topic ID: 950
+
+    TOPIC: Vedanta and Indian Culture
+    Topic ID: 951
+
+    TOPIC: Culture and Its Salient Features
+    Topic ID: 1005
+
+    TOPIC: Vedic-Upanishadic Culture and Society
+    Topic ID: 1006
+
+    TOPIC: Human Aspirations in Vedic-Upanishadic Society
+    Topic ID: 1007
+
+    TOPIC: Culture in Ramayana and Mahabharata
+    Topic ID: 1008
+
+    TOPIC: Ideal Man and Woman in the Epics
+    Topic ID: 1009
+
+    TOPIC: Maitri, Karuna, Seela, Vinaya, Kshama, Santi and Anuraga
+    Topic ID: 1010
+
+    TOPIC: Jainism: Soul, Karma and Liberation
+    Topic ID: 1011
+
+    TOPIC: Buddhism as a Humanistic Culture
+    Topic ID: 1012
+
+    TOPIC: Four Noble Truths of Buddhism
+    Topic ID: 1013
+
+    TOPIC: Vedanta and Indian Culture
+    Topic ID: 1014
+
+    TOPIC: Culture and Its Salient Features
+    Topic ID: 1068
+
+    TOPIC: Vedic-Upanishadic Culture and Society
+    Topic ID: 1069
+
+    TOPIC: Human Aspirations in Vedic-Upanishadic Society
+    Topic ID: 1070
+
+    TOPIC: Culture in Ramayana and Mahabharata
+    Topic ID: 1071
+
+    TOPIC: Ideal Man and Woman in the Epics
+    Topic ID: 1072
+
+    TOPIC: Maitri, Karuna, Seela, Vinaya, Kshama, Santi and Anuraga
+    Topic ID: 1073
+
+    TOPIC: Jainism: Soul, Karma and Liberation
+    Topic ID: 1074
+
+    TOPIC: Buddhism as a Humanistic Culture
+    Topic ID: 1075
+
+    TOPIC: Four Noble Truths of Buddhism
+    Topic ID: 1076
+
+    TOPIC: Vedanta and Indian Culture
+    Topic ID: 1077
+
+  CHAPTER: Indian Knowledge System
+  Chapter Number: 3
+  Chapter ID: 66
+
+    TOPIC: Indian Knowledge as a Unique System
+    Topic ID: 826
+
+    TOPIC: Place of Indian Knowledge in Human Evolution
+    Topic ID: 827
+
+    TOPIC: Relevance of Indian Knowledge Today and in the Future
+    Topic ID: 828
+
+    TOPIC: Nature of Indian Knowledge
+    Topic ID: 829
+
+    TOPIC: Types of Knowledge: Para and Apara
+    Topic ID: 830
+
+    TOPIC: Scientific and Unscientific Knowledge
+    Topic ID: 831
+
+    TOPIC: Instruments for Gaining and Verifying Knowledge
+    Topic ID: 832
+
+    TOPIC: Knowledge Traditions, Lineages, Debate, Epistemology and Pedagogy
+    Topic ID: 833
+
+    TOPIC: Indian Knowledge as a Unique System
+    Topic ID: 889
+
+    TOPIC: Place of Indian Knowledge in Human Evolution
+    Topic ID: 890
+
+    TOPIC: Relevance of Indian Knowledge Today and in the Future
+    Topic ID: 891
+
+    TOPIC: Nature of Indian Knowledge
+    Topic ID: 892
+
+    TOPIC: Types of Knowledge: Para and Apara
+    Topic ID: 893
+
+    TOPIC: Scientific and Unscientific Knowledge
+    Topic ID: 894
+
+    TOPIC: Instruments for Gaining and Verifying Knowledge
+    Topic ID: 895
+
+    TOPIC: Knowledge Traditions, Lineages, Debate, Epistemology and Pedagogy
+    Topic ID: 896
+
+    TOPIC: Indian Knowledge as a Unique System
+    Topic ID: 952
+
+    TOPIC: Place of Indian Knowledge in Human Evolution
+    Topic ID: 953
+
+    TOPIC: Relevance of Indian Knowledge Today and in the Future
+    Topic ID: 954
+
+    TOPIC: Nature of Indian Knowledge
+    Topic ID: 955
+
+    TOPIC: Types of Knowledge: Para and Apara
+    Topic ID: 956
+
+    TOPIC: Scientific and Unscientific Knowledge
+    Topic ID: 957
+
+    TOPIC: Instruments for Gaining and Verifying Knowledge
+    Topic ID: 958
+
+    TOPIC: Knowledge Traditions, Lineages, Debate, Epistemology and Pedagogy
+    Topic ID: 959
+
+    TOPIC: Indian Knowledge as a Unique System
+    Topic ID: 1015
+
+    TOPIC: Place of Indian Knowledge in Human Evolution
+    Topic ID: 1016
+
+    TOPIC: Relevance of Indian Knowledge Today and in the Future
+    Topic ID: 1017
+
+    TOPIC: Nature of Indian Knowledge
+    Topic ID: 1018
+
+    TOPIC: Types of Knowledge: Para and Apara
+    Topic ID: 1019
+
+    TOPIC: Scientific and Unscientific Knowledge
+    Topic ID: 1020
+
+    TOPIC: Instruments for Gaining and Verifying Knowledge
+    Topic ID: 1021
+
+    TOPIC: Knowledge Traditions, Lineages, Debate, Epistemology and Pedagogy
+    Topic ID: 1022
+
+    TOPIC: Indian Knowledge as a Unique System
+    Topic ID: 1078
+
+    TOPIC: Place of Indian Knowledge in Human Evolution
+    Topic ID: 1079
+
+    TOPIC: Relevance of Indian Knowledge Today and in the Future
+    Topic ID: 1080
+
+    TOPIC: Nature of Indian Knowledge
+    Topic ID: 1081
+
+    TOPIC: Types of Knowledge: Para and Apara
+    Topic ID: 1082
+
+    TOPIC: Scientific and Unscientific Knowledge
+    Topic ID: 1083
+
+    TOPIC: Instruments for Gaining and Verifying Knowledge
+    Topic ID: 1084
+
+    TOPIC: Knowledge Traditions, Lineages, Debate, Epistemology and Pedagogy
+    Topic ID: 1085
+
+  CHAPTER: Constitution of India and Social Responsibility
+  Chapter Number: 4
+  Chapter ID: 67
+
+    [No topics]
+
+SUBJECT: Linear Algebra and Statistics
+Subject Key: 48
+Subject ID: MA106
+Semester: 2
+
+  CHAPTER: Probability Theory and Random Process
+  Chapter Number: 1
+  Chapter ID: 45
+
+    TOPIC: Views of Probability
+    Topic ID: 548
+
+    TOPIC: Random Variables and Joint Distributions
+    Topic ID: 549
+
+    TOPIC: Marginal Distribution
+    Topic ID: 550
+
+    TOPIC: Conditional Probability
+    Topic ID: 551
+
+    TOPIC: Conditional Independence
+    Topic ID: 552
+
+    TOPIC: Expectation and Variance
+    Topic ID: 553
+
+    TOPIC: Probability Distributions
+    Topic ID: 554
+
+    TOPIC: Central Limit Theorem
+    Topic ID: 555
+
+    TOPIC: Functions of Random Variables
+    Topic ID: 556
+
+    TOPIC: Sum of Independent Random Variables
+    Topic ID: 557
+
+    TOPIC: Correlation and Regression
+    Topic ID: 558
+
+    TOPIC: Random Processes
+    Topic ID: 559
+
+    TOPIC: Stationary Random Processes
+    Topic ID: 560
+
+    TOPIC: Autocorrelation and Cross-Correlation
+    Topic ID: 561
+
+    TOPIC: Ergodic Processes
+    Topic ID: 562
+
+    TOPIC: Markov Processes
+    Topic ID: 563
+
+    TOPIC: Birth and Death Processes
+    Topic ID: 564
+
+    TOPIC: Poisson Processes
+    Topic ID: 565
+
+    TOPIC: Markov Chains
+    Topic ID: 566
+
+    TOPIC: Chapman-Kolmogorov Theory
+    Topic ID: 567
+
+    TOPIC: Spectral Analysis of Random Processes
+    Topic ID: 568
+
+    TOPIC: Power Spectral Density
+    Topic ID: 569
+
+  CHAPTER: Estimation and Statistics
+  Chapter Number: 2
+  Chapter ID: 46
+
+    TOPIC: Sampling Theory
+    Topic ID: 570
+
+    TOPIC: Population and Sample
+    Topic ID: 571
+
+    TOPIC: Statistical Inference
+    Topic ID: 572
+
+    TOPIC: Sampling Distribution
+    Topic ID: 573
+
+    TOPIC: Sample Mean
+    Topic ID: 574
+
+    TOPIC: Biased Estimation
+    Topic ID: 575
+
+    TOPIC: Unbiased Estimator
+    Topic ID: 576
+
+    TOPIC: Confidence Interval
+    Topic ID: 577
+
+    TOPIC: Point Estimation and Interval Estimates
+    Topic ID: 578
+
+    TOPIC: Statistical Decision
+    Topic ID: 579
+
+    TOPIC: Hypothesis Testing
+    Topic ID: 580
+
+    TOPIC: Statistical Hypotheses
+    Topic ID: 581
+
+    TOPIC: Null Hypotheses
+    Topic ID: 582
+
+    TOPIC: Significance Test
+    Topic ID: 583
+
+    TOPIC: Type I and Type II Errors
+    Topic ID: 584
+
+    TOPIC: Level of Significance
+    Topic ID: 585
+
+    TOPIC: One-Tailed and Two-Tailed Tests
+    Topic ID: 586
+
+    TOPIC: Chi-Square Test
+    Topic ID: 587
+
+    TOPIC: Maximum Likelihood Estimate
+    Topic ID: 588
+
+    TOPIC: Least Square Estimate
+    Topic ID: 589
+
+    TOPIC: Maximum A Posteriori (MAP) Estimate
+    Topic ID: 590
+
+    TOPIC: Minimum Mean Square Estimate
+    Topic ID: 591
+
+  CHAPTER: Introduction to Partial Differential Equation
+  Chapter Number: 3
+  Chapter ID: 47
+
+    TOPIC: Introduction to Partial Differential Equations
+    Topic ID: 592
+
+    TOPIC: Formation of Partial Differential Equations
+    Topic ID: 593
+
+    TOPIC: First-Order Partial Differential Equations
+    Topic ID: 594
+
+    TOPIC: Linear First-Order PDE: Pp + Qq = R
+    Topic ID: 595
+
+    TOPIC: General Solution of First-Order Linear PDE
+    Topic ID: 596
+
+    TOPIC: Nonlinear PDE of Form f(p, q) = 0
+    Topic ID: 597
+
+    TOPIC: Nonlinear PDE of Form f(z, p, q) = 0
+    Topic ID: 598
+
+    TOPIC: PDE of Form f(x, p) = g(y, q)
+    Topic ID: 599
+
+    TOPIC: PDE of Form z = px + qy + f(p, q)
+    Topic ID: 600
+
+  CHAPTER: Basic Concepts of Vector Calculus
+  Chapter Number: 4
+  Chapter ID: 48
+
+    TOPIC: Scalar and Vector Point Functions
+    Topic ID: 601
+
+    TOPIC: Differential Operator
+    Topic ID: 602
+
+    TOPIC: Gradient
+    Topic ID: 603
+
+    TOPIC: Directional Derivative
+    Topic ID: 604
+
+    TOPIC: Divergence
+    Topic ID: 605
+
+    TOPIC: Curl
+    Topic ID: 606
+
+    TOPIC: Laplacian Operator and Its Properties
+    Topic ID: 607
+
+  CHAPTER: Linear Algebra
+  Chapter Number: 5
+  Chapter ID: 49
+
+    TOPIC: Linear Systems
+    Topic ID: 608
+
+    TOPIC: Elementary Row and Column Transformations
+    Topic ID: 609
+
+    TOPIC: Rank of a Matrix
+    Topic ID: 610
+
+    TOPIC: Consistency of Linear Systems of Equations
+    Topic ID: 611
+
+    TOPIC: Linear Independence and Dependence of Vectors
+    Topic ID: 612
+
+    TOPIC: Gauss Elimination Method
+    Topic ID: 613
+
+    TOPIC: Gauss-Jordan Method
+    Topic ID: 614
+
+    TOPIC: Gauss-Jacobi Iteration Method
+    Topic ID: 615
+
+    TOPIC: Vector Spaces
+    Topic ID: 616
+
+    TOPIC: Subspaces
+    Topic ID: 617
+
+    TOPIC: Fields and Rings
+    Topic ID: 618
+
+    TOPIC: Norm and Distance
+    Topic ID: 619
+
+    TOPIC: Linear Mapping
+    Topic ID: 620
+
+    TOPIC: Orthogonality
+    Topic ID: 621
+
+    TOPIC: Eigenvectors and Eigenvalues
+    Topic ID: 622
+
+    TOPIC: Least Squares
+    Topic ID: 623
+
+    TOPIC: Least Square Data Fitting
+    Topic ID: 624
+
+    TOPIC: Constrained Least Square Applications
+    Topic ID: 625
+
+SUBJECT: Computer Organization
+Subject Key: 5
+Subject ID: CS201
+Semester: 3
+
+  CHAPTER: Processor Basics
+  Chapter Number: 1
+  Chapter ID: 82
+
+    TOPIC: Basics of CPU Organization
+    Topic ID: 1307
+
+    TOPIC: Functional Units
+    Topic ID: 1308
+
+    TOPIC: Data Paths
+    Topic ID: 1309
+
+    TOPIC: Registers
+    Topic ID: 1310
+
+    TOPIC: Stored Program Concept
+    Topic ID: 1311
+
+    TOPIC: Data Representation: Basic Formats
+    Topic ID: 1312
+
+    TOPIC: Fixed-Point Representation
+    Topic ID: 1313
+
+    TOPIC: Floating-Point Representation
+    Topic ID: 1314
+
+    TOPIC: Instruction Sets
+    Topic ID: 1315
+
+    TOPIC: Instruction Types
+    Topic ID: 1316
+
+    TOPIC: Instruction Formats
+    Topic ID: 1317
+
+    TOPIC: Addressing Modes
+    Topic ID: 1318
+
+    TOPIC: Designing an Instruction Set
+    Topic ID: 1319
+
+    TOPIC: Data Path Design
+    Topic ID: 1320
+
+    TOPIC: Machine-Level Programming
+    Topic ID: 1321
+
+    TOPIC: Assembly-Level Programming
+    Topic ID: 1322
+
+    TOPIC: High-Level Programming
+    Topic ID: 1323
+
+  CHAPTER: Arithmetic and Logic Unit
+  Chapter Number: 2
+  Chapter ID: 83
+
+    TOPIC: Arithmetic and Logical Operations
+    Topic ID: 1324
+
+    TOPIC: Hardware Implementation of Arithmetic and Logical Operations
+    Topic ID: 1325
+
+    TOPIC: Fixed-Point Arithmetic Multiplication Algorithms
+    Topic ID: 1326
+
+    TOPIC: Hardware Multiplication Algorithm
+    Topic ID: 1327
+
+    TOPIC: Booth Multiplication Algorithm
+    Topic ID: 1328
+
+    TOPIC: Division Algorithm
+    Topic ID: 1329
+
+    TOPIC: Divide Overflow Algorithm
+    Topic ID: 1330
+
+    TOPIC: Combinational ALU
+    Topic ID: 1331
+
+    TOPIC: Sequential ALU
+    Topic ID: 1332
+
+    TOPIC: Floating-Point Arithmetic Operations
+    Topic ID: 1333
+
+  CHAPTER: Control Unit
+  Chapter Number: 3
+  Chapter ID: 84
+
+    TOPIC: Basic Concepts of Control Unit
+    Topic ID: 1334
+
+    TOPIC: Instruction Interpretation and Execution
+    Topic ID: 1335
+
+    TOPIC: Hardwired Control
+    Topic ID: 1336
+
+    TOPIC: Microprogrammed Control
+    Topic ID: 1337
+
+    TOPIC: CPU Control Unit Design
+    Topic ID: 1338
+
+    TOPIC: Control Unit Performance
+    Topic ID: 1339
+
+  CHAPTER: Subroutine Management
+  Chapter Number: 4
+  Chapter ID: 85
+
+    TOPIC: Concepts of Subroutine
+    Topic ID: 1340
+
+    TOPIC: Subroutine Call and Return
+    Topic ID: 1341
+
+  CHAPTER: Memory Organization
+  Chapter Number: 5
+  Chapter ID: 86
+
+    TOPIC: Concepts of Semiconductor Memory
+    Topic ID: 1342
+
+    TOPIC: CPU-Memory Interaction
+    Topic ID: 1343
+
+    TOPIC: Organization of Memory Modules
+    Topic ID: 1344
+
+    TOPIC: Cache Memory
+    Topic ID: 1345
+
+    TOPIC: Cache Mapping Policies
+    Topic ID: 1346
+
+    TOPIC: Cache Replacement Policies
+    Topic ID: 1347
+
+    TOPIC: Virtual Memory
+    Topic ID: 1348
+
+  CHAPTER: System Organization
+  Chapter Number: 6
+  Chapter ID: 87
+
+    TOPIC: Introduction to Input and Output Processing
+    Topic ID: 1370
+
+    TOPIC: Working with Video Display Unit and Keyboard
+    Topic ID: 1371
+
+    TOPIC: Routine to Control Input and Output Devices
+    Topic ID: 1372
+
+    TOPIC: Programmed Controlled I/O Transfer
+    Topic ID: 1373
+
+    TOPIC: Interrupt Controlled I/O Transfer
+    Topic ID: 1374
+
+    TOPIC: DMA Controller
+    Topic ID: 1375
+
+    TOPIC: Secondary Storage and Types of Storage Devices
+    Topic ID: 1376
+
+    TOPIC: Introduction to Buses
+    Topic ID: 1377
+
+    TOPIC: Connecting I/O Devices to CPU and Memory
+    Topic ID: 1378
+
+  CHAPTER: Pipeline Control and Parallel Processing
+  Chapter Number: 7
+  Chapter ID: 88
+
+    TOPIC: Instruction Pipelines
+    Topic ID: 1379
+
+    TOPIC: Pipeline Hazards
+    Topic ID: 1380
+
+    TOPIC: Pipeline Performance
+    Topic ID: 1381
+
+    TOPIC: Superscalar Processing
+    Topic ID: 1382
+
+    TOPIC: Introduction to Parallel Processing
+    Topic ID: 1383
+
+    TOPIC: Processor-Level Parallelism
+    Topic ID: 1384
+
+    TOPIC: Multiprocessor
+    Topic ID: 1385
+
+SUBJECT: Database Management Systems
+Subject Key: 7
+Subject ID: CS203
+Semester: 3
+
+  CHAPTER: Introductory Concepts of DBMS
+  Chapter Number: 1
+  Chapter ID: 89
+
+    TOPIC: Introduction
+    Topic ID: 1401
+
+    TOPIC: Applications of DBMS
+    Topic ID: 1402
+
+    TOPIC: Purpose of Database
+    Topic ID: 1403
+
+    TOPIC: Data Independence
+    Topic ID: 1404
+
+    TOPIC: Database System Architecture
+    Topic ID: 1405
+
+    TOPIC: Data Abstraction
+    Topic ID: 1406
+
+    TOPIC: Database Users and DBA
+    Topic ID: 1407
+
+  CHAPTER: Entity Relationship Model
+  Chapter Number: 2
+  Chapter ID: 90
+
+    TOPIC: Basic Concepts
+    Topic ID: 1408
+
+    TOPIC: Design Process
+    Topic ID: 1409
+
+    TOPIC: Constraints
+    Topic ID: 1410
+
+    TOPIC: Keys
+    Topic ID: 1411
+
+    TOPIC: Design Issues
+    Topic ID: 1412
+
+    TOPIC: E-R Diagrams
+    Topic ID: 1413
+
+    TOPIC: Attribute Types
+    Topic ID: 1414
+
+    TOPIC: Mapping Cardinality
+    Topic ID: 1415
+
+    TOPIC: Types of Relationship
+    Topic ID: 1416
+
+    TOPIC: Weak/Strong Entity Sets
+    Topic ID: 1417
+
+    TOPIC: Extended E-R Features
+    Topic ID: 1418
+
+    TOPIC: Generalization
+    Topic ID: 1419
+
+    TOPIC: Specialization
+    Topic ID: 1420
+
+    TOPIC: Aggregation
+    Topic ID: 1421
+
+  CHAPTER: Relational Models
+  Chapter Number: 3
+  Chapter ID: 91
+
+    TOPIC: Structure of Relational Databases
+    Topic ID: 1422
+
+    TOPIC: Domains
+    Topic ID: 1423
+
+    TOPIC: Relations
+    Topic ID: 1424
+
+    TOPIC: Mapping of ER Model to Relational Model
+    Topic ID: 1425
+
+    TOPIC: Relational Algebra – Fundamentals
+    Topic ID: 1426
+
+    TOPIC: Relational Algebra – Operators and Syntax
+    Topic ID: 1427
+
+    TOPIC: Relational Algebra Queries
+    Topic ID: 1428
+
+    TOPIC: Tuple Relational Calculus
+    Topic ID: 1429
+
+  CHAPTER: Relational Database Design
+  Chapter Number: 4
+  Chapter ID: 92
+
+    TOPIC: Functional Dependency – Definition
+    Topic ID: 1430
+
+    TOPIC: Trivial and Non-trivial FD
+    Topic ID: 1431
+
+    TOPIC: Closure of FD Set
+    Topic ID: 1432
+
+    TOPIC: Closure of Attributes
+    Topic ID: 1433
+
+    TOPIC: Irreducible Set of FD
+    Topic ID: 1434
+
+    TOPIC: Normalization
+    Topic ID: 1435
+
+    TOPIC: 1NF
+    Topic ID: 1436
+
+    TOPIC: 2NF
+    Topic ID: 1437
+
+    TOPIC: 3NF
+    Topic ID: 1438
+
+    TOPIC: Decomposition using FD
+    Topic ID: 1439
+
+    TOPIC: Dependency Preservation
+    Topic ID: 1440
+
+    TOPIC: BCNF
+    Topic ID: 1441
+
+    TOPIC: Multi-Valued Dependency
+    Topic ID: 1442
+
+    TOPIC: 4NF
+    Topic ID: 1443
+
+    TOPIC: Join Dependency
+    Topic ID: 1444
+
+    TOPIC: 5NF
+    Topic ID: 1445
+
+  CHAPTER: Query Processing and Optimization
+  Chapter Number: 5
+  Chapter ID: 93
+
+    TOPIC: Overview of Query Processing
+    Topic ID: 1446
+
+    TOPIC: Measures of Query Cost
+    Topic ID: 1447
+
+    TOPIC: Select Operation
+    Topic ID: 1448
+
+    TOPIC: Sorting
+    Topic ID: 1449
+
+    TOPIC: Join Operation
+    Topic ID: 1450
+
+    TOPIC: Other Operations
+    Topic ID: 1451
+
+    TOPIC: Evaluation of Expressions
+    Topic ID: 1452
+
+    TOPIC: Overview of Query Optimization
+    Topic ID: 1453
+
+    TOPIC: Transformation of Relational Expressions
+    Topic ID: 1454
+
+    TOPIC: Estimating Statistics of Expression Results
+    Topic ID: 1455
+
+    TOPIC: Choice of Evaluation Plans
+    Topic ID: 1456
+
+    TOPIC: Materialized Views
+    Topic ID: 1457
+
+    TOPIC: Advanced Topics in Query Optimization
+    Topic ID: 1458
+
+  CHAPTER: Transaction Management
+  Chapter Number: 6
+  Chapter ID: 94
+
+    TOPIC: Transaction Concepts
+    Topic ID: 1459
+
+    TOPIC: Properties of Transactions
+    Topic ID: 1460
+
+    TOPIC: Serializability of Transactions
+    Topic ID: 1461
+
+    TOPIC: Testing for Serializability
+    Topic ID: 1462
+
+    TOPIC: Concurrent Executions of Transactions and Related Problems
+    Topic ID: 1463
+
+    TOPIC: Locking Mechanism
+    Topic ID: 1464
+
+    TOPIC: Solution to Concurrency Related Problems
+    Topic ID: 1465
+
+    TOPIC: Two-phase Locking Protocol
+    Topic ID: 1466
+
+    TOPIC: Deadlock
+    Topic ID: 1467
+
+    TOPIC: Isolation
+    Topic ID: 1468
+
+    TOPIC: Intent Locking
+    Topic ID: 1469
+
+    TOPIC: System Recovery
+    Topic ID: 1470
+
+    TOPIC: Recovery and Atomicity
+    Topic ID: 1471
+
+    TOPIC: Log-based Recovery
+    Topic ID: 1472
+
+  CHAPTER: SQL Concept
+  Chapter Number: 7
+  Chapter ID: 95
+
+    TOPIC: Basics of SQL
+    Topic ID: 1473
+
+    TOPIC: DDL
+    Topic ID: 1474
+
+    TOPIC: DML
+    Topic ID: 1475
+
+    TOPIC: DCL
+    Topic ID: 1476
+
+    TOPIC: Structure – Creation/Alteration
+    Topic ID: 1477
+
+    TOPIC: Defining Constraints
+    Topic ID: 1478
+
+    TOPIC: Primary Key
+    Topic ID: 1479
+
+    TOPIC: Foreign Key
+    Topic ID: 1480
+
+    TOPIC: Unique
+    Topic ID: 1481
+
+    TOPIC: Not Null
+    Topic ID: 1482
+
+    TOPIC: Check
+    Topic ID: 1483
+
+    TOPIC: IN Operator
+    Topic ID: 1484
+
+  CHAPTER: PL-SQL Concept
+  Chapter Number: 8
+  Chapter ID: 96
+
+    TOPIC: Cursors
+    Topic ID: 1485
+
+    TOPIC: Stored Procedures
+    Topic ID: 1486
+
+    TOPIC: Stored Function
+    Topic ID: 1487
+
+    TOPIC: Database Triggers
+    Topic ID: 1488
+
+  CHAPTER: Advanced Topics
+  Chapter Number: 9
+  Chapter ID: 97
+
+    TOPIC: Data Security: Introduction
+    Topic ID: 1489
+
+    TOPIC: Discretionary Access Control
+    Topic ID: 1490
+
+    TOPIC: Mandatory Access Control
+    Topic ID: 1491
+
+    TOPIC: Data Encryption
+    Topic ID: 1492
+
+    TOPIC: Semi Structured Data and XML
+    Topic ID: 1493
+
+    TOPIC: Object Oriented and Object Relational DBMS
+    Topic ID: 1494
+
+    TOPIC: Distributed DBMS
+    Topic ID: 1495
+
+    TOPIC: NOSQL DBMS
+    Topic ID: 1496
+
+SUBJECT: Design and Analysis of Algorithms
+Subject Key: 9
+Subject ID: CS205
+Semester: 3
+
+  CHAPTER: Introduction
+  Chapter Number: 1
+  Chapter ID: 98
+
+    TOPIC: Introduction to Algorithms
+    Topic ID: 1528
+
+    TOPIC: Analysis and Design Techniques
+    Topic ID: 1529
+
+    TOPIC: Analysis Techniques
+    Topic ID: 1530
+
+    TOPIC: Mathematical Analysis
+    Topic ID: 1531
+
+    TOPIC: Empirical Analysis
+    Topic ID: 1532
+
+    TOPIC: Asymptotic Analysis
+    Topic ID: 1533
+
+    TOPIC: Recurrence Relations and Solving Recurrences
+    Topic ID: 1534
+
+    TOPIC: Mathematical Proof Techniques
+    Topic ID: 1535
+
+    TOPIC: Amortized Analysis
+    Topic ID: 1536
+
+    TOPIC: Probabilistic Analysis
+    Topic ID: 1537
+
+  CHAPTER: Divide and Conquer Approach
+  Chapter Number: 2
+  Chapter ID: 99
+
+    TOPIC: Sorting & Order Statistics
+    Topic ID: 1538
+
+    TOPIC: Divide and Conquer Technique
+    Topic ID: 1539
+
+    TOPIC: Various Comparison based Sorts
+    Topic ID: 1540
+
+    TOPIC: Analysis of the Worst-Case and the Best-Cases
+    Topic ID: 1541
+
+    TOPIC: Randomized Sorting Algorithms
+    Topic ID: 1542
+
+    TOPIC: Lower Bound on Sorting
+    Topic ID: 1543
+
+    TOPIC: Non-comparison based Sorts
+    Topic ID: 1544
+
+    TOPIC: Medians and Order Statistics
+    Topic ID: 1545
+
+    TOPIC: Min-Max Problem
+    Topic ID: 1546
+
+    TOPIC: Polynomial Multiplication
+    Topic ID: 1547
+
+    TOPIC: Fast Fourier Transform
+    Topic ID: 1548
+
+  CHAPTER: Greedy Design Techniques
+  Chapter Number: 3
+  Chapter ID: 100
+
+    TOPIC: Basic Greedy Control Abstraction
+    Topic ID: 1549
+
+    TOPIC: Motivation
+    Topic ID: 1550
+
+    TOPIC: Thirsty Baby Problem
+    Topic ID: 1551
+
+    TOPIC: Formalization
+    Topic ID: 1552
+
+    TOPIC: Activity Selection and its Variants
+    Topic ID: 1553
+
+    TOPIC: Huffman Coding
+    Topic ID: 1554
+
+    TOPIC: Horn Formulas
+    Topic ID: 1555
+
+    TOPIC: Tape Storage Problem
+    Topic ID: 1556
+
+    TOPIC: Container Loading Problem
+    Topic ID: 1557
+
+    TOPIC: Knapsack Problem
+    Topic ID: 1558
+
+    TOPIC: Graph Algorithms
+    Topic ID: 1559
+
+    TOPIC: All-pairs Shortest Paths
+    Topic ID: 1560
+
+    TOPIC: Topological Ordering of DAG
+    Topic ID: 1561
+
+    TOPIC: DFS in Directed Graphs
+    Topic ID: 1562
+
+    TOPIC: Strongly Connected Components
+    Topic ID: 1563
+
+    TOPIC: Minimum Spanning Trees
+    Topic ID: 1564
+
+    TOPIC: Single Source Shortest Paths
+    Topic ID: 1565
+
+    TOPIC: Maximum Bipartite Cover Problem
+    Topic ID: 1566
+
+    TOPIC: Network Flows
+    Topic ID: 1567
+
+    TOPIC: Ford Fulkerson Algorithm
+    Topic ID: 1568
+
+    TOPIC: Max-flow Min-cut Theorem
+    Topic ID: 1569
+
+    TOPIC: Polynomial Time Algorithms for Max-flow
+    Topic ID: 1570
+
+  CHAPTER: Dynamic Programming
+  Chapter Number: 4
+  Chapter ID: 101
+
+    TOPIC: Motivation
+    Topic ID: 1571
+
+    TOPIC: Matrix Multiplication Problem
+    Topic ID: 1572
+
+    TOPIC: Assembly Line Problem
+    Topic ID: 1573
+
+    TOPIC: Coin Changing Problem
+    Topic ID: 1574
+
+    TOPIC: Longest Common Subsequence
+    Topic ID: 1575
+
+    TOPIC: 0/1 Knapsack Problem
+    Topic ID: 1576
+
+    TOPIC: All-pairs Shortest Path Problems
+    Topic ID: 1577
+
+    TOPIC: Dynamic Programming Control Abstraction
+    Topic ID: 1578
+
+    TOPIC: Optimal Binary Search Tree
+    Topic ID: 1579
+
+  CHAPTER: Searching Algorithms
+  Chapter Number: 5
+  Chapter ID: 102
+
+    TOPIC: Backtracking
+    Topic ID: 1580
+
+    TOPIC: N-Queens Problem
+    Topic ID: 1581
+
+    TOPIC: Sum of Subset Problem
+    Topic ID: 1582
+
+    TOPIC: Complexity Analysis
+    Topic ID: 1583
+
+    TOPIC: Branch & Bound
+    Topic ID: 1584
+
+    TOPIC: Least Cost Branch & Bound (LCBB)
+    Topic ID: 1585
+
+    TOPIC: LCBB Complexity Analysis
+    Topic ID: 1586
+
+    TOPIC: 15-Puzzle Problem
+    Topic ID: 1587
+
+    TOPIC: Traveling Sales Person Problem
+    Topic ID: 1588
+
+  CHAPTER: Number Theoretic Algorithms
+  Chapter Number: 6
+  Chapter ID: 103
+
+    TOPIC: Number Theoretic Notions
+    Topic ID: 1589
+
+    TOPIC: GCD
+    Topic ID: 1590
+
+    TOPIC: Modular Arithmetic
+    Topic ID: 1591
+
+    TOPIC: Chinese Remainder Theorem
+    Topic ID: 1592
+
+    TOPIC: Generators
+    Topic ID: 1593
+
+    TOPIC: Cyclic Groups
+    Topic ID: 1594
+
+    TOPIC: Galois Fields
+    Topic ID: 1595
+
+    TOPIC: Applications in Cryptography
+    Topic ID: 1596
+
+    TOPIC: Primality Testing
+    Topic ID: 1597
+
+  CHAPTER: NP-Complete Problems
+  Chapter Number: 7
+  Chapter ID: 104
+
+    TOPIC: Polynomial Time
+    Topic ID: 1598
+
+    TOPIC: Verification
+    Topic ID: 1599
+
+    TOPIC: NP-completeness
+    Topic ID: 1600
+
+    TOPIC: Search Problems
+    Topic ID: 1601
+
+    TOPIC: Reductions
+    Topic ID: 1602
+
+    TOPIC: Dealing with NP-Completeness
+    Topic ID: 1603
+
+    TOPIC: Approximation Algorithms
+    Topic ID: 1604
+
+    TOPIC: Local Search Heuristics
+    Topic ID: 1605
+
+SUBJECT: Discrete Mathematics
+Subject Key: 11
+Subject ID: CS207
+Semester: 3
+
+  CHAPTER: Introduction
+  Chapter Number: 1
+  Chapter ID: 105
+
+    TOPIC: Introduction to Set Theory
+    Topic ID: 1655
+
+    TOPIC: Basics of Functions
+    Topic ID: 1656
+
+    TOPIC: Application of Functions in Computer Science Areas
+    Topic ID: 1657
+
+  CHAPTER: Group Theory
+  Chapter Number: 2
+  Chapter ID: 106
+
+    TOPIC: Basic Properties of Group
+    Topic ID: 1658
+
+    TOPIC: Groupoid
+    Topic ID: 1659
+
+    TOPIC: Semigroup
+    Topic ID: 1660
+
+    TOPIC: Monoid
+    Topic ID: 1661
+
+    TOPIC: Abelian Group
+    Topic ID: 1662
+
+    TOPIC: Subgroup
+    Topic ID: 1663
+
+    TOPIC: Cosets
+    Topic ID: 1664
+
+    TOPIC: Normal Subgroup
+    Topic ID: 1665
+
+    TOPIC: Lagrange's Theorem
+    Topic ID: 1666
+
+    TOPIC: Cyclic Group
+    Topic ID: 1667
+
+    TOPIC: Permutation Group
+    Topic ID: 1668
+
+    TOPIC: Homomorphism & Isomorphism of Groups
+    Topic ID: 1669
+
+    TOPIC: Basic Properties
+    Topic ID: 1670
+
+    TOPIC: Error Correction & Detection Code
+    Topic ID: 1671
+
+  CHAPTER: Relation & Lattices
+  Chapter Number: 3
+  Chapter ID: 107
+
+    TOPIC: Definition & Basic Properties
+    Topic ID: 1672
+
+    TOPIC: Graphs of Relation
+    Topic ID: 1673
+
+    TOPIC: Matrices of Relation
+    Topic ID: 1674
+
+    TOPIC: Equivalence Relation
+    Topic ID: 1675
+
+    TOPIC: Equivalence Classes
+    Topic ID: 1676
+
+    TOPIC: Partition
+    Topic ID: 1677
+
+    TOPIC: Partial Ordered Relation
+    Topic ID: 1678
+
+    TOPIC: Posets
+    Topic ID: 1679
+
+    TOPIC: Hasse Diagram
+    Topic ID: 1680
+
+    TOPIC: Upper Bounds
+    Topic ID: 1681
+
+    TOPIC: Lower Bound
+    Topic ID: 1682
+
+    TOPIC: GLB & LUB of Sets
+    Topic ID: 1683
+
+    TOPIC: Definition & Properties of Lattice
+    Topic ID: 1684
+
+    TOPIC: Sub Lattice
+    Topic ID: 1685
+
+    TOPIC: Distributive & Modular Lattices
+    Topic ID: 1686
+
+    TOPIC: Complemented & Bounded Lattices
+    Topic ID: 1687
+
+    TOPIC: Complete Lattices & Boolean Algebra
+    Topic ID: 1688
+
+  CHAPTER: Mathematical Logic and Program Verification
+  Chapter Number: 4
+  Chapter ID: 108
+
+    TOPIC: Induction
+    Topic ID: 1689
+
+    TOPIC: Propositions
+    Topic ID: 1690
+
+    TOPIC: Combination of Propositions
+    Topic ID: 1691
+
+    TOPIC: Logical Operators & Propositional Algebra
+    Topic ID: 1692
+
+    TOPIC: Equivalence
+    Topic ID: 1693
+
+    TOPIC: Predicates & Quantifiers
+    Topic ID: 1694
+
+    TOPIC: Interaction of Quantifiers with Logical Operators
+    Topic ID: 1695
+
+    TOPIC: Logical Inference & Proof Techniques
+    Topic ID: 1696
+
+    TOPIC: Formal Verification of Computer Programs
+    Topic ID: 1697
+
+    TOPIC: Elements of Hoare Logic
+    Topic ID: 1698
+
+  CHAPTER: Counting and Recurrence Relation
+  Chapter Number: 5
+  Chapter ID: 109
+
+    TOPIC: First Counting Principle
+    Topic ID: 1699
+
+    TOPIC: Second Counting Principle
+    Topic ID: 1700
+
+    TOPIC: Permutation
+    Topic ID: 1701
+
+    TOPIC: Circular Permutations
+    Topic ID: 1702
+
+    TOPIC: Combination
+    Topic ID: 1703
+
+    TOPIC: Pigeonhole Principle
+    Topic ID: 1704
+
+    TOPIC: Recurrence Relations
+    Topic ID: 1705
+
+    TOPIC: Linear Recurrence Relations
+    Topic ID: 1706
+
+    TOPIC: Inclusion and Exclusion
+    Topic ID: 1707
+
+    TOPIC: Generating Functions
+    Topic ID: 1708
+
+  CHAPTER: Basics of Graphs
+  Chapter Number: 6
+  Chapter ID: 110
+
+    TOPIC: Graph Definition
+    Topic ID: 1709
+
+    TOPIC: Graph Representation
+    Topic ID: 1710
+
+    TOPIC: Basic Concepts of Finite & Infinite Graph
+    Topic ID: 1711
+
+    TOPIC: Incidence and Degree
+    Topic ID: 1712
+
+    TOPIC: Isomorphism
+    Topic ID: 1713
+
+    TOPIC: Subgraph
+    Topic ID: 1714
+
+    TOPIC: Walk, Path and Circuits
+    Topic ID: 1715
+
+    TOPIC: Cliques, Cycles and Loops
+    Topic ID: 1716
+
+    TOPIC: Operations on Graphs
+    Topic ID: 1717
+
+    TOPIC: Connected Graph
+    Topic ID: 1718
+
+    TOPIC: Disconnected Graph and Components
+    Topic ID: 1719
+
+    TOPIC: Complete Graph
+    Topic ID: 1720
+
+    TOPIC: Regular Graph
+    Topic ID: 1721
+
+    TOPIC: Bipartite Graph
+    Topic ID: 1722
+
+    TOPIC: Planar Graphs
+    Topic ID: 1723
+
+    TOPIC: Weighted Graphs
+    Topic ID: 1724
+
+    TOPIC: Directed and Undirected Graphs
+    Topic ID: 1725
+
+    TOPIC: Connectivity of Graphs
+    Topic ID: 1726
+
+  CHAPTER: Graphs Algorithms
+  Chapter Number: 7
+  Chapter ID: 111
+
+    TOPIC: Flows
+    Topic ID: 1727
+
+    TOPIC: Combinatorics
+    Topic ID: 1728
+
+    TOPIC: Euler's Graph
+    Topic ID: 1729
+
+    TOPIC: Hamiltonian Paths & Circuits
+    Topic ID: 1730
+
+    TOPIC: Activity Planning and Critical Path
+    Topic ID: 1731
+
+    TOPIC: Planar Graphs: Properties
+    Topic ID: 1732
+
+    TOPIC: Graph Coloring
+    Topic ID: 1733
+
+    TOPIC: Vertex Coloring
+    Topic ID: 1734
+
+    TOPIC: Chromatic Polynomials
+    Topic ID: 1735
+
+    TOPIC: Edge Coloring
+    Topic ID: 1736
+
+    TOPIC: Planar Graph Coloring
+    Topic ID: 1737
+
+    TOPIC: Matching and Factorizations
+    Topic ID: 1738
+
+    TOPIC: Maximum Matching in Bipartite Graphs
+    Topic ID: 1739
+
+    TOPIC: Maximum Matching in General Graphs
+    Topic ID: 1740
+
+    TOPIC: Hall's Marriage Theorem
+    Topic ID: 1741
+
+    TOPIC: Factorization
+    Topic ID: 1742
+
+    TOPIC: Networks
+    Topic ID: 1743
+
+    TOPIC: Max-Flow Min-Cut Theorem
+    Topic ID: 1744
+
+    TOPIC: Menger's Theorem
+    Topic ID: 1745
+
+    TOPIC: Graph and Matrices
+    Topic ID: 1746
+
+    TOPIC: Probabilistic Graphical Models
+    Topic ID: 1747
+
+    TOPIC: Graphical Models
+    Topic ID: 1748
+
+    TOPIC: Directed Models
+    Topic ID: 1749
+
+    TOPIC: Bayesian Network
+    Topic ID: 1750
+
+    TOPIC: Undirected Model
+    Topic ID: 1751
+
+    TOPIC: Markov Random Fields
+    Topic ID: 1752
+
+    TOPIC: Dynamic Model
+    Topic ID: 1753
+
+    TOPIC: Hidden Markov Model
+    Topic ID: 1754
+
+    TOPIC: Learning in Graphical Models
+    Topic ID: 1755
+
+    TOPIC: Parameter Estimation
+    Topic ID: 1756
+
+    TOPIC: Expectation Maximization
+    Topic ID: 1757
+
+SUBJECT: Object Oriented Programming
+Subject Key: 12
+Subject ID: CS231
+Semester: 3
+
+  CHAPTER: Introduction
+  Chapter Number: 1
+  Chapter ID: 112
+
+    TOPIC: Review of High Level Language
+    Topic ID: 1782
+
+    TOPIC: Difference between Procedure Oriented and Object Oriented Approach
+    Topic ID: 1783
+
+    TOPIC: Characteristics of Object-Oriented Languages
+    Topic ID: 1784
+
+    TOPIC: Object Oriented Concepts
+    Topic ID: 1785
+
+    TOPIC: Objects
+    Topic ID: 1786
+
+    TOPIC: Classes
+    Topic ID: 1787
+
+    TOPIC: Abstraction
+    Topic ID: 1788
+
+    TOPIC: Encapsulation
+    Topic ID: 1789
+
+    TOPIC: Inheritance
+    Topic ID: 1790
+
+    TOPIC: Polymorphism
+    Topic ID: 1791
+
+    TOPIC: Dynamic Binding
+    Topic ID: 1792
+
+    TOPIC: Message Passing
+    Topic ID: 1793
+
+    TOPIC: Types of Operators
+    Topic ID: 1794
+
+    TOPIC: Operator Precedence and Associativity
+    Topic ID: 1795
+
+    TOPIC: Data Type Conversions
+    Topic ID: 1796
+
+    TOPIC: Selection
+    Topic ID: 1797
+
+    TOPIC: Loops
+    Topic ID: 1798
+
+  CHAPTER: Classes and Objects
+  Chapter Number: 2
+  Chapter ID: 113
+
+    TOPIC: Abstract Data Types
+    Topic ID: 1799
+
+    TOPIC: Object and Classes
+    Topic ID: 1800
+
+    TOPIC: Attributes
+    Topic ID: 1801
+
+    TOPIC: Methods
+    Topic ID: 1802
+
+    TOPIC: Class Declaration
+    Topic ID: 1803
+
+    TOPIC: Local Class and Global Class
+    Topic ID: 1804
+
+    TOPIC: State, Identity and Behaviour of an Object
+    Topic ID: 1805
+
+    TOPIC: Local Object and Global Object
+    Topic ID: 1806
+
+    TOPIC: Scope Resolution Operator
+    Topic ID: 1807
+
+    TOPIC: Friend Functions
+    Topic ID: 1808
+
+    TOPIC: Inline Functions
+    Topic ID: 1809
+
+    TOPIC: Constructors and Destructors
+    Topic ID: 1810
+
+    TOPIC: Instantiation of Objects
+    Topic ID: 1811
+
+    TOPIC: Types of Constructors
+    Topic ID: 1812
+
+    TOPIC: Static Class Data
+    Topic ID: 1813
+
+    TOPIC: Array of Objects
+    Topic ID: 1814
+
+    TOPIC: Constant Member Functions and Objects
+    Topic ID: 1815
+
+    TOPIC: Memory Management Operators
+    Topic ID: 1816
+
+  CHAPTER: Inheritance
+  Chapter Number: 3
+  Chapter ID: 114
+
+    TOPIC: Inheritance
+    Topic ID: 1817
+
+    TOPIC: Types of Inheritance
+    Topic ID: 1818
+
+    TOPIC: Access Modes – Public, Private & Protected
+    Topic ID: 1819
+
+    TOPIC: Abstract Classes
+    Topic ID: 1820
+
+    TOPIC: Ambiguity Resolution using Scope Resolution Operator
+    Topic ID: 1821
+
+    TOPIC: Virtual Base Class
+    Topic ID: 1822
+
+    TOPIC: Aggregation
+    Topic ID: 1823
+
+    TOPIC: Composition vs. Classification Hierarchies
+    Topic ID: 1824
+
+    TOPIC: Overriding Inheritance Methods
+    Topic ID: 1825
+
+    TOPIC: Constructors in Derived Classes
+    Topic ID: 1826
+
+    TOPIC: Nesting of Classes
+    Topic ID: 1827
+
+  CHAPTER: Polymorphism
+  Chapter Number: 4
+  Chapter ID: 115
+
+    TOPIC: Polymorphism
+    Topic ID: 1828
+
+    TOPIC: Types of Polymorphism – Compile time and Runtime
+    Topic ID: 1829
+
+    TOPIC: Function Overloading
+    Topic ID: 1830
+
+    TOPIC: Operator Overloading (Unary and Binary)
+    Topic ID: 1831
+
+    TOPIC: Polymorphism by Parameter
+    Topic ID: 1832
+
+    TOPIC: Pointer to Objects
+    Topic ID: 1833
+
+    TOPIC: this Pointer
+    Topic ID: 1834
+
+    TOPIC: Virtual Functions
+    Topic ID: 1835
+
+    TOPIC: Pure Virtual Functions
+    Topic ID: 1836
+
+    TOPIC: Late Binding
+    Topic ID: 1837
+
+    TOPIC: Abstract Classes
+    Topic ID: 1838
+
+  CHAPTER: Strings, Files and Exception Handling
+  Chapter Number: 5
+  Chapter ID: 116
+
+    TOPIC: Manipulating Strings
+    Topic ID: 1839
+
+    TOPIC: Streams and Files Handling
+    Topic ID: 1840
+
+    TOPIC: Formatted and Unformatted Input Output
+    Topic ID: 1841
+
+    TOPIC: Exception Handling
+    Topic ID: 1842
+
+    TOPIC: Try, Throw and Catch
+    Topic ID: 1843
+
+    TOPIC: Exceptions and Derived Classes
+    Topic ID: 1844
+
+    TOPIC: Function Exception Declaration
+    Topic ID: 1845
+
+    TOPIC: Unexpected Exceptions
+    Topic ID: 1846
+
+    TOPIC: Exception when Handling Exceptions
+    Topic ID: 1847
+
+    TOPIC: Resource Capture and Release
+    Topic ID: 1848
+
+  CHAPTER: Dynamic Memory Management
+  Chapter Number: 6
+  Chapter ID: 117
+
+    TOPIC: Dynamic Memory Management
+    Topic ID: 1849
+
+    TOPIC: New and Delete Operators
+    Topic ID: 1850
+
+    TOPIC: Object Copying
+    Topic ID: 1851
+
+    TOPIC: Copy Constructor
+    Topic ID: 1852
+
+    TOPIC: Assignment Operator
+    Topic ID: 1853
+
+    TOPIC: Virtual Destructor
+    Topic ID: 1854
+
+  CHAPTER: Standard Template Library
+  Chapter Number: 7
+  Chapter ID: 118
+
+    TOPIC: Standard Template Library
+    Topic ID: 1855
+
+    TOPIC: Overview of Standard Template Library
+    Topic ID: 1856
+
+    TOPIC: Containers
+    Topic ID: 1857
+
+    TOPIC: Algorithms
+    Topic ID: 1858
+
+    TOPIC: Iterators
+    Topic ID: 1859
+
+    TOPIC: Other STL Elements
+    Topic ID: 1860
+
+    TOPIC: The Container Classes
+    Topic ID: 1861
+
+    TOPIC: General Theory of Operation
+    Topic ID: 1862
+
+    TOPIC: Vectors
+    Topic ID: 1863
+
+    TOPIC: Usage of Template Library for the Implementation of Data Structure
+    Topic ID: 1864
+
+SUBJECT: Professional Ethics, Economics and Business Management
+Subject Key: 50
+Subject ID: MG210
+Semester: 3
+
+  CHAPTER: Professional Ethics
+  Chapter Number: 1
+  Chapter ID: 191
+
+    TOPIC: Introduction and Major Attributes of Ethics
+    Topic ID: 2541
+
+    TOPIC: Business Ethics and Ethics in Management
+    Topic ID: 2542
+
+    TOPIC: Whistle Blowing and Intellectual Properties
+    Topic ID: 2543
+
+  CHAPTER: Economics
+  Chapter Number: 2
+  Chapter ID: 192
+
+    TOPIC: Demand Analysis and Demand Forecasting
+    Topic ID: 2544
+
+    TOPIC: Factors of Production and Market Structures
+    Topic ID: 2545
+
+    TOPIC: Break Even Analysis
+    Topic ID: 2546
+
+  CHAPTER: Management
+  Chapter Number: 3
+  Chapter ID: 193
+
+    TOPIC: Development of Management Thoughts (Taylor & Fayol)
+    Topic ID: 2547
+
+    TOPIC: Centralization, Decentralization, Decision Making
+    Topic ID: 2548
+
+    TOPIC: Organizational Behavior: Motivation and Leadership Theories
+    Topic ID: 2549
+
+  CHAPTER: Functional Management
+  Chapter Number: 4
+  Chapter ID: 194
+
+    TOPIC: Marketing Management: Core Concepts and 4Ps
+    Topic ID: 2550
+
+    TOPIC: Operations Management: Layouts, Purchasing, Stores, Inventory
+    Topic ID: 2551
+
+    TOPIC: Personnel Management: Recruitment, Selection, Training
+    Topic ID: 2552
+
+    TOPIC: Financial Management: Sources of Finance, Capital Budgeting
+    Topic ID: 2553
+
+  CHAPTER: Modern Management Aspects
+  Chapter Number: 5
+  Chapter ID: 195
+
+    TOPIC: Introduction to ERP, e-CRM, SCM, Re-Engineering, WTO, IPR
+    Topic ID: 2554
+
+SUBJECT: Microprocessor and Interfacing Techniques
+Subject Key: 6
+Subject ID: CS202
+Semester: 4
+
+  CHAPTER: Introduction to Microprocessor Evolution
+  Chapter Number: 1
+  Chapter ID: 126
+
+    TOPIC: Introduction to Microprocessor and Development and its Operation
+    Topic ID: 1909
+
+    TOPIC: Introduction to Microprocessor and Development and its Operation
+    Topic ID: 2349
+
+  CHAPTER: Architecture Features of 8085
+  Chapter Number: 2
+  Chapter ID: 127
+
+    TOPIC: 8085 Architecture
+    Topic ID: 1910
+
+    TOPIC: 8085 Pin Out Diagram
+    Topic ID: 1911
+
+    TOPIC: 8085 Operations
+    Topic ID: 1912
+
+    TOPIC: 8085 Architecture and Pin out diagram
+    Topic ID: 2350
+
+    TOPIC: 8085 Operations
+    Topic ID: 2351
+
+  CHAPTER: Instruction Set and Programming of 8085
+  Chapter Number: 3
+  Chapter ID: 128
+
+    TOPIC: Data Transfer Instructions
+    Topic ID: 1913
+
+    TOPIC: Arithmetic Instructions and its Examples
+    Topic ID: 1914
+
+    TOPIC: Logical Instructions and its Examples
+    Topic ID: 1915
+
+    TOPIC: Branch, Stack and I/O Related Instructions
+    Topic ID: 1916
+
+    TOPIC: How to Write, Assemble and Execute Assembly Language Programmes
+    Topic ID: 1917
+
+    TOPIC: Assembly Language Programming Practice Based on Above Instructions for 8085
+    Topic ID: 1918
+
+    TOPIC: Design Counters in 8085
+    Topic ID: 1919
+
+    TOPIC: Design Time Delays in 8085
+    Topic ID: 1920
+
+    TOPIC: Stack & Subroutines
+    Topic ID: 1921
+
+    TOPIC: Restart, Conditional and Unconditional Call and Return Instructions
+    Topic ID: 1922
+
+    TOPIC: Advanced Subroutine Concepts
+    Topic ID: 1923
+
+    TOPIC: Code Conversion
+    Topic ID: 1924
+
+    TOPIC: 16-bit Data Operation
+    Topic ID: 1925
+
+    TOPIC: Data Transfer instructions
+    Topic ID: 2352
+
+    TOPIC: Arithmetic instructions and its examples
+    Topic ID: 2353
+
+    TOPIC: Logical Instructions and its examples
+    Topic ID: 2354
+
+    TOPIC: Branch, Stack, and I/O related instructions
+    Topic ID: 2355
+
+    TOPIC: How to write, assemble and execute assembly language programmes
+    Topic ID: 2356
+
+    TOPIC: Assembly language programming Practice Based on above instructions for 8085
+    Topic ID: 2357
+
+    TOPIC: Design Counters in 8085
+    Topic ID: 2358
+
+    TOPIC: Design Time delays in 8085
+    Topic ID: 2359
+
+    TOPIC: Stack & Subroutines: Restart, Conditional and Unconditional Call and Return Instructions
+    Topic ID: 2360
+
+    TOPIC: Advanced Subroutine Concepts
+    Topic ID: 2361
+
+    TOPIC: Code Conversion
+    Topic ID: 2362
+
+    TOPIC: 16-bit Data Operation
+    Topic ID: 2363
+
+  CHAPTER: Peripheral & Memory Interfacing with 8085
+  Chapter Number: 4
+  Chapter ID: 129
+
+    TOPIC: Basic I/O Interfacing Concepts
+    Topic ID: 1926
+
+    TOPIC: Interfacing Display Devices
+    Topic ID: 1927
+
+    TOPIC: Interfacing Input Devices
+    Topic ID: 1928
+
+    TOPIC: Memory Interfacing
+    Topic ID: 1929
+
+    TOPIC: Absolute Decoding
+    Topic ID: 1930
+
+    TOPIC: Partial Decoding
+    Topic ID: 1931
+
+    TOPIC: Shadow Memory
+    Topic ID: 1932
+
+    TOPIC: Interfacing Peripherals
+    Topic ID: 1933
+
+    TOPIC: 8255A Programmable Peripheral Interface
+    Topic ID: 1934
+
+    TOPIC: Examples of Interfacing Keyboard and Seven-segment Display
+    Topic ID: 1935
+
+    TOPIC: Examples of Bidirectional Data Transfer Between Two Microcomputer
+    Topic ID: 1936
+
+    TOPIC: The 8254 (8253) Programmable Interval Timer
+    Topic ID: 1937
+
+    TOPIC: The 8259A Programmable Interrupt Controller
+    Topic ID: 1938
+
+    TOPIC: Direct Memory Access and 8237 DMA Controller
+    Topic ID: 1939
+
+    TOPIC: The 8279 Programmable Keyboard/Display Interface
+    Topic ID: 1940
+
+    TOPIC: Interfacing Scanned Multiplexed Displays and Liquid Crystal Displays
+    Topic ID: 1941
+
+    TOPIC: Interfacing a Matrix Keyboard
+    Topic ID: 1942
+
+    TOPIC: Serial I/O and Data Communication
+    Topic ID: 1943
+
+    TOPIC: Basic Concepts in Serial I/O
+    Topic ID: 1944
+
+    TOPIC: Software-Controlled Asynchronous Serial I/O
+    Topic ID: 1945
+
+    TOPIC: The 8085-Serial I/O Lines: SOD and SID
+    Topic ID: 1946
+
+    TOPIC: Hardware Controlled Serial I/O Using Programmable Chips
+    Topic ID: 1947
+
+    TOPIC: Basic I/O Interfacing Concepts: Interfacing Display devices, Interfacing Input devices
+    Topic ID: 2364
+
+    TOPIC: Memory Interfacing: Absolute decoding, Partial Decoding, Shadow Memory
+    Topic ID: 2365
+
+    TOPIC: Interfacing Peripherals: 8255A Programmable Peripheral Interface
+    Topic ID: 2366
+
+    TOPIC: Examples of Interfacing Keyboard and seven-segment Display
+    Topic ID: 2367
+
+    TOPIC: Examples of Bidirectional Data transfer Between Two Microcomputer
+    Topic ID: 2368
+
+    TOPIC: 8254 (8253) Programmable Interval Timer
+    Topic ID: 2369
+
+    TOPIC: The 8259A Programmable Interrupt Controller
+    Topic ID: 2370
+
+    TOPIC: Direct Memory Access and 8237 DMA Controller
+    Topic ID: 2371
+
+    TOPIC: The 8279 Programmable Keyboard/Display Interface
+    Topic ID: 2372
+
+    TOPIC: Interfacing Scanned Multiplexed Displays and Liquid Crystal Displays
+    Topic ID: 2373
+
+    TOPIC: Interfacing a Matrix Keyboard
+    Topic ID: 2374
+
+    TOPIC: Serial I/O and Data Communication: Basic concepts in Serial I/O
+    Topic ID: 2375
+
+    TOPIC: Software-Controlled Asynchronous Serial I/O
+    Topic ID: 2376
+
+    TOPIC: The 8085-Serial I/O lines: SOD and SID
+    Topic ID: 2377
+
+    TOPIC: Hardware Controlled Serial I/O Using Programmable Chips
+    Topic ID: 2378
+
+  CHAPTER: 8085 Interrupt Management
+  Chapter Number: 5
+  Chapter ID: 130
+
+    TOPIC: Interrupts and its Types in 8085
+    Topic ID: 1948
+
+    TOPIC: Interrupt Vector Table
+    Topic ID: 1949
+
+    TOPIC: Priority of Interrupts
+    Topic ID: 1950
+
+    TOPIC: Programming using Interrupts
+    Topic ID: 1951
+
+    TOPIC: Interrupts and its Types in 8085
+    Topic ID: 2379
+
+    TOPIC: Interrupt Vector Table
+    Topic ID: 2380
+
+    TOPIC: Priority of Interrupts
+    Topic ID: 2381
+
+    TOPIC: Programming using Interrupts
+    Topic ID: 2382
+
+  CHAPTER: 8086 Architecture
+  Chapter Number: 6
+  Chapter ID: 131
+
+    TOPIC: 8086 Architecture
+    Topic ID: 1952
+
+    TOPIC: Pin Out Diagram and its Features
+    Topic ID: 1953
+
+    TOPIC: Registers of 8086
+    Topic ID: 1954
+
+    TOPIC: 8086 Architecture
+    Topic ID: 2383
+
+    TOPIC: Pin Out Diagram and its Features
+    Topic ID: 2384
+
+    TOPIC: Registers of 8086
+    Topic ID: 2385
+
+  CHAPTER: Instruction Set of 8086
+  Chapter Number: 7
+  Chapter ID: 132
+
+    TOPIC: Data Transfer Instructions and Examples based on it
+    Topic ID: 1955
+
+    TOPIC: Arithmetic Instructions and Examples based on it
+    Topic ID: 1956
+
+    TOPIC: Logical Instructions
+    Topic ID: 1957
+
+    TOPIC: Comparison Instructions
+    Topic ID: 1958
+
+    TOPIC: Jump Instructions
+    Topic ID: 1959
+
+    TOPIC: Examples based on Logical, Comparison, Jump Instructions
+    Topic ID: 1960
+
+    TOPIC: Various 8086 Assembler Directives
+    Topic ID: 1961
+
+    TOPIC: Examples based on Various Assembler Directives
+    Topic ID: 1962
+
+    TOPIC: Procedures in 8086
+    Topic ID: 1963
+
+    TOPIC: Procedure-based Examples in 8086
+    Topic ID: 1964
+
+    TOPIC: Macros in 8086
+    Topic ID: 1965
+
+    TOPIC: Macros-based Examples in 8086
+    Topic ID: 1966
+
+    TOPIC: Data Transfer Instructions and Examples based on it
+    Topic ID: 2386
+
+    TOPIC: Arithmetic Instructions and Examples based on it
+    Topic ID: 2387
+
+    TOPIC: Logical Instructions, Comparison Instructions, Jump Instructions
+    Topic ID: 2388
+
+    TOPIC: Various 8086 Assembler Directives
+    Topic ID: 2389
+
+    TOPIC: Procedures in 8086
+    Topic ID: 2390
+
+    TOPIC: Macros in 8086
+    Topic ID: 2391
+
+  CHAPTER: Peripheral & Memory Interfacing with 8086
+  Chapter Number: 8
+  Chapter ID: 133
+
+    TOPIC: Interfacing Peripherals – 8255A
+    Topic ID: 1967
+
+    TOPIC: Examples of Interfacing Keyboard and Seven-segment Display
+    Topic ID: 1968
+
+    TOPIC: Interfacing with Alphanumeric Displays
+    Topic ID: 1969
+
+    TOPIC: Examples of Bidirectional Data Transfer Between Two Microcomputer
+    Topic ID: 1970
+
+    TOPIC: 8254 Interfacing with 8086
+    Topic ID: 1971
+
+    TOPIC: 8259A Interfacing with 8086
+    Topic ID: 1972
+
+    TOPIC: 8279 Interfacing with 8086
+    Topic ID: 1973
+
+    TOPIC: Interfacing Peripherals - 8255A with 8086
+    Topic ID: 2392
+
+    TOPIC: 8254, 8259A, and 8279 Interfacing with 8086
+    Topic ID: 2393
+
+  CHAPTER: 8086 Interrupts Management and Applications
+  Chapter Number: 9
+  Chapter ID: 134
+
+    TOPIC: 8086 Interrupts and Interrupts Responses
+    Topic ID: 1974
+
+    TOPIC: Interrupt Pointer Table
+    Topic ID: 1975
+
+    TOPIC: Hardware Interrupt
+    Topic ID: 1976
+
+    TOPIC: Software Interrupts
+    Topic ID: 1977
+
+    TOPIC: Interrupt Applications
+    Topic ID: 1978
+
+    TOPIC: 8086 Interrupts and Interrupts Responses
+    Topic ID: 2394
+
+    TOPIC: Interrupt Pointer Table
+    Topic ID: 2395
+
+    TOPIC: Hardware Interrupts and Software Interrupts
+    Topic ID: 2396
+
+    TOPIC: Interrupt Applications
+    Topic ID: 2397
+
+  CHAPTER: Recent Trends in Microprocessors
+  Chapter Number: 10
+  Chapter ID: 135
+
+    TOPIC: Recent Trends in Microprocessors
+    Topic ID: 2398
+
+SUBJECT: Computer Networks
+Subject Key: 8
+Subject ID: CS204
+Semester: 4
+
+  CHAPTER: Introduction
+  Chapter Number: 1
+  Chapter ID: 136
+
+    TOPIC: Overview of Computer Networks and Data Communication
+    Topic ID: 2036
+
+    TOPIC: Computer Networking Protocols and Standards
+    Topic ID: 2037
+
+    TOPIC: Types of Computer Networks
+    Topic ID: 2038
+
+    TOPIC: Network Topology
+    Topic ID: 2039
+
+    TOPIC: Protocol Hierarchies and Design Issues
+    Topic ID: 2040
+
+    TOPIC: Interfaces and Services
+    Topic ID: 2041
+
+    TOPIC: Networking Devices
+    Topic ID: 2042
+
+    TOPIC: OSI and TCP/IP Reference Models
+    Topic ID: 2043
+
+    TOPIC: Overview of Computer Networks and Data Communication
+    Topic ID: 2412
+
+    TOPIC: Computer Networking Protocols and Standards
+    Topic ID: 2413
+
+    TOPIC: Types of Computer Networks
+    Topic ID: 2414
+
+    TOPIC: Network Topology
+    Topic ID: 2415
+
+    TOPIC: Protocol Hierarchies and Design Issues
+    Topic ID: 2416
+
+    TOPIC: Interfaces and Services
+    Topic ID: 2417
+
+    TOPIC: Networking Devices
+    Topic ID: 2418
+
+    TOPIC: OSI and TCP/IP Reference Models
+    Topic ID: 2419
+
+  CHAPTER: Physical Layer
+  Chapter Number: 2
+  Chapter ID: 137
+
+    TOPIC: Physical Layer Design Issues
+    Topic ID: 2044
+
+    TOPIC: Data Transmission Techniques
+    Topic ID: 2045
+
+    TOPIC: Multiplexing
+    Topic ID: 2046
+
+    TOPIC: Transmission Media
+    Topic ID: 2047
+
+    TOPIC: Asynchronous Communication
+    Topic ID: 2048
+
+    TOPIC: Wireless Transmission
+    Topic ID: 2049
+
+    TOPIC: ISDN
+    Topic ID: 2050
+
+    TOPIC: ATM
+    Topic ID: 2051
+
+    TOPIC: Cellular Radio
+    Topic ID: 2052
+
+    TOPIC: Switching Techniques and Issues
+    Topic ID: 2053
+
+    TOPIC: Physical Layer Design Issues
+    Topic ID: 2420
+
+    TOPIC: Data Transmission Techniques
+    Topic ID: 2421
+
+    TOPIC: Multiplexing
+    Topic ID: 2422
+
+    TOPIC: Transmission Media
+    Topic ID: 2423
+
+    TOPIC: Asynchronous Communication
+    Topic ID: 2424
+
+    TOPIC: Wireless Transmission
+    Topic ID: 2425
+
+    TOPIC: ISDN, ATM, Cellular Radio
+    Topic ID: 2426
+
+    TOPIC: Switching Techniques and Issues
+    Topic ID: 2427
+
+  CHAPTER: Logical Link Control Layer
+  Chapter Number: 3
+  Chapter ID: 138
+
+    TOPIC: LLC Design Issues
+    Topic ID: 2054
+
+    TOPIC: Framing
+    Topic ID: 2055
+
+    TOPIC: Error and Flow Control
+    Topic ID: 2056
+
+    TOPIC: Framing Techniques
+    Topic ID: 2057
+
+    TOPIC: Error Control Methods
+    Topic ID: 2058
+
+    TOPIC: Flow Control Methods
+    Topic ID: 2059
+
+    TOPIC: PPP
+    Topic ID: 2060
+
+    TOPIC: HDLC
+    Topic ID: 2061
+
+    TOPIC: LLC Design Issues
+    Topic ID: 2428
+
+    TOPIC: Framing Techniques
+    Topic ID: 2429
+
+    TOPIC: Error Control Methods
+    Topic ID: 2430
+
+    TOPIC: Flow Control Methods
+    Topic ID: 2431
+
+    TOPIC: PPP and HDLC
+    Topic ID: 2432
+
+  CHAPTER: Medium Access Control Layer
+  Chapter Number: 4
+  Chapter ID: 139
+
+    TOPIC: MAC Layer Design Issues
+    Topic ID: 2062
+
+    TOPIC: Channel Allocation Methods
+    Topic ID: 2063
+
+    TOPIC: Multiple Access Protocols
+    Topic ID: 2064
+
+    TOPIC: ALOHA
+    Topic ID: 2065
+
+    TOPIC: CSMA
+    Topic ID: 2066
+
+    TOPIC: CSMA/CD Protocols
+    Topic ID: 2067
+
+    TOPIC: Collision Free Protocols
+    Topic ID: 2068
+
+    TOPIC: Limited Contention Protocols
+    Topic ID: 2069
+
+    TOPIC: LAN Architectures
+    Topic ID: 2070
+
+    TOPIC: IEEE-802 Standards
+    Topic ID: 2071
+
+    TOPIC: Ethernet (CSMA/CD)
+    Topic ID: 2072
+
+    TOPIC: Token Bus
+    Topic ID: 2073
+
+    TOPIC: Token Ring
+    Topic ID: 2074
+
+    TOPIC: DQDB
+    Topic ID: 2075
+
+    TOPIC: FDDI
+    Topic ID: 2076
+
+    TOPIC: Bridges
+    Topic ID: 2077
+
+    TOPIC: Recent Developments
+    Topic ID: 2078
+
+    TOPIC: MAC Layer Design Issues
+    Topic ID: 2433
+
+    TOPIC: Channel Allocation Methods
+    Topic ID: 2434
+
+    TOPIC: Multiple Access Protocols ALOHA, CSMA, CSMA/CD
+    Topic ID: 2435
+
+    TOPIC: Collision Free Protocols and Limited Contention Protocols
+    Topic ID: 2436
+
+    TOPIC: LAN Architectures and IEEE-802 Standards
+    Topic ID: 2437
+
+    TOPIC: Ethernet, Token Bus, Token Ring, DQDB, FDDI
+    Topic ID: 2438
+
+    TOPIC: Bridges and Recent Developments
+    Topic ID: 2439
+
+  CHAPTER: Network Layer
+  Chapter Number: 5
+  Chapter ID: 140
+
+    TOPIC: Network Layer Design Issues
+    Topic ID: 2079
+
+    TOPIC: Routing Algorithms and Protocols
+    Topic ID: 2080
+
+    TOPIC: Congestion Control Algorithms and QoS
+    Topic ID: 2081
+
+    TOPIC: Internetworking
+    Topic ID: 2082
+
+    TOPIC: Addressing
+    Topic ID: 2083
+
+    TOPIC: Network Layer Protocols
+    Topic ID: 2084
+
+    TOPIC: Recent Developments
+    Topic ID: 2085
+
+    TOPIC: Network Layer Design Issues
+    Topic ID: 2440
+
+    TOPIC: Routing Algorithms and Protocols
+    Topic ID: 2441
+
+    TOPIC: Congestion Control Algorithms and QoS
+    Topic ID: 2442
+
+    TOPIC: Internetworking and Addressing
+    Topic ID: 2443
+
+    TOPIC: N/W Layer Protocols and Recent Developments
+    Topic ID: 2444
+
+  CHAPTER: Transport Layer
+  Chapter Number: 6
+  Chapter ID: 141
+
+    TOPIC: Transport Layer Design Issues
+    Topic ID: 2086
+
+    TOPIC: Transport Services
+    Topic ID: 2087
+
+    TOPIC: Sockets
+    Topic ID: 2088
+
+    TOPIC: Addressing
+    Topic ID: 2089
+
+    TOPIC: Connection Establishment
+    Topic ID: 2090
+
+    TOPIC: Connection Release
+    Topic ID: 2091
+
+    TOPIC: Flow Control and Buffering
+    Topic ID: 2092
+
+    TOPIC: Multiplexing
+    Topic ID: 2093
+
+    TOPIC: Transport Layer Protocols
+    Topic ID: 2094
+
+    TOPIC: Real Time Transport Protocol (RTP)
+    Topic ID: 2095
+
+    TOPIC: Stream Control Transmission Protocol (SCTP)
+    Topic ID: 2096
+
+    TOPIC: Congestion Control
+    Topic ID: 2097
+
+    TOPIC: QoS
+    Topic ID: 2098
+
+    TOPIC: Recent Developments
+    Topic ID: 2099
+
+    TOPIC: Virtualization
+    Topic ID: 2100
+
+    TOPIC: Network Functions Virtualization (NFV)
+    Topic ID: 2101
+
+    TOPIC: Software Defined Networks
+    Topic ID: 2102
+
+    TOPIC: Transport Layer Design Issues
+    Topic ID: 2445
+
+    TOPIC: Transport Services, Sockets, Addressing
+    Topic ID: 2446
+
+    TOPIC: Connection Establishment and Release
+    Topic ID: 2447
+
+    TOPIC: Flow Control, Buffering, and Multiplexing
+    Topic ID: 2448
+
+    TOPIC: Transport Layer Protocols (RTP, SCTP)
+    Topic ID: 2449
+
+    TOPIC: Congestion Control and QoS
+    Topic ID: 2450
+
+    TOPIC: Virtualization, NFV, and Software Defined Networks
+    Topic ID: 2451
+
+  CHAPTER: Application Layer
+  Chapter Number: 7
+  Chapter ID: 142
+
+    TOPIC: Client Server Model
+    Topic ID: 2103
+
+    TOPIC: Domain Name System (DNS)
+    Topic ID: 2104
+
+    TOPIC: Hyper Text Transfer Protocol (HTTP)
+    Topic ID: 2105
+
+    TOPIC: Email
+    Topic ID: 2106
+
+    TOPIC: SMTP
+    Topic ID: 2107
+
+    TOPIC: MIME
+    Topic ID: 2108
+
+    TOPIC: POP3
+    Topic ID: 2109
+
+    TOPIC: Webmail
+    Topic ID: 2110
+
+    TOPIC: FTP
+    Topic ID: 2111
+
+    TOPIC: TELNET
+    Topic ID: 2112
+
+    TOPIC: Dynamic Host Control Protocol (DHCP)
+    Topic ID: 2113
+
+    TOPIC: Simple Network Management Protocol (SNMP)
+    Topic ID: 2114
+
+    TOPIC: Recent Developments
+    Topic ID: 2115
+
+    TOPIC: Client Server Model
+    Topic ID: 2452
+
+    TOPIC: Domain Name System (DNS)
+    Topic ID: 2453
+
+    TOPIC: Hyper Text Transfer Protocol (HTTP)
+    Topic ID: 2454
+
+    TOPIC: Email: SMTP, MIME, POP3, Webmail
+    Topic ID: 2455
+
+    TOPIC: FTP and TELNET
+    Topic ID: 2456
+
+    TOPIC: Dynamic Host Control Protocol (DHCP)
+    Topic ID: 2457
+
+    TOPIC: Simple Network Management Protocol (SNMP)
+    Topic ID: 2458
+
+SUBJECT: Automata and Formal Languages
+Subject Key: 10
+Subject ID: CS206
+Semester: 4
+
+  CHAPTER: Introduction
+  Chapter Number: 1
+  Chapter ID: 143
+
+    TOPIC: Basic Mathematical Objects
+    Topic ID: 2163
+
+    TOPIC: Sets
+    Topic ID: 2164
+
+    TOPIC: Logic
+    Topic ID: 2165
+
+    TOPIC: Functions
+    Topic ID: 2166
+
+    TOPIC: Relations
+    Topic ID: 2167
+
+    TOPIC: Strings
+    Topic ID: 2168
+
+    TOPIC: Alphabets
+    Topic ID: 2169
+
+    TOPIC: Languages
+    Topic ID: 2170
+
+    TOPIC: Mathematical Induction
+    Topic ID: 2171
+
+    TOPIC: Inductive Proofs
+    Topic ID: 2172
+
+    TOPIC: Principles
+    Topic ID: 2173
+
+    TOPIC: Recursive Definitions
+    Topic ID: 2174
+
+    TOPIC: Set Notation
+    Topic ID: 2175
+
+    TOPIC: Basic Mathematical Objects: Sets, Logic, Functions, Relations, Strings, Alphabets, Languages
+    Topic ID: 2475
+
+    TOPIC: Mathematical Induction: Inductive Proofs, Principles, Recursive Definitions
+    Topic ID: 2476
+
+  CHAPTER: Finite Automata and Regular Expression
+  Chapter Number: 2
+  Chapter ID: 144
+
+    TOPIC: Finite State Systems
+    Topic ID: 2176
+
+    TOPIC: Deterministic Finite Automata
+    Topic ID: 2177
+
+    TOPIC: Nondeterministic Finite Automata
+    Topic ID: 2178
+
+    TOPIC: Nondeterministic Finite Automata with Epsilon
+    Topic ID: 2179
+
+    TOPIC: Applications
+    Topic ID: 2180
+
+    TOPIC: Kleene's Theorem
+    Topic ID: 2181
+
+    TOPIC: Two-way Finite Automata
+    Topic ID: 2182
+
+    TOPIC: Finite Automata with Output
+    Topic ID: 2183
+
+    TOPIC: Regular Languages & Regular Expressions
+    Topic ID: 2184
+
+    TOPIC: Properties of Regular Sets
+    Topic ID: 2185
+
+    TOPIC: The Pumping Lemma for Regular Sets
+    Topic ID: 2186
+
+    TOPIC: Closure Properties
+    Topic ID: 2187
+
+    TOPIC: Decision Properties of Regular Languages
+    Topic ID: 2188
+
+    TOPIC: Equivalence and Minimization of Automata
+    Topic ID: 2189
+
+    TOPIC: Moore and Mealy Machines
+    Topic ID: 2190
+
+    TOPIC: Finite State Systems and Deterministic Finite Automata
+    Topic ID: 2477
+
+    TOPIC: Nondeterministic Finite Automata with Epsilon
+    Topic ID: 2478
+
+    TOPIC: Kleene Theorem and Two-way Finite Automata
+    Topic ID: 2479
+
+    TOPIC: Finite Automata with Output (Moore and Mealy Machines)
+    Topic ID: 2480
+
+    TOPIC: Regular Languages & Regular Expressions
+    Topic ID: 2481
+
+    TOPIC: Pumping Lemma for Regular Sets
+    Topic ID: 2482
+
+    TOPIC: Closure Properties and Decision Properties of Regular Languages
+    Topic ID: 2483
+
+    TOPIC: Equivalence and Minimization of Automata
+    Topic ID: 2484
+
+  CHAPTER: Context Free Grammars
+  Chapter Number: 3
+  Chapter ID: 145
+
+    TOPIC: Definition
+    Topic ID: 2191
+
+    TOPIC: Derivation Trees & Ambiguity
+    Topic ID: 2192
+
+    TOPIC: Inherent Ambiguity
+    Topic ID: 2193
+
+    TOPIC: Parse Tree
+    Topic ID: 2194
+
+    TOPIC: Application of CFG
+    Topic ID: 2195
+
+    TOPIC: Simplification of CFG
+    Topic ID: 2196
+
+    TOPIC: Normal Form of CFG
+    Topic ID: 2197
+
+    TOPIC: Chomsky Normal Form
+    Topic ID: 2198
+
+    TOPIC: Chomsky Hierarchy
+    Topic ID: 2199
+
+    TOPIC: Unrestricted Grammars
+    Topic ID: 2200
+
+    TOPIC: Context-Sensitive Languages
+    Topic ID: 2201
+
+    TOPIC: Relations between Classes of Languages
+    Topic ID: 2202
+
+    TOPIC: Properties of Context Free Languages
+    Topic ID: 2203
+
+    TOPIC: The Pumping Lemma
+    Topic ID: 2204
+
+    TOPIC: Closure Properties
+    Topic ID: 2205
+
+    TOPIC: Decision Properties of CFL
+    Topic ID: 2206
+
+    TOPIC: Context Free Grammar Definition, Derivation Trees & Ambiguity
+    Topic ID: 2485
+
+    TOPIC: Parse Tree and Applications of CFG
+    Topic ID: 2486
+
+    TOPIC: Simplification of CFG and Normal Forms (CNF)
+    Topic ID: 2487
+
+    TOPIC: Chomsky Hierarchy and Context-Sensitive Languages
+    Topic ID: 2488
+
+    TOPIC: Properties of Context Free Languages and Pumping Lemma for CFL
+    Topic ID: 2489
+
+  CHAPTER: Pushdown Automata
+  Chapter Number: 4
+  Chapter ID: 146
+
+    TOPIC: Definitions
+    Topic ID: 2207
+
+    TOPIC: Languages of PDA
+    Topic ID: 2208
+
+    TOPIC: Equivalence of PDA and CFG
+    Topic ID: 2209
+
+    TOPIC: Deterministic PDA
+    Topic ID: 2210
+
+    TOPIC: Pushdown Automata Definitions and Languages of PDA
+    Topic ID: 2490
+
+    TOPIC: Equivalence of PDA and CFG
+    Topic ID: 2491
+
+    TOPIC: Deterministic PDA
+    Topic ID: 2492
+
+  CHAPTER: Turing Machines
+  Chapter Number: 5
+  Chapter ID: 147
+
+    TOPIC: Turing Machine Model
+    Topic ID: 2211
+
+    TOPIC: Language of a Turing Machine (TM)
+    Topic ID: 2212
+
+    TOPIC: Programming Techniques of the TM
+    Topic ID: 2213
+
+    TOPIC: Variations of TM
+    Topic ID: 2214
+
+    TOPIC: Multiple TM
+    Topic ID: 2215
+
+    TOPIC: One-Tape and Multi-Tape TM
+    Topic ID: 2216
+
+    TOPIC: Deterministic and Non-Deterministic TM
+    Topic ID: 2217
+
+    TOPIC: Universal TM
+    Topic ID: 2218
+
+    TOPIC: Church Thesis
+    Topic ID: 2219
+
+    TOPIC: Recursively Enumerable Languages
+    Topic ID: 2220
+
+    TOPIC: Decidability
+    Topic ID: 2221
+
+    TOPIC: Reducibility
+    Topic ID: 2222
+
+    TOPIC: Intractable Problem
+    Topic ID: 2223
+
+    TOPIC: Classes of Problems
+    Topic ID: 2224
+
+    TOPIC: NP Hard
+    Topic ID: 2225
+
+    TOPIC: NP Complete
+    Topic ID: 2226
+
+    TOPIC: Turing Machine Model and Language of TM
+    Topic ID: 2493
+
+    TOPIC: Programming Techniques of TM
+    Topic ID: 2494
+
+    TOPIC: Variations of TM: One-Tape, Multi-Tape, Non-Deterministic, Universal TM
+    Topic ID: 2495
+
+    TOPIC: Church Thesis, Recursively Enumerable Languages
+    Topic ID: 2496
+
+    TOPIC: Decidability, Reducibility, NP-Hard, and NP-Complete Problems
+    Topic ID: 2497
+
+SUBJECT: Artificial Intelligence
+Subject Key: 13
+Subject ID: CS232
+Semester: 4
+
+  CHAPTER: Introduction
+  Chapter Number: 1
+  Chapter ID: 148
+
+    TOPIC: Introduction to AI and Robotics
+    Topic ID: 2290
+
+    TOPIC: History
+    Topic ID: 2291
+
+    TOPIC: Growth
+    Topic ID: 2292
+
+    TOPIC: Total Turing Test
+    Topic ID: 2293
+
+    TOPIC: Robot Applications
+    Topic ID: 2294
+
+    TOPIC: Manufacturing Industry
+    Topic ID: 2295
+
+    TOPIC: Defence
+    Topic ID: 2296
+
+    TOPIC: Rehabilitation
+    Topic ID: 2297
+
+    TOPIC: Medical
+    Topic ID: 2298
+
+    TOPIC: Laws of Robotics
+    Topic ID: 2299
+
+  CHAPTER: Searching Techniques in AI
+  Chapter Number: 2
+  Chapter ID: 149
+
+    TOPIC: Searching Techniques
+    Topic ID: 2300
+
+    TOPIC: Uninformed Search Strategies
+    Topic ID: 2301
+
+    TOPIC: Informed (Heuristic) Search Strategies
+    Topic ID: 2302
+
+    TOPIC: Local Search Algorithms
+    Topic ID: 2303
+
+    TOPIC: Searching in Non-deterministic and Partially Observable Environment
+    Topic ID: 2304
+
+    TOPIC: Adversarial Search
+    Topic ID: 2305
+
+  CHAPTER: Robotic Sensors and their Interfacing
+  Chapter Number: 3
+  Chapter ID: 150
+
+    TOPIC: Types of Sensors
+    Topic ID: 2306
+
+    TOPIC: Camera as a Sensor
+    Topic ID: 2307
+
+    TOPIC: Fundamentals of Computer Vision
+    Topic ID: 2308
+
+    TOPIC: Image Acquisition and Representation
+    Topic ID: 2309
+
+    TOPIC: Image Transformation
+    Topic ID: 2310
+
+    TOPIC: Filtering
+    Topic ID: 2311
+
+    TOPIC: Restoration
+    Topic ID: 2312
+
+    TOPIC: Morphing
+    Topic ID: 2313
+
+    TOPIC: Camera Models
+    Topic ID: 2314
+
+    TOPIC: Calibration
+    Topic ID: 2315
+
+    TOPIC: Single View Geometry
+    Topic ID: 2316
+
+    TOPIC: Multiple View Geometry
+    Topic ID: 2317
+
+    TOPIC: Epipolar Geometry
+    Topic ID: 2318
+
+    TOPIC: RANSAC
+    Topic ID: 2319
+
+  CHAPTER: Position and Orientation
+  Chapter Number: 4
+  Chapter ID: 151
+
+    TOPIC: Feature based Alignment
+    Topic ID: 2320
+
+    TOPIC: Pose Estimation
+    Topic ID: 2321
+
+    TOPIC: Time Varying Pose and Trajectories
+    Topic ID: 2322
+
+    TOPIC: Structure from Motion
+    Topic ID: 2323
+
+    TOPIC: Dense Motion Estimation
+    Topic ID: 2324
+
+    TOPIC: Visual Odometry
+    Topic ID: 2325
+
+    TOPIC: Semi-direct VO
+    Topic ID: 2326
+
+    TOPIC: Direct Sparse Odometry
+    Topic ID: 2327
+
+    TOPIC: Bundle Adjustment
+    Topic ID: 2328
+
+  CHAPTER: Motion Planning
+  Chapter Number: 5
+  Chapter ID: 152
+
+    TOPIC: Navigation
+    Topic ID: 2329
+
+    TOPIC: Coverage
+    Topic ID: 2330
+
+    TOPIC: Localization and Mapping
+    Topic ID: 2331
+
+    TOPIC: Initialization
+    Topic ID: 2332
+
+    TOPIC: Tracking
+    Topic ID: 2333
+
+    TOPIC: Mapping
+    Topic ID: 2334
+
+    TOPIC: Simultaneous Localization and Mapping (SLAM)
+    Topic ID: 2335
+
+  CHAPTER: Recognition and Interpretations
+  Chapter Number: 6
+  Chapter ID: 153
+
+    TOPIC: Concepts of Machine Learning and Deep Learning
+    Topic ID: 2336
+
+    TOPIC: Sequence Modeling
+    Topic ID: 2337
+
+    TOPIC: Learning for Robotic Vision
+    Topic ID: 2338
+
+    TOPIC: Active Learning
+    Topic ID: 2339
+
+    TOPIC: Incremental and Class Incremental Learning
+    Topic ID: 2340
+
+    TOPIC: Identify Unknowns
+    Topic ID: 2341
+
+    TOPIC: Uncertainty Estimation
+    Topic ID: 2342
+
+    TOPIC: Embodiment for Robotic Vision
+    Topic ID: 2343
+
+    TOPIC: Active Vision
+    Topic ID: 2344
+
+    TOPIC: Spatial and Temporal Embodiment
+    Topic ID: 2345
+
+    TOPIC: Reasoning for Object, Scene and Scene Semantics
+    Topic ID: 2346
+
+  CHAPTER: Recent Advancement in the Motion Planning
+  Chapter Number: 7
+  Chapter ID: 154
+
+    TOPIC: Planning using Fuzzy Logic and Neural Networks
+    Topic ID: 2347
+
+    TOPIC: Reinforcement Learning for the Planning in Robots
+    Topic ID: 2348
+
+SUBJECT: Information Security
+Subject Key: 14
+Subject ID: CS233
+Semester: 4
+
+  [No chapters]
+
+SUBJECT: Data Structures and Algorithms (for Minor)
+Subject Key: 15
+Subject ID: CS254
+Semester: 4
+
+  [No chapters]
+
+SUBJECT: Operating Systems
+Subject Key: 16
+Subject ID: CS301
+Semester: 5
+
+  CHAPTER: Operating System Overview
+  Chapter Number: 1
+  Chapter ID: 177
+
+    TOPIC: Operating System Objectives, Evolution, and Types
+    Topic ID: 2506
+
+    TOPIC: OS Design Considerations for Multiprocessor and Multicore
+    Topic ID: 2507
+
+  CHAPTER: Processes and Threads
+  Chapter Number: 2
+  Chapter ID: 178
+
+    TOPIC: Process Concept, States, PCB, and Hierarchy
+    Topic ID: 2508
+
+    TOPIC: Processes vs Threads and Types of Threads
+    Topic ID: 2509
+
+    TOPIC: Case Study: Linux & Windows Process and Thread Management
+    Topic ID: 2510
+
+  CHAPTER: Concurrency: Mutual Exclusion and Synchronization
+  Chapter Number: 3
+  Chapter ID: 179
+
+    TOPIC: Principles of Concurrency and Mutual Exclusion
+    Topic ID: 2511
+
+    TOPIC: Semaphores, Monitors, Message Passing
+    Topic ID: 2512
+
+    TOPIC: Readers/Writers Problem
+    Topic ID: 2513
+
+  CHAPTER: Concurrency: Deadlock and Starvation
+  Chapter Number: 4
+  Chapter ID: 180
+
+    TOPIC: Principles of Deadlock, Prevention, Avoidance, Detection
+    Topic ID: 2514
+
+    TOPIC: Dining Philosopher Problem
+    Topic ID: 2515
+
+  CHAPTER: Scheduling
+  Chapter Number: 5
+  Chapter ID: 181
+
+    TOPIC: Uniprocessor Scheduling Algorithms
+    Topic ID: 2516
+
+    TOPIC: Multiprocessor and Real-Time Scheduling
+    Topic ID: 2517
+
+  CHAPTER: Memory Management
+  Chapter Number: 6
+  Chapter ID: 182
+
+    TOPIC: Memory Hierarchy, Swapping, Contiguous vs Non-Contiguous Allocation
+    Topic ID: 2518
+
+    TOPIC: Paging and Segmentation
+    Topic ID: 2519
+
+  CHAPTER: Virtual Memory
+  Chapter Number: 7
+  Chapter ID: 183
+
+    TOPIC: Virtual Memory Concepts and Fetch/Placement/Replacement Policies
+    Topic ID: 2520
+
+    TOPIC: Resident Set Management and Load Control
+    Topic ID: 2521
+
+  CHAPTER: I/O Management and Disk Scheduling
+  Chapter Number: 8
+  Chapter ID: 184
+
+    TOPIC: I/O Buffering, Disk Scheduling, RAID, Disk Cache
+    Topic ID: 2522
+
+  CHAPTER: File Management
+  Chapter Number: 9
+  Chapter ID: 185
+
+    TOPIC: File Structure, File Directories, Sharing, and Security
+    Topic ID: 2523
+
+SUBJECT: Machine Learning
+Subject Key: 18
+Subject ID: CS331
+Semester: 5
+
+  CHAPTER: Introduction
+  Chapter Number: 1
+  Chapter ID: 186
+
+    TOPIC: Pattern Representation and Bayes Decision Theory
+    Topic ID: 2524
+
+    TOPIC: Maximum-Likelihood and Bayesian Parameter Estimation
+    Topic ID: 2525
+
+    TOPIC: Linear Discriminant Functions and Decision Surface
+    Topic ID: 2526
+
+    TOPIC: Fisher Discriminant Analysis
+    Topic ID: 2527
+
+  CHAPTER: Supervised Learning Algorithms
+  Chapter Number: 2
+  Chapter ID: 187
+
+    TOPIC: Linear Regression and Gradient Descent
+    Topic ID: 2528
+
+    TOPIC: Support Vector Machines and Decision Trees
+    Topic ID: 2529
+
+    TOPIC: K-Nearest Neighbor and Naive Bayes
+    Topic ID: 2530
+
+    TOPIC: Artificial Neural Networks and Back-propagation
+    Topic ID: 2531
+
+    TOPIC: Cross Validation and Overfitting Regularization
+    Topic ID: 2532
+
+  CHAPTER: Unsupervised Learning Algorithms
+  Chapter Number: 3
+  Chapter ID: 188
+
+    TOPIC: K-Means Clustering and Gaussian Mixture Models
+    Topic ID: 2533
+
+    TOPIC: Expectation Maximization Approach
+    Topic ID: 2534
+
+    TOPIC: Principal Component Analysis (PCA) and Dimensionality Reduction
+    Topic ID: 2535
+
+  CHAPTER: Transform Domain Pattern Analysis
+  Chapter Number: 4
+  Chapter ID: 189
+
+    TOPIC: Signal Transformation and Frequency Domain Representation
+    Topic ID: 2536
+
+    TOPIC: Wavelet Transform and Discrete Cosine Transform
+    Topic ID: 2537
+
+  CHAPTER: Applications
+  Chapter Number: 5
+  Chapter ID: 190
+
+    TOPIC: Signal and Image Processing Applications
+    Topic ID: 2538
+
+    TOPIC: Biometric, Face, and Speech Recognition
+    Topic ID: 2539
+
+    TOPIC: Information Retrieval and Natural Language Processing
+    Topic ID: 2540
+
+SUBJECT: Foundations of Cryptography
+Subject Key: 21
+Subject ID: CS352
+Semester: 5
+
+  [No chapters]
+
+SUBJECT: Unmanned Aerial Vehicle Technology
+Subject Key: 22
+Subject ID: CS353
+Semester: 5
+
+  [No chapters]
+
+SUBJECT: Network Security
+Subject Key: 23
+Subject ID: CS355
+Semester: 5
+
+  [No chapters]
+
+SUBJECT: Social Network Analysis
+Subject Key: 24
+Subject ID: CS356
+Semester: 5
+
+  [No chapters]
+
+SUBJECT: System Software
+Subject Key: 17
+Subject ID: CS302
+Semester: 6
+
+  CHAPTER: Introduction
+  Chapter Number: 1
+  Chapter ID: 196
+
+    TOPIC: System Software and Utility Software Concepts
+    Topic ID: 2555
+
+    TOPIC: Language Processors and Data Structures for Language Processing
+    Topic ID: 2556
+
+  CHAPTER: Assemblers
+  Chapter Number: 2
+  Chapter ID: 197
+
+    TOPIC: Overview of Assembly Process and Two Pass Assembler
+    Topic ID: 2557
+
+    TOPIC: Design of Operation Code Table, Symbol Table, Literal Table
+    Topic ID: 2558
+
+  CHAPTER: Macro Processors
+  Chapter Number: 3
+  Chapter ID: 198
+
+    TOPIC: Macro Processor Design and Parameters Handling
+    Topic ID: 2559
+
+    TOPIC: Macro Calls within Macros and Implementation in Assembler
+    Topic ID: 2560
+
+  CHAPTER: Compilers
+  Chapter Number: 4
+  Chapter ID: 199
+
+    TOPIC: Phases of Compiler and Lexical Analysis
+    Topic ID: 2561
+
+    TOPIC: Grammars, Top Down and Bottom Up Parsing Techniques
+    Topic ID: 2562
+
+    TOPIC: Language Processor Development Tools - LEX & YACC
+    Topic ID: 2563
+
+    TOPIC: Intermediate Representations and Basic Code Optimization
+    Topic ID: 2564
+
+  CHAPTER: Linkers and Loaders
+  Chapter Number: 5
+  Chapter ID: 200
+
+    TOPIC: Design of Linkers and Program Relocation
+    Topic ID: 2565
+
+    TOPIC: Absolute, Relocating, Dynamic, and Bootstrap Loaders
+    Topic ID: 2566
+
+  CHAPTER: Interpreters & Debuggers
+  Chapter Number: 6
+  Chapter ID: 201
+
+    TOPIC: Types of Errors and Debugger Classification
+    Topic ID: 2567
+
+    TOPIC: Java Language Environment and JVM Overview
+    Topic ID: 2568
+
+SUBJECT: Distributed Computing
+Subject Key: 19
+Subject ID: CS332
+Semester: 6
+
+  CHAPTER: Introduction to Distributed Systems
+  Chapter Number: 1
+  Chapter ID: 202
+
+    TOPIC: Characteristics, Properties, and Goals of Distributed Systems
+    Topic ID: 2569
+
+    TOPIC: Client-Server Model and Middleware Concepts
+    Topic ID: 2570
+
+  CHAPTER: Communication in Distributed Systems
+  Chapter Number: 2
+  Chapter ID: 203
+
+    TOPIC: Message Passing, RPC, and Remote Object Invocation
+    Topic ID: 2571
+
+  CHAPTER: Process Management
+  Chapter Number: 3
+  Chapter ID: 204
+
+    TOPIC: Threads, Process Migration, and Scheduling
+    Topic ID: 2572
+
+    TOPIC: Load Balancing and Sharing Approaches
+    Topic ID: 2573
+
+  CHAPTER: Synchronization
+  Chapter Number: 4
+  Chapter ID: 205
+
+    TOPIC: Clock Synchronization and Logical Clocks
+    Topic ID: 2574
+
+    TOPIC: Election Algorithms (Bully, Ring)
+    Topic ID: 2575
+
+    TOPIC: Distributed Mutual Exclusion and Transactions
+    Topic ID: 2576
+
+  CHAPTER: Consistency and Replication
+  Chapter Number: 5
+  Chapter ID: 206
+
+    TOPIC: Data-Centric and Client-Centric Consistency Models
+    Topic ID: 2577
+
+    TOPIC: Replica Placement and Epidemic Protocols
+    Topic ID: 2578
+
+  CHAPTER: Fault Tolerance
+  Chapter Number: 6
+  Chapter ID: 207
+
+    TOPIC: Failure Models, Masking, and Process Resilience
+    Topic ID: 2579
+
+    TOPIC: Distributed Commit and Recovery Protocols
+    Topic ID: 2580
+
+  CHAPTER: Distributed Object Based Systems
+  Chapter Number: 7
+  Chapter ID: 208
+
+    TOPIC: Distributed Objects, EJB, RMI Framework
+    Topic ID: 2581
+
+  CHAPTER: Distributed File Systems
+  Chapter Number: 8
+  Chapter ID: 209
+
+    TOPIC: Distributed File Systems Architecture and Cache Consistency
+    Topic ID: 2582
+
+  CHAPTER: Distributed Web Based Systems
+  Chapter Number: 9
+  Chapter ID: 210
+
+    TOPIC: Web Proxy Caching and Web Hosting Systems Replication
+    Topic ID: 2583
+
+SUBJECT: Software Engineering
+Subject Key: 20
+Subject ID: CS351
+Semester: 6
+
+  [No chapters]
+
+SUBJECT: High Performance Computing
+Subject Key: 25
+Subject ID: CS357
+Semester: 6
+
+  [No chapters]
+
+SUBJECT: Unmanned Aerial Vehicles Information Systems
+Subject Key: 26
+Subject ID: CS358
+Semester: 6
+
+  [No chapters]
+
+SUBJECT: Artificial Intelligence for Robotics
+Subject Key: 27
+Subject ID: CS359
+Semester: 6
+
+  [No chapters]
+
+SUBJECT: Blockchain Technology
+Subject Key: 28
+Subject ID: CS360
+Semester: 6
+
+  [No chapters]
+
+SUBJECT: Data Science
+Subject Key: 29
+Subject ID: CS361
+Semester: 6
+
+  [No chapters]
+
+SUBJECT: Cyber Physical Systems
+Subject Key: 30
+Subject ID: CS431
+Semester: 7
+
+  CHAPTER: Introduction
+  Chapter Number: 1
+  Chapter ID: 353
+
+    TOPIC: Introduction to Cyber Physical System and Design Process
+    Topic ID: 2633
+
+    TOPIC: Introduction to Cyber Physical System and Design Process
+    Topic ID: 2648
+
+  CHAPTER: Modelling Dynamic Behaviour
+  Chapter Number: 2
+  Chapter ID: 354
+
+    TOPIC: Continuous Dynamics: Newtonian Mechanics and Actor Models
+    Topic ID: 2634
+
+    TOPIC: Discrete Dynamics: FSM, Extended State Machines, Hybrid Systems
+    Topic ID: 2635
+
+    TOPIC: Continuous Dynamics: Newtonian Mechanics and Actor Models
+    Topic ID: 2649
+
+    TOPIC: Discrete Dynamics: FSM, Extended State Machines, Hybrid Systems
+    Topic ID: 2650
+
+  CHAPTER: Design of Embedded Systems
+  Chapter Number: 3
+  Chapter ID: 355
+
+    TOPIC: Sensors, Actuators, and Embedded Processors
+    Topic ID: 2636
+
+    TOPIC: Memory Architectures, I/O, Multitasking, and Scheduling
+    Topic ID: 2637
+
+    TOPIC: Sensors, Actuators, and Embedded Processors
+    Topic ID: 2651
+
+    TOPIC: Memory Architectures, I/O, Multitasking, and Scheduling
+    Topic ID: 2652
+
+  CHAPTER: Analysis and Verification of Cyber Physical Systems
+  Chapter Number: 4
+  Chapter ID: 356
+
+    TOPIC: Invariants, Temporal Logic, and Reachability Analysis
+    Topic ID: 2638
+
+    TOPIC: Model Checking and Quantitative Analysis
+    Topic ID: 2639
+
+    TOPIC: Invariants, Temporal Logic, and Reachability Analysis
+    Topic ID: 2653
+
+    TOPIC: Model Checking and Quantitative Analysis
+    Topic ID: 2654
+
+  CHAPTER: Security and Privacy in Cyber Physical Systems
+  Chapter Number: 5
+  Chapter ID: 357
+
+    TOPIC: Cryptographic Primitives and Cyber Physical Attacks
+    Topic ID: 2640
+
+    TOPIC: Security Protocols, Software Security, and Privacy Risk Analysis
+    Topic ID: 2641
+
+    TOPIC: Cryptographic Primitives and Cyber Physical Attacks
+    Topic ID: 2655
+
+    TOPIC: Security Protocols, Software Security, and Privacy Risk Analysis
+    Topic ID: 2656
+
+  CHAPTER: Case Studies and Advanced Topics
+  Chapter Number: 6
+  Chapter ID: 358
+
+    TOPIC: Case Studies and Advanced Topics in CPS
+    Topic ID: 2642
+
+    TOPIC: Case Studies and Advanced Topics in CPS
+    Topic ID: 2657
+
+SUBJECT: Cyber Laws and Forensic Tools
+Subject Key: 31
+Subject ID: CS451
+Semester: 7
+
+  [No chapters]
+
+SUBJECT: Big Data Analytics
+Subject Key: 32
+Subject ID: CS452
+Semester: 7
+
+  [No chapters]
+
+SUBJECT: Drone Forensics
+Subject Key: 33
+Subject ID: CS453
+Semester: 7
+
+  [No chapters]
+
+SUBJECT: Software Security
+Subject Key: 34
+Subject ID: CS454
+Semester: 7
+
+  [No chapters]
+
+SUBJECT: System Analysis and Simulation
+Subject Key: 35
+Subject ID: CS455
+Semester: 7
+
+  [No chapters]
+
+SUBJECT: Security in Cyber Physical Systems
+Subject Key: 36
+Subject ID: CS456
+Semester: 7
+
+  [No chapters]
+
+SUBJECT: Deep Learning
+Subject Key: 37
+Subject ID: CS457
+Semester: 8
+
+  [No chapters]
+
+SUBJECT: Machine Learning for Security
+Subject Key: 38
+Subject ID: CS458
+Semester: 8
+
+  [No chapters]
+
+SUBJECT: Natural Language Processing
+Subject Key: 39
+Subject ID: CS459
+Semester: 8
+
+  [No chapters]
+
+SUBJECT: Network Reconnaissance
+Subject Key: 40
+Subject ID: CS460
+Semester: 8
+
+  [No chapters]
+
+SUBJECT: Motion Analytics
+Subject Key: 41
+Subject ID: CS461
+Semester: 8
+
+  [No chapters]

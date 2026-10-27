@@ -3,8 +3,11 @@ import { fetchApi } from "../services/api";
 import SearchableSelect, { type ComboOption } from "./SearchableSelect";
 import {
     useApiList,
+    type BookOption,
     type ChapterOption,
     type DepartmentOption,
+    type ExamOption,
+    type SourceOption,
     type SubjectOption,
     type TopicOption,
 } from "../hooks/useApiList";
@@ -20,12 +23,6 @@ const TYPE_LABELS: Record<QuestionType, string> = {
     SUBJECTIVE: "Subjective",
     "TRUE/FALSE": "True / False",
 };
-
-interface SourceOption {
-    sourceId: number;
-    sourceType: "EXAM" | "BOOK";
-    label: string;
-}
 
 interface CreatedQuestion {
     quesId: number;
@@ -241,7 +238,9 @@ export function computeItemStatus(item: JsonImportItem): ItemResolutionStatus {
 }
 
 export default function AddQuestionForm() {
-    const [mode, setMode] = useState<"manual" | "json">("manual");
+    const [sourceMode, setSourceMode] = useState<"exam" | "book">("exam");
+    const [entryFormat, setEntryFormat] = useState<"manual" | "json">("manual");
+    const mode = entryFormat;
 
     // Common selectors
     const [department, setDepartment] = useState<ComboOption | null>(null);
@@ -255,6 +254,22 @@ export default function AddQuestionForm() {
     const [text, setText] = useState("");
     const [manualImages, setManualImages] = useState<ImageAttachment[]>([]);
     const [manualSubmitted, setManualSubmitted] = useState(false);
+
+    // Quick Register Exam Modal state
+    const [quickExamModalOpen, setQuickExamModalOpen] = useState(false);
+    const [quickExamType, setQuickExamType] = useState<string>("MIDSEM");
+    const [quickExamYear, setQuickExamYear] = useState<number>(new Date().getFullYear());
+    const [quickSemesterNo, setQuickSemesterNo] = useState<number>(1);
+    const [quickMonth, setQuickMonth] = useState<string>("");
+    const [quickExamSubmitting, setQuickExamSubmitting] = useState(false);
+    const [quickExamError, setQuickExamError] = useState<string | null>(null);
+
+    // Quick Register Book Modal state
+    const [quickBookModalOpen, setQuickBookModalOpen] = useState(false);
+    const [quickBookName, setQuickBookName] = useState("");
+    const [quickAuthorName, setQuickAuthorName] = useState("");
+    const [quickBookSubmitting, setQuickBookSubmitting] = useState(false);
+    const [quickBookError, setQuickBookError] = useState<string | null>(null);
 
     // JSON Import state
     const [jsonRaw, setJsonRaw] = useState("");
@@ -293,6 +308,14 @@ export default function AddQuestionForm() {
         chapterId ? `/api/topics?chapterId=${chapterId}` : null,
     );
     const sources = useApiList<SourceOption>("/api/sources");
+    const exams = useApiList<ExamOption>(
+        subject && sourceMode === "exam"
+            ? `/api/exams?subjectKey=${subject.id}`
+            : null,
+    );
+    const books = useApiList<BookOption>(
+        sourceMode === "book" ? "/api/books" : null,
+    );
 
     const departmentOptions = useMemo<ComboOption[]>(
         () =>
@@ -350,7 +373,11 @@ export default function AddQuestionForm() {
     if (topicIds.length === 0) errors.topics = "Select at least one topic.";
     if (!text.trim()) errors.text = "Enter the question text.";
     if (!type) errors.type = "Select a question type.";
-    if (!sourceId) errors.source = "Select a source.";
+    if (!sourceId) {
+        if (sourceMode === "exam") errors.source = "Select an exam for this subject.";
+        else if (sourceMode === "book") errors.source = "Select a registered book.";
+        else errors.source = "Select a source.";
+    }
 
     const show = (key: keyof Errors) =>
         manualSubmitted ? errors[key] : undefined;
@@ -361,6 +388,9 @@ export default function AddQuestionForm() {
         setSubject(null);
         setChapterId("");
         setTopicIds([]);
+        if (sourceMode === "exam") {
+            setSourceId("");
+        }
         clearNotice();
     };
 
@@ -368,9 +398,95 @@ export default function AddQuestionForm() {
         setSubject(option);
         setChapterId("");
         setTopicIds([]);
+        if (sourceMode === "exam") {
+            setSourceId("");
+        }
         clearNotice();
         // Clear cached JSON items when subject changes to avoid mismatched chapters
         setJsonItems([]);
+    };
+
+    const openQuickExamModal = () => {
+        setQuickExamError(null);
+        if (subject) {
+            const found = subjects.data.find((s) => s.subjectKey === subject.id);
+            if (found && typeof found.semester === "number") {
+                setQuickSemesterNo(found.semester);
+            }
+        }
+        setQuickExamModalOpen(true);
+    };
+
+    const handleQuickExamSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!subject) return;
+        setQuickExamSubmitting(true);
+        setQuickExamError(null);
+
+        try {
+            const created = await fetchApi<ExamOption>("/api/exams", {
+                method: "POST",
+                body: JSON.stringify({
+                    subjectKey: subject.id,
+                    examType: quickExamType,
+                    examYear: Number(quickExamYear),
+                    semesterNo: Number(quickSemesterNo),
+                    month: quickMonth ? quickMonth : undefined,
+                }),
+            });
+
+            exams.retry();
+            sources.retry();
+            setSourceId(String(created.sourceId));
+            setQuickExamModalOpen(false);
+            setNotice({
+                kind: "success",
+                message: `Exam registered and selected! (Source #${created.sourceId})`,
+            });
+        } catch (err) {
+            setQuickExamError(
+                err instanceof Error ? err.message : "Failed to register exam.",
+            );
+        } finally {
+            setQuickExamSubmitting(false);
+        }
+    };
+
+    const handleQuickBookSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!quickBookName.trim() || !quickAuthorName.trim()) {
+            setQuickBookError("Book title and author name are required.");
+            return;
+        }
+        setQuickBookSubmitting(true);
+        setQuickBookError(null);
+
+        try {
+            const created = await fetchApi<BookOption>("/api/books", {
+                method: "POST",
+                body: JSON.stringify({
+                    bookName: quickBookName.trim(),
+                    authorName: quickAuthorName.trim(),
+                }),
+            });
+
+            books.retry();
+            sources.retry();
+            setSourceId(String(created.sourceId));
+            setQuickBookName("");
+            setQuickAuthorName("");
+            setQuickBookModalOpen(false);
+            setNotice({
+                kind: "success",
+                message: `Book "${created.bookName}" registered and selected! (Source #${created.sourceId})`,
+            });
+        } catch (err) {
+            setQuickBookError(
+                err instanceof Error ? err.message : "Failed to register book.",
+            );
+        } finally {
+            setQuickBookSubmitting(false);
+        }
     };
 
     const handleChapter = (value: string) => {
@@ -488,6 +604,8 @@ export default function AddQuestionForm() {
                     sourceId: Number(sourceId),
                     topicIds,
                     imageUrls: uploadedUrls,
+                    chapterId: Number(chapterId),
+                    subjectKey: subject?.id,
                 }),
             });
 
@@ -940,8 +1058,7 @@ export default function AddQuestionForm() {
         if (!department || !subject || !type || !sourceId) {
             setNotice({
                 kind: "error",
-                message:
-                    "Please select Department, Subject, Question Type, and Source above before importing.",
+                message: `Please select Department, Subject, ${sourceMode === "exam" ? "Exam" : "Book"}, and Question Type above before importing.`,
             });
             return;
         }
@@ -1089,36 +1206,73 @@ export default function AddQuestionForm() {
                     </p>
                 </div>
 
-                {/* Tabs */}
-                <div className="inline-flex p-1 rounded-lg bg-neutral-900 border border-neutral-800">
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setMode("manual");
-                            clearNotice();
-                        }}
-                        className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-colors ${
-                            mode === "manual"
-                                ? "bg-red-600 text-white shadow"
-                                : "text-neutral-400 hover:text-neutral-200"
-                        }`}
-                    >
-                        Manual Entry
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setMode("json");
-                            clearNotice();
-                        }}
-                        className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-colors ${
-                            mode === "json"
-                                ? "bg-red-600 text-white shadow"
-                                : "text-neutral-400 hover:text-neutral-200"
-                        }`}
-                    >
-                        JSON Import
-                    </button>
+                {/* Mode Selectors: Source Mode (Exam vs Book) & Input Format (Single vs JSON) */}
+                <div className="flex flex-wrap items-center gap-3">
+                    {/* Source Mode Switcher */}
+                    <div className="inline-flex p-1 rounded-lg bg-neutral-900 border border-neutral-800">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setSourceMode("exam");
+                                setSourceId("");
+                                clearNotice();
+                            }}
+                            className={`px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors ${
+                                sourceMode === "exam"
+                                    ? "bg-red-600 text-white shadow"
+                                    : "text-neutral-400 hover:text-neutral-200"
+                            }`}
+                        >
+                            🎓 Exam Mode
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setSourceMode("book");
+                                setSourceId("");
+                                clearNotice();
+                            }}
+                            className={`px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors ${
+                                sourceMode === "book"
+                                    ? "bg-red-600 text-white shadow"
+                                    : "text-neutral-400 hover:text-neutral-200"
+                            }`}
+                        >
+                            📚 Book Mode
+                        </button>
+                    </div>
+
+                    {/* Input Format Switcher */}
+                    <div className="inline-flex p-1 rounded-lg bg-neutral-900 border border-neutral-800">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setEntryFormat("manual");
+                                clearNotice();
+                            }}
+                            className={`px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors ${
+                                entryFormat === "manual"
+                                    ? "bg-neutral-800 text-white border border-neutral-700 shadow"
+                                    : "text-neutral-400 hover:text-neutral-200"
+                            }`}
+                        >
+                            Single Question
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setEntryFormat("json");
+                                clearNotice();
+                            }}
+                            className={`px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors ${
+                                entryFormat === "json"
+                                    ? "bg-neutral-800 text-white border border-neutral-700 shadow"
+                                    : "text-neutral-400 hover:text-neutral-200"
+                            }`}
+                        >
+                            JSON Import
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -1156,9 +1310,19 @@ export default function AddQuestionForm() {
             {/* Common Context Selectors */}
             <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 relative overflow-hidden mb-6 space-y-6">
                 <div className="absolute top-0 left-0 w-1 h-full bg-red-500/80"></div>
-                <h4 className="text-sm font-semibold text-neutral-300 uppercase tracking-wider">
-                    Target Subject & Context
-                </h4>
+                <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-semibold text-neutral-300 uppercase tracking-wider">
+                        {sourceMode === "exam"
+                            ? "Step 1: Department, Subject & Exam"
+                            : "Step 1: Department, Subject & Book"}
+                    </h4>
+                    <span className="text-xs text-neutral-500">
+                        {sourceMode === "exam"
+                            ? "Mode A: Exam Question Entry"
+                            : "Mode B: Book Question Entry"}{" "}
+                        · {entryFormat === "manual" ? "Single Entry" : "JSON Import Mode"}
+                    </span>
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Department */}
@@ -1229,17 +1393,153 @@ export default function AddQuestionForm() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Question type */}
+                    {/* Source Selection: Exam or Book based on sourceMode */}
+                    {sourceMode === "exam" ? (
+                        <Field
+                            label="Exam"
+                            htmlFor="source"
+                            error={
+                                show("source") ??
+                                (exams.error
+                                    ? "Exams failed to load."
+                                    : undefined)
+                            }
+                            hint={
+                                !subject
+                                    ? "Select a subject to view its exams."
+                                    : !exams.loading && exams.data.length === 0
+                                      ? "No exams found for this subject."
+                                      : "Select the exam paper."
+                            }
+                        >
+                            <div className="flex gap-2">
+                                <select
+                                    id="source"
+                                    value={sourceId}
+                                    disabled={!subject || exams.loading}
+                                    onChange={(e) => {
+                                        setSourceId(e.target.value);
+                                        clearNotice();
+                                    }}
+                                    aria-invalid={!!show("source") || undefined}
+                                    aria-describedby={
+                                        show("source")
+                                            ? "source-error"
+                                            : undefined
+                                    }
+                                    className={`flex-1 ${inputClass(!!show("source"))}`}
+                                >
+                                    <option value="">
+                                        {!subject
+                                            ? "Select subject first"
+                                            : exams.loading
+                                              ? "Loading exams…"
+                                              : exams.data.length === 0
+                                                ? "No exams for this subject"
+                                                : "Select an exam"}
+                                    </option>
+                                    {exams.data.map((ex) => (
+                                        <option
+                                            key={ex.sourceId}
+                                            value={ex.sourceId}
+                                        >
+                                            {ex.examType} {ex.examYear} · Sem{" "}
+                                            {ex.semesterNo}
+                                            {ex.month ? ` (${ex.month})` : ""} ·
+                                            Source #{ex.sourceId}
+                                        </option>
+                                    ))}
+                                </select>
+                                <button
+                                    type="button"
+                                    disabled={!subject}
+                                    onClick={openQuickExamModal}
+                                    title="Register new exam for this subject"
+                                    className="px-3 py-2 text-xs font-medium text-red-300 bg-red-950/40 hover:bg-red-900/50 border border-red-500/40 rounded-lg transition-colors whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                                >
+                                    + Register Exam
+                                </button>
+                            </div>
+                        </Field>
+                    ) : (
+                        <Field
+                            label="Registered Book"
+                            htmlFor="source"
+                            error={
+                                show("source") ??
+                                (books.error
+                                    ? "Books failed to load."
+                                    : undefined)
+                            }
+                            hint={
+                                !books.loading && books.data.length === 0
+                                    ? "No books registered yet."
+                                    : "Reference textbook for this question."
+                            }
+                        >
+                            <div className="flex gap-2">
+                                <select
+                                    id="source"
+                                    value={sourceId}
+                                    disabled={books.loading}
+                                    onChange={(e) => {
+                                        setSourceId(e.target.value);
+                                        clearNotice();
+                                    }}
+                                    aria-invalid={!!show("source") || undefined}
+                                    aria-describedby={
+                                        show("source")
+                                            ? "source-error"
+                                            : undefined
+                                    }
+                                    className={`flex-1 ${inputClass(!!show("source"))}`}
+                                >
+                                    <option value="">
+                                        {books.loading
+                                            ? "Loading books…"
+                                            : books.data.length === 0
+                                              ? "No books registered"
+                                              : "Select a book"}
+                                    </option>
+                                    {books.data.map((b) => (
+                                        <option
+                                            key={b.sourceId}
+                                            value={b.sourceId}
+                                        >
+                                            {b.bookName} — {b.authorName}{" "}
+                                            (Source #{b.sourceId})
+                                        </option>
+                                    ))}
+                                </select>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setQuickBookError(null);
+                                        setQuickBookModalOpen(true);
+                                    }}
+                                    title="Register new book"
+                                    className="px-3 py-2 text-xs font-medium text-red-300 bg-red-950/40 hover:bg-red-900/50 border border-red-500/40 rounded-lg transition-colors whitespace-nowrap shrink-0"
+                                >
+                                    + Register Book
+                                </button>
+                            </div>
+                        </Field>
+                    )}
+
+                    {/* Question type (applies to both Single and JSON Import) */}
                     <Field
                         label="Question type"
                         htmlFor="type"
                         error={show("type")}
+                        hint={entryFormat === "json" ? "Applied to all imported questions" : undefined}
                     >
                         <select
                             id="type"
                             value={type}
                             onChange={(e) => {
-                                setType(e.target.value as QuestionType | "");
+                                setType(
+                                    e.target.value as QuestionType | "",
+                                );
                                 clearNotice();
                             }}
                             aria-invalid={!!show("type") || undefined}
@@ -1252,51 +1552,6 @@ export default function AddQuestionForm() {
                             {QUESTION_TYPES.map((t) => (
                                 <option key={t} value={t}>
                                     {TYPE_LABELS[t]}
-                                </option>
-                            ))}
-                        </select>
-                    </Field>
-
-                    {/* Source */}
-                    <Field
-                        label="Source"
-                        htmlFor="source"
-                        error={
-                            show("source") ??
-                            (sources.error
-                                ? "Sources failed to load."
-                                : undefined)
-                        }
-                        hint={
-                            !sources.loading &&
-                            !sources.error &&
-                            sources.data.length === 0
-                                ? "No sources exist in the database yet."
-                                : "Exam or Book reference."
-                        }
-                    >
-                        <select
-                            id="source"
-                            value={sourceId}
-                            disabled={sources.loading}
-                            onChange={(e) => {
-                                setSourceId(e.target.value);
-                                clearNotice();
-                            }}
-                            aria-invalid={!!show("source") || undefined}
-                            aria-describedby={
-                                show("source") ? "source-error" : undefined
-                            }
-                            className={inputClass(!!show("source"))}
-                        >
-                            <option value="">
-                                {sources.loading
-                                    ? "Loading sources…"
-                                    : "Select a source"}
-                            </option>
-                            {sources.data.map((s) => (
-                                <option key={s.sourceId} value={s.sourceId}>
-                                    {s.label}
                                 </option>
                             ))}
                         </select>
@@ -2252,6 +2507,237 @@ export default function AddQuestionForm() {
                             })}
                         </div>
                     )}
+                </div>
+            )}
+
+            {/* Quick Register Exam Modal */}
+            {quickExamModalOpen && (
+                <div
+                    className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="quick-exam-modal-title"
+                >
+                    <div className="bg-neutral-900 border border-neutral-800 rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl">
+                        <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+                            <h4
+                                id="quick-exam-modal-title"
+                                className="text-base font-semibold text-neutral-100"
+                            >
+                                Register Exam for {subject?.label?.split("—")[0]?.trim() || "Subject"}
+                            </h4>
+                            <button
+                                onClick={() => setQuickExamModalOpen(false)}
+                                className="text-neutral-400 hover:text-neutral-200 text-sm p-1"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        {quickExamError && (
+                            <div className="text-xs text-red-400 bg-red-950/30 border border-red-500/30 p-2.5 rounded-lg">
+                                {quickExamError}
+                            </div>
+                        )}
+
+                        <form onSubmit={handleQuickExamSubmit} className="space-y-4">
+                            <div className="bg-neutral-950 border border-neutral-800 rounded-lg p-3 text-xs space-y-1">
+                                <div className="text-neutral-400">
+                                    <span className="font-medium text-neutral-300">Department:</span>{" "}
+                                    {department?.label ?? "—"}
+                                </div>
+                                <div className="text-neutral-400">
+                                    <span className="font-medium text-neutral-300">Subject:</span>{" "}
+                                    {subject?.label ?? "—"}
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="block text-xs font-medium text-neutral-300 mb-1">
+                                        Exam Type <span className="text-red-500">*</span>
+                                    </label>
+                                    <select
+                                        value={quickExamType}
+                                        onChange={(e) => setQuickExamType(e.target.value)}
+                                        className="w-full bg-neutral-950 border border-neutral-800 text-neutral-100 text-xs rounded-lg px-3 py-2 focus:border-red-500 focus:outline-none"
+                                    >
+                                        <option value="MIDSEM">MIDSEM</option>
+                                        <option value="ENDSEM">ENDSEM</option>
+                                        <option value="QUIZ">QUIZ</option>
+                                        <option value="ASSIGNMENT">ASSIGNMENT</option>
+                                        <option value="TUTORIAL">TUTORIAL</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-medium text-neutral-300 mb-1">
+                                        Year <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min={1950}
+                                        max={2100}
+                                        value={quickExamYear}
+                                        onChange={(e) => setQuickExamYear(Number(e.target.value))}
+                                        required
+                                        className="w-full bg-neutral-950 border border-neutral-800 text-neutral-100 text-xs rounded-lg px-3 py-2 focus:border-red-500 focus:outline-none"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="block text-xs font-medium text-neutral-300 mb-1">
+                                        Semester <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min={1}
+                                        max={10}
+                                        value={quickSemesterNo}
+                                        onChange={(e) => setQuickSemesterNo(Number(e.target.value))}
+                                        required
+                                        className="w-full bg-neutral-950 border border-neutral-800 text-neutral-100 text-xs rounded-lg px-3 py-2 focus:border-red-500 focus:outline-none"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-medium text-neutral-300 mb-1">
+                                        Month (Optional)
+                                    </label>
+                                    <select
+                                        value={quickMonth}
+                                        onChange={(e) => setQuickMonth(e.target.value)}
+                                        className="w-full bg-neutral-950 border border-neutral-800 text-neutral-100 text-xs rounded-lg px-3 py-2 focus:border-red-500 focus:outline-none"
+                                    >
+                                        <option value="">None</option>
+                                        {[
+                                            "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
+                                            "JUL", "AUG", "SEP", "OCT", "NOV", "DEC",
+                                        ].map((m) => (
+                                            <option key={m} value={m}>
+                                                {m}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <p className="text-[11px] text-neutral-500">
+                                This will register the exam in the database and automatically select it for your question. Your existing form inputs will not be lost.
+                            </p>
+
+                            <div className="flex items-center justify-end gap-2 pt-2 border-t border-neutral-800">
+                                <button
+                                    type="button"
+                                    onClick={() => setQuickExamModalOpen(false)}
+                                    className="px-3 py-1.5 text-xs text-neutral-300 hover:text-white bg-neutral-800 rounded-lg transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={quickExamSubmitting}
+                                    className="px-3 py-1.5 text-xs font-medium text-white bg-red-600 hover:bg-red-500 disabled:opacity-50 rounded-lg transition-colors flex items-center gap-1.5"
+                                >
+                                    {quickExamSubmitting && (
+                                        <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    )}
+                                    Save & Select Exam
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Quick Register Book Modal */}
+            {quickBookModalOpen && (
+                <div
+                    className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="quick-book-modal-title"
+                >
+                    <div className="bg-neutral-900 border border-neutral-800 rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl">
+                        <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+                            <h4
+                                id="quick-book-modal-title"
+                                className="text-base font-semibold text-neutral-100"
+                            >
+                                Register New Book
+                            </h4>
+                            <button
+                                onClick={() => setQuickBookModalOpen(false)}
+                                className="text-neutral-400 hover:text-neutral-200 text-sm p-1"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        {quickBookError && (
+                            <div className="text-xs text-red-400 bg-red-950/30 border border-red-500/30 p-2.5 rounded-lg">
+                                {quickBookError}
+                            </div>
+                        )}
+
+                        <form onSubmit={handleQuickBookSubmit} className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-medium text-neutral-300 mb-1">
+                                    Book Name <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    placeholder="e.g. Database System Concepts"
+                                    value={quickBookName}
+                                    onChange={(e) => setQuickBookName(e.target.value)}
+                                    maxLength={200}
+                                    required
+                                    className="w-full bg-neutral-950 border border-neutral-800 text-neutral-100 text-xs rounded-lg px-3 py-2 focus:border-red-500 focus:outline-none"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-medium text-neutral-300 mb-1">
+                                    Author Name <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    placeholder="e.g. Silberschatz, Korth, Sudarshan"
+                                    value={quickAuthorName}
+                                    onChange={(e) => setQuickAuthorName(e.target.value)}
+                                    maxLength={200}
+                                    required
+                                    className="w-full bg-neutral-950 border border-neutral-800 text-neutral-100 text-xs rounded-lg px-3 py-2 focus:border-red-500 focus:outline-none"
+                                />
+                            </div>
+
+                            <p className="text-[11px] text-neutral-500">
+                                This will register the book in the database and automatically select it for your question. Your existing form inputs will not be lost.
+                            </p>
+
+                            <div className="flex items-center justify-end gap-2 pt-2 border-t border-neutral-800">
+                                <button
+                                    type="button"
+                                    onClick={() => setQuickBookModalOpen(false)}
+                                    className="px-3 py-1.5 text-xs text-neutral-300 hover:text-white bg-neutral-800 rounded-lg transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={quickBookSubmitting}
+                                    className="px-3 py-1.5 text-xs font-medium text-white bg-red-600 hover:bg-red-500 disabled:opacity-50 rounded-lg transition-colors flex items-center gap-1.5"
+                                >
+                                    {quickBookSubmitting && (
+                                        <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    )}
+                                    Save & Select Book
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             )}
         </div>

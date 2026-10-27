@@ -11,6 +11,7 @@ export interface SubjectOption {
     subjectId: string;
     deptId: number;
     subjectName: string;
+    semester?: number;
 }
 
 export interface ChapterOption {
@@ -24,6 +25,45 @@ export interface TopicOption {
     topicId: number;
     topicName: string;
     chapterId: number;
+}
+
+export interface ExamOption {
+    sourceId: number;
+    examType: string;
+    examYear: number;
+    semesterNo: number;
+    subjectKey: number;
+    month?: string | null;
+    subjectName?: string | null;
+    subjectId?: string | null;
+    deptId?: number | null;
+    deptName?: string | null;
+    label: string;
+    questionCount?: number;
+}
+
+export interface BookOption {
+    sourceId: number;
+    bookName: string;
+    authorName: string;
+    label: string;
+    questionCount?: number;
+}
+
+export interface SourceOption {
+    sourceId: number;
+    sourceType: "EXAM" | "BOOK";
+    label: string;
+    examType?: string | null;
+    examYear?: number | null;
+    semesterNo?: number | null;
+    subjectKey?: number | null;
+    subjectName?: string | null;
+    subjectId?: string | null;
+    month?: string | null;
+    bookName?: string | null;
+    authorName?: string | null;
+    questionCount?: number;
 }
 
 interface Settled<T> {

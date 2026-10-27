@@ -43,4 +43,14 @@ export class CreateQuestionDto {
   @IsArray()
   @IsString({ each: true })
   imageUrls?: string[];
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  chapterId?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  subjectKey?: number;
 }

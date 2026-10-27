@@ -324,25 +324,29 @@ export class QuestionsService {
   /**
    * Creates a Question, its QuestionTopic rows, and its QuestionImage rows in ONE transaction.
    * Any failure rolls back the question, every topic link, and every image link.
+   * Validates foreign keys, source types, subject ownership, and chapter/topic relationships.
    */
   async create(dto: CreateQuestionDto): Promise<CreatedQuestion> {
     try {
       return await this.dataSource.transaction(async (manager) => {
-        const sources: unknown[] = await manager.query(
-          'SELECT `SourceID` FROM `Source` WHERE `SourceID` = ?',
-          [dto.sourceId],
-        );
-        if (sources.length === 0) {
+        // 1. Verify Source exists and retrieve SourceType
+        const sourceRows: { SourceID: number; SourceType?: string }[] =
+          await manager.query(
+            'SELECT `SourceID`, `SourceType` FROM `Source` WHERE `SourceID` = ?',
+            [dto.sourceId],
+          );
+        if (sourceRows.length === 0) {
           throw new BadRequestException(
             `Source with ID ${dto.sourceId} does not exist`,
           );
         }
+        const source = sourceRows[0];
 
-        const existing = await manager.find(Topic, {
-          select: { topicId: true },
+        // 2. Verify all topicIds exist
+        const topics = await manager.find(Topic, {
           where: { topicId: In(dto.topicIds) },
         });
-        const existingIds = new Set(existing.map((t) => t.topicId));
+        const existingIds = new Set(topics.map((t) => t.topicId));
         const missing = dto.topicIds.filter((id) => !existingIds.has(id));
         if (missing.length > 0) {
           throw new BadRequestException(
@@ -350,6 +354,99 @@ export class QuestionsService {
           );
         }
 
+        // 3. Ensure topics belong to the selected chapter and chapter belongs to the subject
+        const topicChapterIds = Array.from(
+          new Set(
+            topics
+              .map((t) => t.chapterId)
+              .filter((cid): cid is number => cid != null),
+          ),
+        );
+
+        if (topicChapterIds.length > 1) {
+          throw new BadRequestException(
+            'All selected topics for a question must belong to the same chapter',
+          );
+        }
+
+        const resolvedChapterId = dto.chapterId ?? topicChapterIds[0];
+        if (
+          dto.chapterId &&
+          topicChapterIds.length > 0 &&
+          dto.chapterId !== topicChapterIds[0]
+        ) {
+          throw new BadRequestException(
+            `Selected topics do not belong to the selected chapter #${dto.chapterId}`,
+          );
+        }
+
+        let resolvedChapter: Chapter | null = null;
+        if (resolvedChapterId != null) {
+          resolvedChapter = await manager.findOne(Chapter, {
+            where: { chapterId: resolvedChapterId },
+          });
+          if (!resolvedChapter) {
+            throw new BadRequestException(
+              `Chapter #${resolvedChapterId} does not exist`,
+            );
+          }
+
+          if (
+            dto.subjectKey &&
+            resolvedChapter.subjectKey != null &&
+            resolvedChapter.subjectKey !== dto.subjectKey
+          ) {
+            throw new BadRequestException(
+              `Chapter #${resolvedChapterId} does not belong to subject #${dto.subjectKey}`,
+            );
+          }
+        }
+
+        // 4. Validate source-type specifics (EXAM or BOOK)
+        if (source.SourceType === 'EXAM') {
+          const examRows: { SourceID: number; subjectKey: number | null }[] =
+            await manager.query(
+              'SELECT `SourceID`, `subjectKey` FROM `Exam` WHERE `SourceID` = ?',
+              [dto.sourceId],
+            );
+          if (examRows.length === 0) {
+            throw new BadRequestException(
+              `Exam details are missing for Source #${dto.sourceId}. Orphaned sources cannot be used.`,
+            );
+          }
+
+          const examSubjectKey = examRows[0].subjectKey;
+          if (
+            resolvedChapter?.subjectKey != null &&
+            examSubjectKey != null &&
+            resolvedChapter.subjectKey !== examSubjectKey
+          ) {
+            throw new BadRequestException(
+              `The selected exam belongs to subject #${examSubjectKey}, but the selected chapter belongs to subject #${resolvedChapter.subjectKey}. Exam and question subject must match.`,
+            );
+          }
+          if (
+            dto.subjectKey != null &&
+            examSubjectKey != null &&
+            dto.subjectKey !== examSubjectKey
+          ) {
+            throw new BadRequestException(
+              `The selected exam belongs to subject #${examSubjectKey}, but subject #${dto.subjectKey} was selected.`,
+            );
+          }
+        } else if (source.SourceType === 'BOOK') {
+          const bookRows: { SourceID: number }[] = await manager.query(
+            'SELECT `SourceID` FROM `Book` WHERE `SourceID` = ?',
+            [dto.sourceId],
+          );
+          if (bookRows.length === 0) {
+            throw new BadRequestException(
+              `Book details are missing for Source #${dto.sourceId}. Orphaned sources cannot be used.`,
+            );
+          }
+        }
+
+        // 5. Insert Question (marks are not added to Question; text is not deduplicated)
         const inserted = await manager.insert(Question, {
           quesText: dto.quesText,
           quesType: dto.quesType,
@@ -357,12 +454,13 @@ export class QuestionsService {
         });
         const quesId = Number((inserted.identifiers[0] as Question).quesId);
 
+        // 6. Insert QuestionTopic links
         await manager.insert(
           QuestionTopic,
           dto.topicIds.map((topicId) => ({ quesId, topicId })),
         );
 
-        // Atomically insert attached images into the existing QuestionImage table
+        // 7. Insert QuestionImage links
         const validUrls = (dto.imageUrls ?? []).filter(
           (url) => typeof url === 'string' && url.trim().length > 0,
         );
