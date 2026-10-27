@@ -1,61 +1,61 @@
-import type React from "react";
 import { useCallback, useEffect, useReducer, useRef } from "react";
 
-export type FetchState<T> =
-    | { status: "idle" }
-    | { status: "loading" }
-    | { status: "success"; data: T }
-    | { status: "error"; message: string };
+type State<T> =
+    | { status: "loading"; data: null; message: null }
+    | { status: "success"; data: T; message: null }
+    | { status: "error"; data: null; message: string };
 
 type Action<T> =
-    | { type: "IDLE" }
-    | { type: "LOADING" }
+    | { type: "START" }
     | { type: "SUCCESS"; data: T }
     | { type: "ERROR"; message: string };
 
-function reducer<T>(state: FetchState<T>, action: Action<T>): FetchState<T> {
+function reducer<T>(_state: State<T>, action: Action<T>): State<T> {
     switch (action.type) {
-        case "IDLE":
-            return { status: "idle" };
-        case "LOADING":
-            return { status: "loading" };
+        case "START":
+            return { status: "loading", data: null, message: null };
         case "SUCCESS":
-            return { status: "success", data: action.data };
+            return { status: "success", data: action.data, message: null };
         case "ERROR":
-            return { status: "error", message: action.message };
-        default:
-            return state;
+            return { status: "error", data: null, message: action.message };
     }
 }
 
+/**
+ * Standard fetch hook used by all screens that consume the API.
+ *
+ * Provides:
+ *   - Loading / success / error states
+ *   - Abort of in-flight requests when the screen unmounts or dependencies change
+ *   - Manual `refresh()` trigger
+ *   - Opt-in `enabled` flag (so dependent queries can wait for parents)
+ */
 export function useApiData<T>(
     fetcher: () => Promise<T>,
-    enabled = true,
-): FetchState<T> & { refresh: () => void } {
-    const [state, dispatch] = useReducer(
-        reducer as React.Reducer<FetchState<T>, Action<T>>,
-        { status: "idle" },
-    );
+    enabled: boolean = true,
+): State<T> & { refresh: () => void } {
+    const [state, dispatch] = useReducer(reducer<T>, {
+        status: "loading",
+        data: null,
+        message: null,
+    });
 
-    // Each request gets an id. Only the latest request may update state, so
-    // stale responses (after a re-render, retry or unmount) are ignored.
+    // Monotonically increasing ID so out-of-order responses are dropped.
     const requestId = useRef(0);
 
     const run = useCallback(() => {
-        const id = ++requestId.current;
-
         if (!enabled) {
-            dispatch({ type: "IDLE" });
+            dispatch({ type: "START" });
             return;
         }
 
-        dispatch({ type: "LOADING" });
+        const id = ++requestId.current;
+        dispatch({ type: "START" });
 
         fetcher()
             .then((data) => {
-                if (id === requestId.current) {
-                    dispatch({ type: "SUCCESS", data });
-                }
+                if (id !== requestId.current) return;
+                dispatch({ type: "SUCCESS", data });
             })
             .catch((err: unknown) => {
                 if (id !== requestId.current) return;
@@ -72,9 +72,10 @@ export function useApiData<T>(
 
     useEffect(() => {
         run();
+        const reqRef = requestId;
         return () => {
             // Invalidate any in-flight request on unmount / dependency change.
-            requestId.current++;
+            reqRef.current++;
         };
     }, [run]);
 
