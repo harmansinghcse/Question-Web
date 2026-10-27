@@ -178,6 +178,17 @@ export interface Question {
     sourceId: number;
     topics: Topic[];
     images?: QuestionImage[];
+    chapterId?: number | null;
+    chapterName?: string | null;
+    chapterNo?: number | null;
+    subjectKey?: number | null;
+    subjectName?: string | null;
+    subjectId?: string | null;
+    deptId?: number | null;
+    deptName?: string | null;
+    sourceType?: "EXAM" | "BOOK" | null;
+    sourceLabel?: string | null;
+    semester?: number | null;
 }
 
 export interface QuestionDetail {
@@ -224,6 +235,8 @@ export interface QuestionQuery {
     search?: string;
     /** Only questions tagged with a topic from this subject */
     subjectKey?: number;
+    /** Filter questions by academic semester (1 to 8) */
+    semester?: number;
     quesType?: QuestionType;
     /** 1-based */
     page?: number;
@@ -309,6 +322,10 @@ async function searchQuestions(
     const matches = all.filter((q) => {
         const topics = q.topics ?? [];
         if (query.quesType && q.quesType !== query.quesType) return false;
+        if (query.semester != null) {
+            const sem = q.semester ?? (q as any).subject?.semester;
+            if (sem !== query.semester) return false;
+        }
         if (
             subjectTopicIds &&
             !topics.some((t) => subjectTopicIds.has(t.topicId))
@@ -394,4 +411,214 @@ export const api = {
         questionsCache = null; // so the new question shows up immediately
         return created;
     },
+
+    // ─── Quiz Revision API ───────────────────────────────────────────────────
+
+    getQuizFilters: (): Promise<QuizFiltersResponse> =>
+        request<QuizFiltersResponse>("/quiz/filters"),
+
+    getQuizCounts: (params: {
+        subjectKey: number;
+        chapterId?: number;
+        topicIds?: number[];
+        difficulty?: string;
+        questionType?: string;
+    }): Promise<QuizCountsResponse> => {
+        const query = new URLSearchParams();
+        query.append("subjectKey", String(params.subjectKey));
+        if (params.chapterId) query.append("chapterId", String(params.chapterId));
+        if (params.topicIds?.length) {
+            params.topicIds.forEach((id) => query.append("topicIds", String(id)));
+        }
+        if (params.difficulty) query.append("difficulty", params.difficulty);
+        if (params.questionType) query.append("questionType", params.questionType);
+        return request<QuizCountsResponse>(`/quiz/counts?${query.toString()}`);
+    },
+
+    startQuiz: (payload: StartQuizPayload): Promise<StartQuizResponse> =>
+        request<StartQuizResponse>("/quiz/start", {
+            method: "POST",
+            body: JSON.stringify(payload),
+        }),
+
+    submitQuiz: (
+        attemptId: number,
+        payload: SubmitQuizPayload,
+    ): Promise<SubmitQuizResponse> => {
+        const answersList = payload.answers || payload.responses || [];
+        const time = payload.timeSpentSeconds ?? payload.timeTakenSeconds ?? 0;
+        return request<SubmitQuizResponse>(`/quiz/attempts/${attemptId}/submit`, {
+            method: "POST",
+            body: JSON.stringify({
+                attemptId,
+                answers: answersList,
+                responses: answersList,
+                timeSpentSeconds: time,
+                timeTakenSeconds: time,
+            }),
+        });
+    },
+
+    getQuizReview: (attemptId: number): Promise<SubmitQuizResponse> =>
+        request<SubmitQuizResponse>(`/quiz/attempts/${attemptId}/review`),
+
+    getQuizHistory: (page = 1, limit = 10): Promise<QuizHistoryResponse> =>
+        request<QuizHistoryResponse>(`/quiz/attempts/history?page=${page}&limit=${limit}`),
 };
+
+// ─── Quiz Revision Types ─────────────────────────────────────────────────────
+
+export type QuizQuestionType = "MCQ" | "FILLUPS" | "TRUE_FALSE";
+export type QuizDifficulty = "EASY" | "MEDIUM" | "HARD";
+
+export interface QuizTopicMeta {
+    topicId: number;
+    topicName: string;
+}
+
+export interface QuizChapterMeta {
+    chapterId: number;
+    chapterNo: number;
+    chapterName: string;
+    subjectKey: number;
+    topics: QuizTopicMeta[];
+}
+
+export interface QuizSubjectMeta {
+    subjectKey: number;
+    subjectName: string;
+    semester: number;
+    questionCount?: number;
+    chapters: QuizChapterMeta[];
+}
+
+export interface QuizFiltersResponse {
+    subjects: QuizSubjectMeta[];
+    chapters: QuizChapterMeta[];
+    topics: QuizTopicMeta[];
+    subjectQuestionCounts?: Record<number, number>;
+}
+
+export interface QuizCountsResponse {
+    total: number;
+    availableQuestions?: number;
+    breakdown?: {
+        EASY: number;
+        MEDIUM: number;
+        HARD: number;
+    };
+    typeBreakdown?: {
+        MCQ: number;
+        FILLUPS: number;
+        TRUE_FALSE: number;
+    };
+    subjectName?: string;
+    chapterName?: string;
+    topicsCount?: number;
+}
+
+export interface StartQuizPayload {
+    subjectKey: number;
+    chapterId?: number;
+    topicIds?: number[];
+    difficulty?: "EASY" | "MEDIUM" | "HARD";
+    questionType?: "MCQ" | "FILLUPS" | "TRUE_FALSE" | "ALL";
+    count?: number;
+    limit?: number;
+    retryAttemptId?: number;
+}
+
+export interface QuizSessionQuestion {
+    quizQuesId: number;
+    quesText: string;
+    questionType: QuizQuestionType;
+    options?: Record<string, string> | null;
+    difficulty: QuizDifficulty;
+    chapterId: number;
+    topics?: { topicId: number; topicName: string }[];
+}
+
+export interface StartQuizResponse {
+    attemptId: number;
+    totalQuestions: number;
+    mode: "PRACTICE" | "TOPIC_TEST";
+    subjectName: string;
+    chapterName?: string;
+    questions: QuizSessionQuestion[];
+}
+
+export interface SubmitQuizResponseItem {
+    quizQuesId: number;
+    quesText: string;
+    questionType: QuizQuestionType;
+    options?: Record<string, string> | null;
+    difficulty: QuizDifficulty;
+    studentAnswer: string | null;
+    correctAnswer: string;
+    acceptedAnswers?: string[] | null;
+    isCorrect: boolean;
+    explanation: string;
+    topics?: { topicId: number; topicName: string }[];
+}
+
+export interface TopicPerformanceItem {
+    topicId: number;
+    topicName: string;
+    total: number;
+    correct: number;
+    accuracy: number;
+}
+
+export interface SubmitQuizPayload {
+    responses?: {
+        quizQuesId: number;
+        selectedAnswer?: string | null;
+        timeSpentSeconds?: number;
+    }[];
+    answers?: {
+        quizQuesId: number;
+        selectedAnswer?: string | null;
+        timeSpentSeconds?: number;
+    }[];
+    timeSpentSeconds?: number;
+    timeTakenSeconds?: number;
+}
+
+export interface SubmitQuizResponse {
+    attemptId: number;
+    status: "COMPLETED" | "ABANDONED";
+    score: number;
+    accuracyPercentage: number;
+    totalQuestions: number;
+    correctCount: number;
+    incorrectCount: number;
+    unansweredCount: number;
+    timeSpentSeconds: number;
+    createdAt: string;
+    topicPerformance: TopicPerformanceItem[];
+    questions: SubmitQuizResponseItem[];
+}
+
+export interface QuizHistoryAttempt {
+    attemptId: number;
+    mode: string;
+    subjectName: string;
+    chapterName?: string;
+    totalQuestions: number;
+    score: number;
+    accuracyPercentage: number;
+    correctCount: number;
+    incorrectCount: number;
+    unansweredCount: number;
+    timeSpentSeconds: number;
+    status: string;
+    createdAt: string;
+}
+
+export interface QuizHistoryResponse {
+    items: QuizHistoryAttempt[];
+    total: number;
+    page: number;
+    limit: number;
+}
+

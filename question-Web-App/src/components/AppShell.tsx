@@ -20,6 +20,7 @@ type IconName = React.ComponentProps<typeof Ionicons>["name"];
 
 export type NavKey =
     | "home"
+    | "revision"
     | "questions"
     | "syllabus"
     | "prompt"
@@ -41,6 +42,14 @@ const NAV_ITEMS: {
         icon: "grid-outline",
         iconActive: "grid",
         path: "/",
+    },
+    {
+        key: "revision",
+        label: "Quiz Revision",
+        short: "Revision",
+        icon: "flash-outline",
+        iconActive: "flash",
+        path: "/quiz-revision",
     },
     {
         key: "questions",

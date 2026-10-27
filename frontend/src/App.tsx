@@ -5,8 +5,19 @@ import AddQuestionForm from "./components/AddQuestionForm";
 import ExamManagement from "./components/ExamManagement";
 import BookManagement from "./components/BookManagement";
 import SourceManagement from "./components/SourceManagement";
+import QuizRevision from "./components/QuizRevision";
+import QuizAdminManagement from "./components/QuizAdminManagement";
+import PromptStudio from "./components/PromptStudio";
 
-type ViewSection = "overview" | "questions" | "exams" | "books" | "sources";
+type ViewSection =
+    | "overview"
+    | "revision"
+    | "quiz-admin"
+    | "prompt-studio"
+    | "questions"
+    | "exams"
+    | "books"
+    | "sources";
 
 const NAV_ACTIVE =
     "flex items-center gap-3 px-3 py-2 rounded-md bg-neutral-800 text-neutral-100 font-medium border-l-2 border-red-500 transition-colors";
@@ -68,6 +79,95 @@ export default function App() {
                             <rect width="7" height="5" x="3" y="16" rx="1" />
                         </svg>
                         Overview
+                    </a>
+
+                    {/* Quiz-Based Revision */}
+                    <a
+                        href="#revision"
+                        aria-current={view === "revision" ? "page" : undefined}
+                        onClick={(e) => {
+                            e.preventDefault();
+                            setView("revision");
+                        }}
+                        className={view === "revision" ? NAV_ACTIVE : NAV_IDLE}
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className={view === "revision" ? "text-red-500" : ""}
+                        >
+                            <circle cx="12" cy="12" r="10" />
+                            <polygon points="10 8 16 12 10 16 10 8" />
+                        </svg>
+                        <span>Quiz Revision</span>
+                        <span className="ml-auto text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30">
+                            New
+                        </span>
+                    </a>
+
+                    {/* Quiz Question Bank */}
+                    <a
+                        href="#quiz-admin"
+                        aria-current={view === "quiz-admin" ? "page" : undefined}
+                        onClick={(e) => {
+                            e.preventDefault();
+                            setView("quiz-admin");
+                        }}
+                        className={view === "quiz-admin" ? NAV_ACTIVE : NAV_IDLE}
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className={view === "quiz-admin" ? "text-red-500" : ""}
+                        >
+                            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
+                            <polyline points="10 2 10 10 13 7 16 10 16 2" />
+                        </svg>
+                        Quiz Question Bank
+                    </a>
+
+                    {/* Prompt Studio */}
+                    <a
+                        href="#prompt-studio"
+                        aria-current={view === "prompt-studio" ? "page" : undefined}
+                        onClick={(e) => {
+                            e.preventDefault();
+                            setView("prompt-studio");
+                        }}
+                        className={view === "prompt-studio" ? NAV_ACTIVE : NAV_IDLE}
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className={view === "prompt-studio" ? "text-red-500" : ""}
+                        >
+                            <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+                        </svg>
+                        <span>Prompt Studio</span>
+                        <span className="ml-auto text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                            Studio
+                        </span>
                     </a>
 
                     {/* 2. Question Entry */}
@@ -198,6 +298,9 @@ export default function App() {
                     <div className="flex items-center gap-4">
                         <h2 className="text-lg font-medium text-neutral-100">
                             {view === "overview" && "Dashboard Overview"}
+                            {view === "revision" && "Quiz-Based Revision"}
+                            {view === "quiz-admin" && "Quiz Question Bank"}
+                            {view === "prompt-studio" && "Prompt Studio"}
                             {view === "questions" && "Question Entry"}
                             {view === "exams" && "Exam Management"}
                             {view === "books" && "Book Management"}
@@ -265,6 +368,9 @@ export default function App() {
 
                 {/* Page Content */}
                 <div className="flex-1 p-8 overflow-y-auto">
+                    {view === "revision" && <QuizRevision />}
+                    {view === "quiz-admin" && <QuizAdminManagement />}
+                    {view === "prompt-studio" && <PromptStudio />}
                     {view === "questions" && <AddQuestionForm />}
                     {view === "exams" && <ExamManagement />}
                     {view === "books" && <BookManagement />}
@@ -336,7 +442,46 @@ export default function App() {
                             </div>
 
                             {/* Quick Action Cards */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+                                <button
+                                    onClick={() => setView("revision")}
+                                    className="p-5 bg-gradient-to-br from-red-950/30 to-neutral-900 hover:from-red-950/50 hover:to-neutral-850 border border-red-500/30 hover:border-red-500/60 rounded-xl text-left transition-all group shadow-lg shadow-red-950/20"
+                                >
+                                    <div className="w-9 h-9 rounded-lg bg-red-600 text-white flex items-center justify-center mb-3 group-hover:scale-105 transition-transform shadow-md shadow-red-600/30">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <h4 className="text-sm font-semibold text-white">Quiz Revision</h4>
+                                        <span className="text-[10px] uppercase font-bold text-red-400 bg-red-500/20 px-1.5 py-0.5 rounded">New</span>
+                                    </div>
+                                    <p className="text-xs text-neutral-400 mt-1">Practice topic-based MCQs with instant feedback & review</p>
+                                </button>
+
+                                <button
+                                    onClick={() => setView("quiz-admin")}
+                                    className="p-5 bg-neutral-900 hover:bg-neutral-850 border border-neutral-800 hover:border-neutral-700 rounded-xl text-left transition-all group"
+                                >
+                                    <div className="w-9 h-9 rounded-lg bg-neutral-800 border border-neutral-700 text-red-400 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><polyline points="10 2 10 10 13 7 16 10 16 2"/></svg>
+                                    </div>
+                                    <h4 className="text-sm font-semibold text-neutral-200">Quiz Question Bank</h4>
+                                    <p className="text-xs text-neutral-500 mt-1">Manage & AI batch-import revision MCQs</p>
+                                </button>
+
+                                <button
+                                    onClick={() => setView("prompt-studio")}
+                                    className="p-5 bg-gradient-to-br from-amber-950/30 to-neutral-900 hover:from-amber-950/50 hover:to-neutral-850 border border-amber-500/30 hover:border-amber-500/60 rounded-xl text-left transition-all group shadow-lg shadow-amber-950/20"
+                                >
+                                    <div className="w-9 h-9 rounded-lg bg-amber-600 text-white flex items-center justify-center mb-3 group-hover:scale-105 transition-transform shadow-md shadow-amber-600/30">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <h4 className="text-sm font-semibold text-white">Prompt Studio</h4>
+                                        <span className="text-[10px] uppercase font-bold text-amber-400 bg-amber-500/20 px-1.5 py-0.5 rounded">New</span>
+                                    </div>
+                                    <p className="text-xs text-neutral-400 mt-1">Select questions & generate prompts for external AI chatbots</p>
+                                </button>
+
                                 <button
                                     onClick={() => setView("questions")}
                                     className="p-5 bg-neutral-900 hover:bg-neutral-850 border border-neutral-800 hover:border-neutral-700 rounded-xl text-left transition-all group"

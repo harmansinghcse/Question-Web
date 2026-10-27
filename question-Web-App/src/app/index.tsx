@@ -284,6 +284,15 @@ export default function HomeScreen() {
             onPress: () => openSyllabus(),
         },
         {
+            id: "revision",
+            title: "Quiz Revision",
+            desc: "MCQ, Fill-ins & True/False quizzes",
+            icon: "flash-outline" as const,
+            color: "#EF4444",
+            bgColor: "#EF44441A",
+            onPress: () => router.push("/quiz-revision" as never),
+        },
+        {
             id: "questions",
             title: "Question Bank",
             desc: "Practise questions by subject",
