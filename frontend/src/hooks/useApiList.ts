@@ -66,6 +66,43 @@ export interface SourceOption {
     questionCount?: number;
 }
 
+export interface UpcomingExamOption {
+    examId: number;
+    deptId: number;
+    subjectKey?: number | null;
+    semester?: number | null;
+    title: string;
+    examDate: string;
+    durationMinutes: number;
+    venue?: string | null;
+    instructions?: string | null;
+    department?: { deptName: string };
+    subject?: { subjectName: string; subjectId: string };
+}
+
+export interface TimetableOption {
+    timetableId: number;
+    deptId: number;
+    semester: number;
+    division: string;
+    academicYear: string;
+    isActive: boolean;
+    department?: { deptName: string };
+}
+
+export interface TimetableEntryOption {
+    entryId: number;
+    timetableId: number;
+    subjectKey: number;
+    dayOfWeek: "MON" | "TUE" | "WED" | "THU" | "FRI" | "SAT" | "SUN";
+    startTime: string;
+    endTime: string;
+    classroom?: string | null;
+    teacher?: string | null;
+    classType: "LECTURE" | "LAB" | "TUTORIAL" | "OTHER";
+    subject?: { subjectName: string; subjectId: string };
+}
+
 interface Settled<T> {
     path: string | null;
     attempt: number;
@@ -87,8 +124,8 @@ export function useApiList<T>(path: string | null) {
 
     useEffect(() => {
         if (!path) return;
-        let cancelled = false;
 
+        let cancelled = false;
         fetchApi<T[]>(path)
             .then((data) => {
                 if (!cancelled)

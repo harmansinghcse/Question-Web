@@ -7,10 +7,12 @@ import { QuestionTopic } from './entities/question-topic.entity';
 import { QuestionsController } from './questions.controller';
 import { QuestionsService } from './questions.service';
 import { CloudinaryService } from './cloudinary.service';
+import { DepartmentsModule } from '../departments/departments.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Question, QuestionTopic, QuestionImage, Topic]),
+    DepartmentsModule,
   ],
   controllers: [QuestionsController],
   providers: [QuestionsService, CloudinaryService],

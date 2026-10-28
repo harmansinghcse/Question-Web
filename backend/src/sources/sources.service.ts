@@ -122,8 +122,43 @@ export class SourcesService {
     }
   }
 
-  /** Create a raw Source record */
-  async createSource(dto: CreateSourceDto): Promise<{ sourceId: number; sourceType: 'EXAM' | 'BOOK' }> {
+  /** Create a Source record (delegates to createExam or createBook if details provided) */
+  async createSource(
+    dto: CreateSourceDto,
+  ): Promise<{ sourceId: number; sourceType: 'EXAM' | 'BOOK'; label?: string }> {
+    if (
+      dto.sourceType === 'EXAM' &&
+      dto.subjectKey &&
+      dto.examType &&
+      dto.examYear &&
+      dto.semesterNo
+    ) {
+      const exam = await this.createExam({
+        subjectKey: dto.subjectKey,
+        examType: dto.examType,
+        examYear: dto.examYear,
+        semesterNo: dto.semesterNo,
+        month: dto.month,
+      });
+      return {
+        sourceId: exam.sourceId,
+        sourceType: 'EXAM',
+        label: exam.label,
+      };
+    }
+
+    if (dto.sourceType === 'BOOK' && dto.bookName && dto.authorName) {
+      const book = await this.createBook({
+        bookName: dto.bookName,
+        authorName: dto.authorName,
+      });
+      return {
+        sourceId: book.sourceId,
+        sourceType: 'BOOK',
+        label: book.label,
+      };
+    }
+
     try {
       const result = await this.dataSource.manager.insert(Source, {
         sourceType: dto.sourceType,

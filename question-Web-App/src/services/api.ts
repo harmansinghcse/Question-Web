@@ -1,7 +1,6 @@
 import { authSession } from "./auth-session";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL?.replace(/\/+$/, "");
-
 /** Max time to wait for the backend before giving up. */
 const TIMEOUT_MS = 20000;
 
@@ -9,7 +8,7 @@ if (!API_BASE_URL) {
     console.warn("[api] EXPO_PUBLIC_API_URL is not configured");
 }
 
-// ─── HTTP layer ──────────────────────────────────────────────────────────────
+// --- HTTP layer ---
 
 /** Pull a human-readable message out of a NestJS error body. */
 function extractErrorMessage(body: string, status: number): string {
@@ -20,7 +19,7 @@ function extractErrorMessage(body: string, status: number): string {
             if (Array.isArray(msg)) return msg.join(", ");
             if (typeof msg === "string" && msg.trim()) return msg;
         } catch {
-            // Not JSON — fall through to raw text if it's short enough.
+            // Not JSON - fall through to raw text if it's short enough.
             if (body.length <= 200) return body;
         }
     }
@@ -39,7 +38,6 @@ async function request<T>(
     }
 
     const url = `${API_BASE_URL}${endpoint}`;
-
     // Abort after TIMEOUT_MS so an unreachable host doesn't spin forever.
     const controller = new AbortController();
     let timedOut = false;
@@ -61,7 +59,6 @@ async function request<T>(
     }
 
     let response: Response;
-
     try {
         response = await fetch(url, {
             ...options,
@@ -84,7 +81,6 @@ async function request<T>(
         } else {
             message = raw || "Network request failed";
         }
-
         throw new Error(`Network error: ${message}`);
     } finally {
         clearTimeout(timeout);
@@ -100,13 +96,11 @@ async function request<T>(
 
     if (!response.ok) {
         const body = await response.text().catch(() => "");
-
         console.error("[API ERROR]", {
             url,
             status: response.status,
             body,
         });
-
         throw new Error(extractErrorMessage(body, response.status));
     }
 
@@ -121,7 +115,7 @@ async function request<T>(
     }
 }
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// --- Types ---
 
 export interface Subject {
     subjectKey: number;
@@ -255,13 +249,75 @@ export interface QuestionStats {
     byType: Record<QuestionType, number>;
 }
 
-// ─── Client-side question search ─────────────────────────────────────────────
-// The backend's GET /questions returns every question as a plain array, so
-// search, filtering and paging happen here. The list is cached briefly so that
-// typing or changing pages doesn't re-download it each time.
-//
-// When the backend gains query params (search, type, subject, page), move the
-// filtering into `searchQuestions` below and delete the caches.
+// New Types for Upcoming Exams, Timetable, and Sources
+
+export interface UpcomingExam {
+    examId: number;
+    deptId: number;
+    subjectKey?: number | null;
+    semester?: number | null;
+    title: string;
+    examDate: string;
+    durationMinutes: number;
+    venue?: string | null;
+    instructions?: string | null;
+    department?: { deptName: string };
+    subject?: { subjectName: string; subjectId: string };
+}
+
+export interface TimetableEntry {
+    entryId: number;
+    timetableId: number;
+    subjectKey: number;
+    dayOfWeek: "MON" | "TUE" | "WED" | "THU" | "FRI" | "SAT" | "SUN";
+    startTime: string;
+    endTime: string;
+    classroom?: string | null;
+    teacher?: string | null;
+    classType: "LECTURE" | "LAB" | "TUTORIAL" | "OTHER";
+    subject?: { subjectName: string; subjectId: string };
+}
+
+export interface Timetable {
+    timetableId: number;
+    deptId: number;
+    semester: number;
+    division: string;
+    academicYear: string;
+    isActive: boolean;
+    entries?: TimetableEntry[];
+    department?: { deptName: string };
+}
+
+/** Response of GET /timetables/my. Department and semester are resolved by the backend. */
+export interface MyTimetable {
+    deptId: number;
+    deptName: string;
+    semester: number;
+    /** Divisions that have an active timetable for this department + semester. */
+    divisions: string[];
+    /** Division the returned timetable belongs to (null until one is chosen). */
+    division: string | null;
+    timetable: Timetable | null;
+}
+
+export interface SourceRecord {
+    sourceId: number;
+    sourceType: "EXAM" | "BOOK";
+    label: string;
+    examType?: string | null;
+    examYear?: number | null;
+    semesterNo?: number | null;
+    subjectKey?: number | null;
+    subjectName?: string | null;
+    subjectId?: string | null;
+    month?: string | null;
+    bookName?: string | null;
+    authorName?: string | null;
+    questionCount?: number;
+}
+
+// --- Client-side question search ---
 
 const QUESTIONS_TTL_MS = 30_000;
 let questionsCache: { at: number; promise: Promise<Question[]> } | null = null;
@@ -271,19 +327,19 @@ function loadQuestions(): Promise<Question[]> {
     if (questionsCache && now - questionsCache.at < QUESTIONS_TTL_MS) {
         return questionsCache.promise;
     }
+
     const promise = request<Question[]>("/questions");
     questionsCache = { at: now, promise };
+
     // Never cache a failure, so "Try again" really retries.
     promise.catch(() => {
         if (questionsCache?.promise === promise) questionsCache = null;
     });
+
     return promise;
 }
 
-// Questions link to topics, topics to chapters, chapters to subjects.
-// To filter by subject we collect that subject's topic ids (cached per subject).
 const subjectTopicCache = new Map<number, Promise<Set<number>>>();
-
 function loadSubjectTopicIds(subjectKey: number): Promise<Set<number>> {
     let promise = subjectTopicCache.get(subjectKey);
     if (!promise) {
@@ -367,38 +423,30 @@ async function getQuestionStats(): Promise<QuestionStats> {
     return { total: all.length, byType };
 }
 
-// ─── Public API ──────────────────────────────────────────────────────────────
+// --- Public API ---
 
 export const api = {
     getSubjects: (search?: string): Promise<Subject[]> =>
         request<Subject[]>(
             `/subjects${search ? `?search=${encodeURIComponent(search)}` : ""}`,
         ),
-
     getSubject: (id: number): Promise<Subject> =>
         request<Subject>(`/subjects/${id}`),
 
     getChapters: (subjectKey: number): Promise<Chapter[]> =>
         request<Chapter[]>(`/chapters?subjectKey=${subjectKey}`),
-
     getChapter: (id: number): Promise<Chapter> =>
         request<Chapter>(`/chapters/${id}`),
 
     getTopics: (chapterId: number): Promise<Topic[]> =>
         request<Topic[]>(`/topics?chapterId=${chapterId}`),
-
     getTopic: (id: number): Promise<Topic> => request<Topic>(`/topics/${id}`),
 
-    /** Every question, as returned by the backend. */
     getQuestions: (): Promise<Question[]> => loadQuestions(),
-
-    /** Fetches complete details for a single question including images and source. */
     getQuestionById: (id: number): Promise<QuestionDetail> =>
         request<QuestionDetail>(`/questions/${id}`),
 
-    /** Filtered, paginated questions (used by Home and Question Bank). */
     searchQuestions,
-
     getQuestionStats,
 
     createQuestion: async (
@@ -412,8 +460,21 @@ export const api = {
         return created;
     },
 
-    // ─── Quiz Revision API ───────────────────────────────────────────────────
+    // New Endpoints for Timetables, Exams, and Sources
+    getUpcomingExams: (): Promise<UpcomingExam[]> =>
+        request<UpcomingExam[]>("/upcoming-exams"),
 
+    getMyTimetable: (division?: string): Promise<MyTimetable> =>
+        request<MyTimetable>(
+            division
+                ? `/timetables/my?division=${encodeURIComponent(division)}`
+                : "/timetables/my",
+        ),
+
+    getSources: (): Promise<SourceRecord[]> =>
+        request<SourceRecord[]>("/sources"),
+
+    // --- Quiz Revision API ---
     getQuizFilters: (): Promise<QuizFiltersResponse> =>
         request<QuizFiltersResponse>("/quiz/filters"),
 
@@ -426,12 +487,17 @@ export const api = {
     }): Promise<QuizCountsResponse> => {
         const query = new URLSearchParams();
         query.append("subjectKey", String(params.subjectKey));
-        if (params.chapterId) query.append("chapterId", String(params.chapterId));
+        if (params.chapterId)
+            query.append("chapterId", String(params.chapterId));
         if (params.topicIds?.length) {
-            params.topicIds.forEach((id) => query.append("topicIds", String(id)));
+            params.topicIds.forEach((id) =>
+                query.append("topicIds", String(id)),
+            );
         }
         if (params.difficulty) query.append("difficulty", params.difficulty);
-        if (params.questionType) query.append("questionType", params.questionType);
+        if (params.questionType)
+            query.append("questionType", params.questionType);
+
         return request<QuizCountsResponse>(`/quiz/counts?${query.toString()}`);
     },
 
@@ -447,26 +513,31 @@ export const api = {
     ): Promise<SubmitQuizResponse> => {
         const answersList = payload.answers || payload.responses || [];
         const time = payload.timeSpentSeconds ?? payload.timeTakenSeconds ?? 0;
-        return request<SubmitQuizResponse>(`/quiz/attempts/${attemptId}/submit`, {
-            method: "POST",
-            body: JSON.stringify({
-                attemptId,
-                answers: answersList,
-                responses: answersList,
-                timeSpentSeconds: time,
-                timeTakenSeconds: time,
-            }),
-        });
+        return request<SubmitQuizResponse>(
+            `/quiz/attempts/${attemptId}/submit`,
+            {
+                method: "POST",
+                body: JSON.stringify({
+                    attemptId,
+                    answers: answersList,
+                    responses: answersList,
+                    timeSpentSeconds: time,
+                    timeTakenSeconds: time,
+                }),
+            },
+        );
     },
 
     getQuizReview: (attemptId: number): Promise<SubmitQuizResponse> =>
         request<SubmitQuizResponse>(`/quiz/attempts/${attemptId}/review`),
 
     getQuizHistory: (page = 1, limit = 10): Promise<QuizHistoryResponse> =>
-        request<QuizHistoryResponse>(`/quiz/attempts/history?page=${page}&limit=${limit}`),
+        request<QuizHistoryResponse>(
+            `/quiz/attempts/history?page=${page}&limit=${limit}`,
+        ),
 };
 
-// ─── Quiz Revision Types ─────────────────────────────────────────────────────
+// --- Quiz Revision Types ---
 
 export type QuizQuestionType = "MCQ" | "FILLUPS" | "TRUE_FALSE";
 export type QuizDifficulty = "EASY" | "MEDIUM" | "HARD";
@@ -621,4 +692,3 @@ export interface QuizHistoryResponse {
     page: number;
     limit: number;
 }
-

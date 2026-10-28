@@ -325,9 +325,11 @@ export default function QuestionDetailsScreen() {
 
                             <View style={s.imagesGrid}>
                                 {question.images.map((img, idx) => {
-                                    const hasFailed = failedImageIds.has(
-                                        img.imageId,
-                                    );
+                                    const hasFailed =
+                                        failedImageIds.has(img.imageId) ||
+                                        !img.imageUrl ||
+                                        !img.imageUrl.trim();
+                                    const isSingle = question.images.length === 1;
 
                                     return (
                                         <Pressable
@@ -339,6 +341,7 @@ export default function QuestionDetailsScreen() {
                                             accessibilityLabel={`Enlarge image ${idx + 1}`}
                                             style={({ pressed }) => [
                                                 s.imageThumbnailWrapper,
+                                                isSingle && s.singleImageThumbnailWrapper,
                                                 pressed && { opacity: 0.85 },
                                             ]}
                                         >
@@ -364,10 +367,10 @@ export default function QuestionDetailsScreen() {
                                             ) : (
                                                 <Image
                                                     source={{
-                                                        uri: img.imageUrl,
+                                                        uri: (img.imageUrl || "").trim(),
                                                     }}
                                                     style={s.imageThumbnail}
-                                                    contentFit="cover"
+                                                    contentFit={isSingle ? "contain" : "cover"}
                                                     transition={300}
                                                     onError={() =>
                                                         markImageFailed(
@@ -425,12 +428,22 @@ export default function QuestionDetailsScreen() {
                     {/* Enlarged Image Container with Prev/Next buttons */}
                     <View style={s.modalImageContainer}>
                         {currentModalImage && (
-                            <Image
-                                source={{ uri: currentModalImage.imageUrl }}
-                                style={s.modalImage}
-                                contentFit="contain"
-                                transition={200}
-                            />
+                            failedImageIds.has(currentModalImage.imageId) || !currentModalImage.imageUrl?.trim() ? (
+                                <View style={{ alignItems: "center", justifyContent: "center", gap: 10 }}>
+                                    <Ionicons name="alert-circle-outline" size={48} color="#9CA3AF" />
+                                    <Text style={{ color: "#D1D5DB", fontSize: 14, fontWeight: "600" }}>
+                                        Image Unavailable
+                                    </Text>
+                                </View>
+                            ) : (
+                                <Image
+                                    source={{ uri: (currentModalImage.imageUrl || "").trim() }}
+                                    style={s.modalImage}
+                                    contentFit="contain"
+                                    transition={200}
+                                    onError={() => markImageFailed(currentModalImage.imageId)}
+                                />
+                            )
                         )}
 
                         {question && question.images.length > 1 && (
@@ -727,6 +740,10 @@ function makeStyles(
             borderColor: t.border,
             backgroundColor: t.surfaceAlt,
             position: "relative",
+        },
+        singleImageThumbnailWrapper: {
+            width: SCREEN_WIDTH - 64,
+            height: 220,
         },
         imageThumbnail: {
             width: "100%",

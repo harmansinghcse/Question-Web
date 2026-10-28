@@ -1,6 +1,37 @@
 import { useMemo, useState } from "react";
-import { useApiList, type SourceOption } from "../hooks/useApiList";
+import {
+    useApiList,
+    type DepartmentOption,
+    type ExamOption,
+    type BookOption,
+    type SourceOption,
+    type SubjectOption,
+} from "../hooks/useApiList";
 import { fetchApi } from "../services/api";
+import SearchableSelect, { type ComboOption } from "./SearchableSelect";
+
+const EXAM_TYPES = [
+    "MIDSEM",
+    "ENDSEM",
+    "QUIZ",
+    "ASSIGNMENT",
+    "TUTORIAL",
+] as const;
+
+const MONTHS = [
+    "JAN",
+    "FEB",
+    "MAR",
+    "APR",
+    "MAY",
+    "JUN",
+    "JUL",
+    "AUG",
+    "SEP",
+    "OCT",
+    "NOV",
+    "DEC",
+] as const;
 
 export default function SourceManagement() {
     const { data: sources, loading, error, retry } = useApiList<SourceOption>("/api/sources");
@@ -11,10 +42,62 @@ export default function SourceManagement() {
     const [searchQuery, setSearchQuery] = useState("");
     const [typeFilter, setTypeFilter] = useState<"ALL" | "EXAM" | "BOOK">("ALL");
 
+    // Exam-specific form state
+    const [selectedDeptId, setSelectedDeptId] = useState<number | null>(null);
+    const [selectedSubjectKey, setSelectedSubjectKey] = useState<number | null>(null);
+    const [examType, setExamType] = useState<(typeof EXAM_TYPES)[number]>("MIDSEM");
+    const [examYear, setExamYear] = useState<number>(new Date().getFullYear());
+    const [semesterNo, setSemesterNo] = useState<number>(1);
+    const [month, setMonth] = useState<string>("");
+
+    // Book-specific form state
+    const [bookName, setBookName] = useState("");
+    const [authorName, setAuthorName] = useState("");
+
     const [notice, setNotice] = useState<{
         kind: "success" | "error";
         message: string;
     } | null>(null);
+
+    // Dynamic department and subject loading for exam source creation
+    const { data: departments, loading: deptsLoading } = useApiList<DepartmentOption>("/api/departments");
+    const subjectsPath = selectedDeptId ? `/api/subjects?deptId=${selectedDeptId}` : null;
+    const { data: subjects, loading: subjectsLoading } = useApiList<SubjectOption>(subjectsPath);
+
+    const deptComboOptions: ComboOption[] = useMemo(
+        () => departments.map((d) => ({ id: d.deptId, label: d.deptName })),
+        [departments],
+    );
+
+    const subjectComboOptions: ComboOption[] = useMemo(
+        () =>
+            subjects.map((s) => ({
+                id: s.subjectKey,
+                label: `${s.subjectId} — ${s.subjectName || "Untitled"} (Sem ${s.semester ?? 1})`,
+            })),
+        [subjects],
+    );
+
+    const selectedDeptOption = useMemo(
+        () => deptComboOptions.find((o) => o.id === selectedDeptId) ?? null,
+        [deptComboOptions, selectedDeptId],
+    );
+
+    const selectedSubjectOption = useMemo(
+        () => subjectComboOptions.find((o) => o.id === selectedSubjectKey) ?? null,
+        [subjectComboOptions, selectedSubjectKey],
+    );
+
+    const resetModalFields = () => {
+        setSelectedDeptId(null);
+        setSelectedSubjectKey(null);
+        setExamType("MIDSEM");
+        setExamYear(new Date().getFullYear());
+        setSemesterNo(1);
+        setMonth("");
+        setBookName("");
+        setAuthorName("");
+    };
 
     const handleCreateSource = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -22,19 +105,60 @@ export default function SourceManagement() {
         setNotice(null);
 
         try {
-            const created = await fetchApi<{ sourceId: number; sourceType: "EXAM" | "BOOK" }>(
-                "/api/sources",
-                {
-                    method: "POST",
-                    body: JSON.stringify({ sourceType: selectedType }),
-                },
-            );
+            if (selectedType === "EXAM") {
+                if (!selectedSubjectKey) {
+                    setNotice({
+                        kind: "error",
+                        message: "Please select a subject for the exam source.",
+                    });
+                    setSubmitting(false);
+                    return;
+                }
 
-            setNotice({
-                kind: "success",
-                message: `Source #${created.sourceId} (${created.sourceType}) created successfully.`,
-            });
+                const created = await fetchApi<ExamOption>("/api/exams", {
+                    method: "POST",
+                    body: JSON.stringify({
+                        subjectKey: selectedSubjectKey,
+                        examType,
+                        examYear: Number(examYear),
+                        semesterNo: Number(semesterNo),
+                        month: month ? month : undefined,
+                    }),
+                });
+
+                setNotice({
+                    kind: "success",
+                    message: `Exam Source #${created.sourceId} created successfully: ${created.label || `${created.examType} ${created.examYear}`}.`,
+                });
+            } else {
+                const trimmedBook = bookName.trim();
+                const trimmedAuthor = authorName.trim();
+
+                if (!trimmedBook || !trimmedAuthor) {
+                    setNotice({
+                        kind: "error",
+                        message: "Both book title and author name are required for a book source.",
+                    });
+                    setSubmitting(false);
+                    return;
+                }
+
+                const created = await fetchApi<BookOption>("/api/books", {
+                    method: "POST",
+                    body: JSON.stringify({
+                        bookName: trimmedBook,
+                        authorName: trimmedAuthor,
+                    }),
+                });
+
+                setNotice({
+                    kind: "success",
+                    message: `Book Source #${created.sourceId} created successfully: "${created.bookName}" by ${created.authorName}.`,
+                });
+            }
+
             setModalOpen(false);
+            resetModalFields();
             retry();
         } catch (err) {
             setNotice({
@@ -54,7 +178,7 @@ export default function SourceManagement() {
             return (
                 String(s.sourceId).includes(q) ||
                 s.sourceType.toLowerCase().includes(q) ||
-                s.label.toLowerCase().includes(q)
+                (s.label && s.label.toLowerCase().includes(q))
             );
         });
     }, [sources, typeFilter, searchQuery]);
@@ -77,6 +201,7 @@ export default function SourceManagement() {
                 <button
                     onClick={() => {
                         setNotice(null);
+                        resetModalFields();
                         setModalOpen(true);
                     }}
                     className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
@@ -293,7 +418,7 @@ export default function SourceManagement() {
                     aria-modal="true"
                     aria-labelledby="modal-source-title"
                 >
-                    <div className="bg-neutral-900 border border-neutral-800 rounded-2xl max-w-md w-full p-6 space-y-6 shadow-2xl">
+                    <div className="bg-neutral-900 border border-neutral-800 rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
                         <div className="flex items-center justify-between border-b border-neutral-800 pb-4">
                             <h4 id="modal-source-title" className="text-lg font-semibold text-neutral-100">
                                 Create Source Record
@@ -307,6 +432,7 @@ export default function SourceManagement() {
                         </div>
 
                         <form onSubmit={handleCreateSource} className="space-y-5">
+                            {/* Source Type selector */}
                             <div>
                                 <label className="block text-xs font-medium text-neutral-300 mb-2">
                                     Source Type
@@ -316,7 +442,10 @@ export default function SourceManagement() {
                                         <button
                                             type="button"
                                             key={type}
-                                            onClick={() => setSelectedType(type)}
+                                            onClick={() => {
+                                                setSelectedType(type);
+                                                setNotice(null);
+                                            }}
                                             className={`px-4 py-3 rounded-xl border text-sm font-medium transition-all text-center flex flex-col items-center gap-1 ${
                                                 selectedType === type
                                                     ? "bg-red-950/40 border-red-500/60 text-red-200 ring-1 ring-red-500"
@@ -330,10 +459,160 @@ export default function SourceManagement() {
                                         </button>
                                     ))}
                                 </div>
-                                <p className="text-xs text-neutral-500 mt-2">
-                                    Note: To register an exam with year/semester/subject or a book with name/author, you can also use the dedicated Exam Management and Book Management tabs.
-                                </p>
                             </div>
+
+                            {/* EXAM fields */}
+                            {selectedType === "EXAM" && (
+                                <div className="space-y-4">
+                                    {/* Department */}
+                                    <div>
+                                        <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                                            Department <span className="text-red-500">*</span>
+                                        </label>
+                                        {deptsLoading ? (
+                                            <p className="text-xs text-neutral-500">Loading departments…</p>
+                                        ) : (
+                                            <SearchableSelect
+                                                id="modal-source-dept"
+                                                options={deptComboOptions}
+                                                value={selectedDeptOption}
+                                                onChange={(opt) => {
+                                                    setSelectedDeptId(opt ? opt.id : null);
+                                                    setSelectedSubjectKey(null);
+                                                }}
+                                                placeholder="Select department…"
+                                            />
+                                        )}
+                                    </div>
+
+                                    {/* Subject */}
+                                    <div>
+                                        <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                                            Subject <span className="text-red-500">*</span>
+                                        </label>
+                                        {subjectsLoading ? (
+                                            <p className="text-xs text-neutral-500">Loading subjects…</p>
+                                        ) : (
+                                            <SearchableSelect
+                                                id="modal-source-subject"
+                                                options={subjectComboOptions}
+                                                value={selectedSubjectOption}
+                                                onChange={(opt) => {
+                                                    setSelectedSubjectKey(opt ? opt.id : null);
+                                                    if (opt) {
+                                                        const found = subjects.find((s) => s.subjectKey === opt.id);
+                                                        if (found && typeof found.semester === "number") {
+                                                            setSemesterNo(found.semester);
+                                                        }
+                                                    }
+                                                }}
+                                                placeholder={selectedDeptId ? "Select subject…" : "Select department first"}
+                                                disabled={!selectedDeptId}
+                                            />
+                                        )}
+                                    </div>
+
+                                    {/* Exam Type */}
+                                    <div>
+                                        <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                                            Exam Type <span className="text-red-500">*</span>
+                                        </label>
+                                        <select
+                                            value={examType}
+                                            onChange={(e) => setExamType(e.target.value as (typeof EXAM_TYPES)[number])}
+                                            className="w-full rounded-md bg-neutral-950 border border-neutral-700 px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500/60"
+                                        >
+                                            {EXAM_TYPES.map((t) => (
+                                                <option key={t} value={t}>{t}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    {/* Exam Year & Semester */}
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                                                Year <span className="text-red-500">*</span>
+                                            </label>
+                                            <input
+                                                type="number"
+                                                min={1950}
+                                                max={2100}
+                                                value={examYear}
+                                                onChange={(e) => setExamYear(Number(e.target.value))}
+                                                className="w-full rounded-md bg-neutral-950 border border-neutral-700 px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500/60"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                                                Semester <span className="text-red-500">*</span>
+                                            </label>
+                                            <input
+                                                type="number"
+                                                min={1}
+                                                max={10}
+                                                value={semesterNo}
+                                                onChange={(e) => setSemesterNo(Number(e.target.value))}
+                                                className="w-full rounded-md bg-neutral-950 border border-neutral-700 px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500/60"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Month (optional) */}
+                                    <div>
+                                        <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                                            Month (optional)
+                                        </label>
+                                        <select
+                                            value={month}
+                                            onChange={(e) => setMonth(e.target.value)}
+                                            className="w-full rounded-md bg-neutral-950 border border-neutral-700 px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500/60"
+                                        >
+                                            <option value="">— None —</option>
+                                            {MONTHS.map((m) => (
+                                                <option key={m} value={m}>{m}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* BOOK fields */}
+                            {selectedType === "BOOK" && (
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                                            Book Title <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={bookName}
+                                            onChange={(e) => setBookName(e.target.value)}
+                                            placeholder="e.g. Introduction to Algorithms"
+                                            className="w-full rounded-md bg-neutral-950 border border-neutral-700 px-3 py-2 text-sm text-neutral-100 placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500/60"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                                            Author Name <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={authorName}
+                                            onChange={(e) => setAuthorName(e.target.value)}
+                                            placeholder="e.g. Cormen, Leiserson, Rivest, Stein"
+                                            className="w-full rounded-md bg-neutral-950 border border-neutral-700 px-3 py-2 text-sm text-neutral-100 placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500/60"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Inline error notice */}
+                            {notice && notice.kind === "error" && (
+                                <p className="text-xs text-red-400 bg-red-950/20 border border-red-500/30 rounded-lg px-3 py-2">
+                                    {notice.message}
+                                </p>
+                            )}
 
                             <div className="flex items-center justify-end gap-3 pt-3 border-t border-neutral-800">
                                 <button
@@ -351,7 +630,7 @@ export default function SourceManagement() {
                                     {submitting && (
                                         <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                                     )}
-                                    Create Source
+                                    {selectedType === "EXAM" ? "Register Exam Source" : "Register Book Source"}
                                 </button>
                             </div>
                         </form>

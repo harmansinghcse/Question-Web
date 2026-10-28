@@ -1,12 +1,11 @@
 /**
- * Academic Calendar configuration and SVNIT student email parser.
- *
- * SVNIT Email Format:
+ * Academic Calendar configuration and institutional student email parser.
+ * Institutional Email Format:
  *   [U|u][2-digit admission year][2-4 letter department code][roll digits]@domain
  *   Example: U25CS044@coed.svnit.ac.in
- *     - U  = Undergraduate (B.Tech)
- *     - 25 = 2025 Admission batch
- *     - CS = Computer Science and Engineering
+ *     - U   = Undergraduate (B.Tech)
+ *     - 25  = 2025 Admission batch
+ *     - CS  = Computer Science and Engineering
  *     - 044 = Roll number portion
  */
 
@@ -39,23 +38,31 @@ export interface StudentProfile {
 }
 
 /**
- * Mapping of known SVNIT department codes to existing Department entity IDs.
+ * Standard department code alias mapping to primary department code abbreviations.
  */
-export const DEPT_CODE_TO_ID: Record<string, number> = {
-  CS: 1, // Computer Science and Engineering
-  CO: 1, // Alternate code for Computer Engineering
-  AI: 2, // Artificial Intelligence
-  DS: 2, // Data Science
+export const DEPARTMENT_CODE_ALIASES: Record<string, string> = {
+  CS: 'CS',
+  CSE: 'CS',
+  CO: 'CS',
+  COED: 'CS',
+  AI: 'AI',
+  AIDS: 'AI',
+  DS: 'AI',
+  EC: 'EC',
+  ECE: 'EC',
+  EE: 'EE',
+  EEE: 'EE',
+  ME: 'ME',
+  MECH: 'ME',
+  CE: 'CE',
+  CIVIL: 'CE',
+  CH: 'CH',
+  CHEM: 'CH',
 };
 
 /**
- * Parses an authenticated student email and dynamically calculates their expected
- * current semester using the current date and college academic calendar rules.
- *
- * @param email - College email address (e.g. U25CS044@coed.svnit.ac.in)
- * @param now - Dynamic reference date (defaults to `new Date()`)
- * @param config - Configurable calendar rules
- * @returns StudentProfile if email matches SVNIT UG pattern, or null if unsupported/invalid.
+ * Extracts student academic information from institutional email.
+ * Preserves admission year, department code, and semester calculations.
  */
 export function parseStudentEmail(
   email?: string | null,
@@ -67,7 +74,6 @@ export function parseStudentEmail(
   }
 
   const trimmed = email.trim();
-  // Matches initial U/u, 2 digits for year, 2-4 letters for dept, optional digits for roll, and @
   const match = trimmed.match(/^[uU](\d{2})([a-zA-Z]{2,4})(\d+)?@/);
   if (!match) {
     return null;
@@ -78,30 +84,23 @@ export function parseStudentEmail(
     return null;
   }
 
-  // Two-digit year expansion: 25 -> 2025
   const admissionYear = 2000 + rawYear;
-  const deptCode = match[2].toUpperCase();
+  const rawDeptCode = match[2].toUpperCase();
+  const deptCode = DEPARTMENT_CODE_ALIASES[rawDeptCode] ?? rawDeptCode;
   const rollNumber = match[3] || '';
 
   const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth(); // 0 to 11
+  const currentMonth = now.getMonth();
 
-  // Academic calendar logic:
-  // Odd semester (Semesters 1, 3, 5, 7): July to December
-  // Even semester (Semesters 2, 4, 6, 8): January to June
   const isOddSemester = currentMonth >= config.oddSemesterStartMonth;
   const yearDiff = currentYear - admissionYear;
 
   let calculatedSemester: number;
-
   if (yearDiff < 0 || (yearDiff === 0 && !isOddSemester)) {
-    // Student enrolled for upcoming term before July start
     calculatedSemester = 1;
   } else if (isOddSemester) {
-    // In Autumn term of (yearDiff + 1)-th academic year
     calculatedSemester = yearDiff * 2 + 1;
   } else {
-    // In Spring term of (yearDiff)-th academic year
     calculatedSemester = yearDiff * 2;
   }
 
@@ -112,13 +111,12 @@ export function parseStudentEmail(
   );
 
   const startYear = isOddSemester ? currentYear : currentYear - 1;
-  const academicYearLabel = `${startYear}–${startYear + 1}`;
+  const academicYearLabel = `${startYear}-${startYear + 1}`;
 
   return {
     isUndergraduate: true,
     admissionYear,
     deptCode,
-    deptId: DEPT_CODE_TO_ID[deptCode],
     rollNumber,
     rawSemester: calculatedSemester,
     currentSemester,
