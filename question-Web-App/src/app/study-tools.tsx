@@ -71,6 +71,14 @@ export default function StudyToolsScreen() {
 
     const toolsList = [
         {
+            id: "quiz",
+            title: "Quiz Revision",
+            subtitle: "Practice MCQs, fill-ups, and True/False with timer and instant grading",
+            icon: "flash-outline" as const,
+            stat: "Interactive tests",
+            action: () => router.push("/quiz" as never),
+        },
+        {
             id: "syllabus",
             title: "Syllabus Tracker",
             subtitle: "Curriculum progress and topic mastery across semesters",

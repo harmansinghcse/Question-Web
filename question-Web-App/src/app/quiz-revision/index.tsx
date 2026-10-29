@@ -204,9 +204,9 @@ export default function QuizRevisionHomeScreen() {
                                 <Text style={s.historyBtnText}>Attempt History</Text>
                             </Pressable>
                         </View>
-                        <Text style={s.title}>Quiz-Based Revision</Text>
+                        <Text style={s.title}>Quiz & Revision</Text>
                         <Text style={s.subtitle}>
-                            Sharpen concepts with MCQs, Fill-in-the-Blanks, and True/False questions directly linked to your syllabus.
+                            Test your knowledge and strengthen your concepts.
                         </Text>
                     </View>
                 </View>
@@ -455,7 +455,7 @@ export default function QuizRevisionHomeScreen() {
                                 ) : (
                                     <>
                                         <Ionicons name="play" size={16} color="#FFF" />
-                                        <Text style={s.startBtnText}>Start Revision</Text>
+                                        <Text style={s.startBtnText}>Start Quiz</Text>
                                     </>
                                 )}
                             </Pressable>

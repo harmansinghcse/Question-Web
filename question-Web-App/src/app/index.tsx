@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "expo-router";
 import {
-    Platform,
     Pressable,
     StyleSheet,
     Text,
@@ -254,12 +253,18 @@ export default function HomeScreen() {
                     </View>
                 </View>
 
+                {/* Section Divider */}
+                <View style={s.sectionDivider} />
+
                 {/* 2. UPCOMING EXAM */}
                 <View style={s.section}>
                     <View style={s.sectionHeader}>
-                        <Text style={s.sectionTitle}>
-                            Upcoming Exam
-                        </Text>
+                        <View style={s.sectionHeaderLeft}>
+                            <View style={s.sectionAccentBar} />
+                            <Text style={s.sectionTitle}>
+                                Upcoming Exam
+                            </Text>
+                        </View>
                         <Pressable
                             onPress={() => setActiveModal("upcoming-exams")}
                             accessibilityRole="button"
@@ -337,12 +342,18 @@ export default function HomeScreen() {
                     )}
                 </View>
 
+                {/* Section Divider */}
+                <View style={s.sectionDivider} />
+
                 {/* 3. TODAY'S TIMETABLE */}
                 <View style={s.section}>
                     <View style={s.sectionHeader}>
-                        <Text style={s.sectionTitle}>
-                            {"Today's Timetable"}
-                        </Text>
+                        <View style={s.sectionHeaderLeft}>
+                            <View style={[s.sectionAccentBar, { backgroundColor: "#3B82F6" }]} />
+                            <Text style={s.sectionTitle}>
+                                {"Today's Timetable"}
+                            </Text>
+                        </View>
                         <Pressable
                             onPress={() => setActiveModal("timetable")}
                             accessibilityRole="button"
@@ -403,10 +414,16 @@ export default function HomeScreen() {
                     )}
                 </View>
 
+                {/* Section Divider */}
+                <View style={s.sectionDivider} />
+
                 {/* 4. SYLLABUS TRACKER */}
                 <View style={s.section}>
                     <View style={s.sectionHeader}>
-                        <Text style={s.sectionTitle}>Syllabus Tracker</Text>
+                        <View style={s.sectionHeaderLeft}>
+                            <View style={[s.sectionAccentBar, { backgroundColor: "#10B981" }]} />
+                            <Text style={s.sectionTitle}>Syllabus Tracker</Text>
+                        </View>
                         <Pressable
                             onPress={() => router.push("/syllabus" as never)}
                             accessibilityRole="button"
@@ -442,7 +459,7 @@ export default function HomeScreen() {
                                     }
                                     style={({ pressed }) => [
                                         s.syllabusRow,
-                                        idx < syllabusPreview.length - 1 && s.scheduleDivider,
+                                        idx < syllabusPreview.length - 1 && s.syllabusDivider,
                                         pressed && { opacity: 0.8 },
                                     ]}
                                 >
@@ -460,22 +477,38 @@ export default function HomeScreen() {
                                                 {item.name}
                                             </Text>
                                         </View>
-                                        <Text style={s.syllabusPctText}>
-                                            {item.percentage}%
-                                        </Text>
+                                        <View style={s.syllabusPctBadge}>
+                                            <Text style={s.syllabusPctText}>
+                                                {item.percentage}%
+                                            </Text>
+                                        </View>
                                     </View>
 
                                     <View style={s.progressBarWrapper}>
                                         <ProgressBar
                                             progress={item.percentage}
                                             color={theme.accent}
-                                            height={4}
+                                            height={6}
                                         />
                                     </View>
 
-                                    <Text style={s.syllabusTopicsCount}>
-                                        {item.completedCount} of {item.totalCount} topics completed
-                                    </Text>
+                                    <View style={s.syllabusFooterRow}>
+                                        <View style={s.syllabusTopicsCountCol}>
+                                            <Ionicons
+                                                name="checkmark-circle-outline"
+                                                size={13}
+                                                color={theme.muted}
+                                            />
+                                            <Text style={s.syllabusTopicsCount}>
+                                                {item.completedCount} of {item.totalCount} topics completed
+                                            </Text>
+                                        </View>
+                                        <Ionicons
+                                            name="chevron-forward"
+                                            size={12}
+                                            color={theme.muted}
+                                        />
+                                    </View>
                                 </Pressable>
                             ))}
                         </View>
@@ -498,10 +531,16 @@ export default function HomeScreen() {
                     )}
                 </View>
 
+                {/* Section Divider */}
+                <View style={s.sectionDivider} />
+
                 {/* 5. FOUR STUDY TOOLS CARDS (Balanced 2x2 grid) */}
                 <View style={s.section}>
                     <View style={s.sectionHeader}>
-                        <Text style={s.sectionTitle}>Study Tools</Text>
+                        <View style={s.sectionHeaderLeft}>
+                            <View style={[s.sectionAccentBar, { backgroundColor: theme.accent }]} />
+                            <Text style={s.sectionTitle}>Study Tools</Text>
+                        </View>
                     </View>
 
                     <View style={s.toolsGrid}>
@@ -516,22 +555,30 @@ export default function HomeScreen() {
                                     pressed && { opacity: 0.85 },
                                 ]}
                             >
-                                <View style={s.toolIconWrapper}>
-                                    <Ionicons
-                                        name={tool.icon}
-                                        size={20}
-                                        color={theme.accent}
-                                    />
+                                <View style={s.toolCardTop}>
+                                    <View style={s.toolIconWrapper}>
+                                        <Ionicons
+                                            name={tool.icon}
+                                            size={18}
+                                            color={theme.accent}
+                                        />
+                                    </View>
+                                    <View style={s.toolChevronWrapper}>
+                                        <Ionicons
+                                            name="chevron-forward"
+                                            size={12}
+                                            color={theme.muted}
+                                        />
+                                    </View>
                                 </View>
-                                <View style={s.toolTextCol}>
-                                    <Text style={s.toolTitle}>{tool.title}</Text>
-                                    <Text style={s.toolSub}>{tool.subtitle}</Text>
+                                <View style={s.toolCardBottom}>
+                                    <Text style={s.toolTitle} numberOfLines={1}>
+                                        {tool.title}
+                                    </Text>
+                                    <Text style={s.toolSub} numberOfLines={1}>
+                                        {tool.subtitle}
+                                    </Text>
                                 </View>
-                                <Ionicons
-                                    name="chevron-forward"
-                                    size={13}
-                                    color={theme.muted}
-                                />
                             </Pressable>
                         ))}
                     </View>
@@ -635,6 +682,23 @@ function makeStyles(t: AppTheme) {
             alignItems: "center",
             justifyContent: "space-between",
         },
+        sectionHeaderLeft: {
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 8,
+        },
+        sectionAccentBar: {
+            width: 3.5,
+            height: 16,
+            borderRadius: 2,
+            backgroundColor: t.accent,
+        },
+        sectionDivider: {
+            height: 1,
+            backgroundColor: t.border,
+            opacity: 0.5,
+            marginVertical: 4,
+        },
         sectionTitle: {
             color: t.text,
             fontSize: 16,
@@ -656,7 +720,7 @@ function makeStyles(t: AppTheme) {
         // ── Shared Card Surface ─────────────────────────────────────────────
         card: {
             backgroundColor: t.surface,
-            borderRadius: 14,
+            borderRadius: 16,
             borderWidth: 1,
             borderColor: t.border,
             padding: 16,
@@ -755,8 +819,14 @@ function makeStyles(t: AppTheme) {
 
         // ── 4. Syllabus Tracker ─────────────────────────────────────────────
         syllabusRow: {
-            paddingVertical: 10,
-            gap: 8,
+            paddingVertical: 14,
+            gap: 10,
+        },
+        syllabusDivider: {
+            borderBottomWidth: 1,
+            borderBottomColor: t.border,
+            paddingBottom: 16,
+            marginBottom: 2,
         },
         syllabusHeaderRow: {
             flexDirection: "row",
@@ -772,21 +842,38 @@ function makeStyles(t: AppTheme) {
         },
         syllabusName: {
             color: t.text,
-            fontSize: 13,
+            fontSize: 14,
             fontWeight: "600",
             flex: 1,
         },
+        syllabusPctBadge: {
+            backgroundColor: t.accentSoft,
+            paddingHorizontal: 8,
+            paddingVertical: 2,
+            borderRadius: 6,
+        },
         syllabusPctText: {
             color: t.accent,
-            fontSize: 12,
+            fontSize: 11,
             fontWeight: "700",
         },
         progressBarWrapper: {
             width: "100%",
+            marginVertical: 2,
+        },
+        syllabusFooterRow: {
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+        },
+        syllabusTopicsCountCol: {
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 6,
         },
         syllabusTopicsCount: {
             color: t.muted,
-            fontSize: 11,
+            fontSize: 12,
             fontWeight: "500",
         },
 
@@ -795,39 +882,56 @@ function makeStyles(t: AppTheme) {
             flexDirection: "row",
             flexWrap: "wrap",
             gap: 12,
+            justifyContent: "space-between",
         },
         toolCard: {
-            flex: 1,
-            minWidth: Platform.OS === "web" ? 320 : 160,
-            flexDirection: "row",
-            alignItems: "center",
+            width: "48%",
             backgroundColor: t.surface,
             borderRadius: 14,
             borderWidth: 1,
             borderColor: t.border,
             padding: 14,
-            gap: 12,
+            minHeight: 110,
+            justifyContent: "space-between",
+        },
+        toolCardTop: {
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            width: "100%",
         },
         toolIconWrapper: {
             width: 36,
             height: 36,
             borderRadius: 10,
+            backgroundColor: t.accentSoft,
+            alignItems: "center",
+            justifyContent: "center",
+            borderWidth: 1,
+            borderColor: t.accent + "25",
+        },
+        toolChevronWrapper: {
+            width: 22,
+            height: 22,
+            borderRadius: 11,
             backgroundColor: t.surfaceAlt,
             alignItems: "center",
             justifyContent: "center",
         },
-        toolTextCol: {
-            flex: 1,
-            gap: 2,
+        toolCardBottom: {
+            gap: 3,
+            marginTop: 8,
         },
         toolTitle: {
             color: t.text,
-            fontSize: 14,
+            fontSize: 13,
             fontWeight: "700",
+            letterSpacing: -0.1,
         },
         toolSub: {
             color: t.muted,
             fontSize: 11,
+            fontWeight: "500",
         },
 
         // ── Empty States ────────────────────────────────────────────────────

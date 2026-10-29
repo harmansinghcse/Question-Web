@@ -21,6 +21,7 @@ type IconName = React.ComponentProps<typeof Ionicons>["name"];
 export type NavKey =
     | "home"
     | "learn"
+    | "quiz"
     | "prompt"
     | "tools"
     | "revision"
@@ -49,9 +50,17 @@ const NAV_ITEMS: {
         key: "learn",
         label: "Learn",
         short: "Learn",
-        icon: "library-outline",
-        iconActive: "library",
+        icon: "book-outline",
+        iconActive: "book",
         path: "/learn",
+    },
+    {
+        key: "quiz",
+        label: "Quiz",
+        short: "Quiz",
+        icon: "clipboard-outline",
+        iconActive: "clipboard",
+        path: "/quiz",
     },
     {
         key: "prompt",
@@ -65,8 +74,8 @@ const NAV_ITEMS: {
         key: "tools",
         label: "Study Tools",
         short: "Tools",
-        icon: "timer-outline",
-        iconActive: "timer",
+        icon: "grid-outline",
+        iconActive: "grid",
         path: "/study-tools",
     },
 ];
@@ -208,6 +217,8 @@ export default function AppShell({
                             {NAV_ITEMS.map((item) => {
                                 const isActive =
                                     item.key === active ||
+                                    (item.key === "quiz" &&
+                                        active === "revision") ||
                                     (item.key === "learn" &&
                                         (active === "questions" ||
                                             active === "resources")) ||
@@ -455,6 +466,7 @@ export default function AppShell({
                     {NAV_ITEMS.map((item) => {
                         const isActive =
                             item.key === active ||
+                            (item.key === "quiz" && active === "revision") ||
                             (item.key === "learn" &&
                                 (active === "questions" ||
                                     active === "resources")) ||
