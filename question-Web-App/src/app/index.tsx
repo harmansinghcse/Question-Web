@@ -6,11 +6,17 @@ import {
     Text,
     View,
 } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import AppShell, { useLayout } from "../components/AppShell";
 import AcademicBannerIllustration from "../components/AcademicBannerIllustration";
-import { ErrorBlock, LoadingBlock, ProgressBar } from "../components/ui";
+import {
+    EmptyBlock,
+    ErrorBlock,
+    LoadingBlock,
+    ProgressBar,
+} from "../components/ui";
 import StudyToolsModals, {
     type ActiveToolModal,
 } from "../components/StudyToolsModals";
@@ -18,15 +24,20 @@ import { useAppTheme } from "../providers/ThemeProvider";
 import { useAuth } from "../providers/AuthProvider";
 import { api, type Subject } from "../services/api";
 import { useApiData } from "../hooks/use-api-data";
-import { sortSubjects, subjectCode, subjectDisplayName } from "../constants/subjects";
+import { useStudentSchedule } from "../hooks/use-student-schedule";
+import {
+    sortSubjects,
+    subjectCode,
+    subjectDisplayName,
+} from "../constants/subjects";
 import {
     studyStorage,
-    type ExamItem,
-    type ScheduleItem,
     type StudyGoal,
     type StudyStats,
 } from "../services/study-storage";
 import type { AppTheme } from "../constants/theme";
+
+const DAY_KEYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
 export default function HomeScreen() {
     const router = useRouter();
@@ -37,14 +48,14 @@ export default function HomeScreen() {
 
     // ── Local Storage Data ───────────────────────────────────────────────────
     const [goals, setGoals] = useState<StudyGoal[]>([]);
-    const [schedule, setSchedule] = useState<ScheduleItem[]>([]);
-    const [exams, setExams] = useState<ExamItem[]>([]);
     const [studyStats, setStudyStats] = useState<StudyStats>({
         totalMinutes: 0,
         sessionsCompleted: 0,
         lastStudyDate: new Date().toISOString(),
     });
-    const [completedTopicIds, setCompletedTopicIds] = useState<Set<number>>(new Set());
+    const [completedTopicIds, setCompletedTopicIds] = useState<Set<number>>(
+        new Set(),
+    );
 
     // ── Active Modal ────────────────────────────────────────────────────────
     const [activeModal, setActiveModal] = useState<ActiveToolModal>(null);
@@ -54,18 +65,14 @@ export default function HomeScreen() {
         let isMounted = true;
         async function loadStoredData() {
             try {
-                const [storedGoals, storedSchedule, storedExams, storedStats, storedTopics] =
+                const [storedGoals, storedStats, storedTopics] =
                     await Promise.all([
                         studyStorage.getGoals(),
-                        studyStorage.getSchedule(),
-                        studyStorage.getExams(),
                         studyStorage.getStudyStats(),
                         studyStorage.getCompletedTopics(),
                     ]);
                 if (isMounted) {
                     setGoals(storedGoals);
-                    setSchedule(storedSchedule);
-                    setExams(storedExams);
                     setStudyStats(storedStats);
                     setCompletedTopicIds(storedTopics);
                 }
@@ -79,14 +86,45 @@ export default function HomeScreen() {
         };
     }, []);
 
-    // ── Real Subjects Data for Syllabus Tracker ──────────────────────────────
+    // ── Backend Data ─────────────────────────────────────────────────────────
     const fetchSubjects = useCallback(() => api.getSubjects(), []);
     const subjectsState = useApiData<Subject[]>(fetchSubjects);
 
+    // Real timetable + upcoming exams (department/semester resolved by the backend)
+    const schedule = useStudentSchedule();
+
     const subjects = useMemo(() => {
-        if (subjectsState.status !== "success" || !subjectsState.data) return [];
+        if (subjectsState.status !== "success" || !subjectsState.data)
+            return [];
         return sortSubjects(subjectsState.data);
     }, [subjectsState]);
+
+    // Backend exams (already department/semester scoped and unexpired)
+    const upcomingExams = useMemo(
+        () => schedule.exams.data ?? [],
+        [schedule.exams.data],
+    );
+
+    // Today's classes (at most 3 on Home) from the real timetable
+    const todaySchedule = useMemo(() => {
+        const entries = schedule.timetable.data?.timetable?.entries ?? [];
+        const todayKey = DAY_KEYS[new Date().getDay()];
+        return entries
+            .filter((e) => e.dayOfWeek === todayKey)
+            .sort((a, b) => a.startTime.localeCompare(b.startTime))
+            .slice(0, 3);
+    }, [schedule.timetable.data]);
+
+    const timetableNeedsDivision =
+        schedule.timetable.status === "success" &&
+        !!schedule.timetable.data &&
+        !schedule.timetable.data.timetable &&
+        schedule.timetable.data.divisions.length > 1;
+    const timetableEmptyText = timetableNeedsDivision
+        ? "Choose your division to see your classes."
+        : schedule.timetable.data?.divisions.length === 0
+          ? "No timetable has been published for your department and semester yet."
+          : "No classes are scheduled for today.";
 
     // ── Time & Greeting ──────────────────────────────────────────────────────
     const greeting = useMemo(() => {
@@ -104,12 +142,13 @@ export default function HomeScreen() {
 
     // ── Nearest Exam ────────────────────────────────────────────────────────
     const nearestExamInfo = useMemo(() => {
-        if (!exams || exams.length === 0) return null;
-        const sorted = [...exams].sort(
-            (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+        if (upcomingExams.length === 0) return null;
+        const sorted = [...upcomingExams].sort(
+            (a, b) =>
+                new Date(a.examDate).getTime() - new Date(b.examDate).getTime(),
         );
         const next = sorted[0];
-        const examDate = new Date(next.date);
+        const examDate = new Date(next.examDate);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         examDate.setHours(0, 0, 0, 0);
@@ -131,23 +170,25 @@ export default function HomeScreen() {
             countdownTone = "soon";
         }
 
-        const formattedDate = new Date(next.date).toLocaleDateString("en-US", {
+        const formattedDate = new Date(next.examDate).toLocaleDateString("en-US", {
             month: "short",
             day: "numeric",
         });
 
         return {
             exam: next,
+            subjectLabel:
+                next.subject?.subjectName ||
+                next.subject?.subjectId ||
+                next.department?.deptName ||
+                "Exam",
             countdownLabel,
             countdownTone,
             formattedDate,
         };
-    }, [exams]);
+    }, [upcomingExams]);
 
     // ── Today's Schedule (at most 3 entries on Home) ────────────────────────
-    const todaySchedule = useMemo(() => {
-        return schedule.slice(0, 3);
-    }, [schedule]);
 
     // ── Syllabus Progress Preview (at most 3 subject rows) ───────────────────
     const syllabusPreview = useMemo(() => {
@@ -162,7 +203,10 @@ export default function HomeScreen() {
             );
             const percentage =
                 totalCount > 0
-                    ? Math.min(100, Math.round((completedCount / totalCount) * 100))
+                    ? Math.min(
+                          100,
+                          Math.round((completedCount / totalCount) * 100),
+                      )
                     : 0;
             return {
                 subjectKey: sub.subjectKey,
@@ -224,7 +268,8 @@ export default function HomeScreen() {
                                 Make today count.
                             </Text>
                             <Text style={s.bannerSubtitle}>
-                                Stay consistent, keep learning, and achieve your goals.
+                                Stay consistent, keep learning, and achieve your
+                                goals.
                             </Text>
                             <Pressable
                                 onPress={() => setActiveModal("daily-planner")}
@@ -265,6 +310,7 @@ export default function HomeScreen() {
                                 Upcoming Exam
                             </Text>
                         </View>
+                        <Text style={s.sectionTitle}>Upcoming Exam</Text>
                         <Pressable
                             onPress={() => setActiveModal("upcoming-exams")}
                             accessibilityRole="button"
@@ -280,14 +326,30 @@ export default function HomeScreen() {
                         </Pressable>
                     </View>
 
-                    {nearestExamInfo ? (
+                    {schedule.exams.status === "unauthenticated" ? (
+                        <EmptyBlock
+                            icon="log-in-outline"
+                            title="Log in to see upcoming exams"
+                            text="Exams are shown for your department once you are signed in."
+                            actionLabel="Log in"
+                            onAction={() => router.push("/login" as never)}
+                        />
+                    ) : schedule.exams.status === "loading" ? (
+                        <LoadingBlock label="Loading upcoming exams..." />
+                    ) : schedule.exams.status === "error" ? (
+                        <ErrorBlock
+                            title="Couldn't load upcoming exams"
+                            message={schedule.exams.message ?? undefined}
+                            onRetry={schedule.exams.refresh}
+                        />
+                    ) : nearestExamInfo ? (
                         <View style={s.card}>
                             <View style={s.examRow}>
                                 <View style={{ flex: 1, gap: 4 }}>
                                     <View style={s.examTagRow}>
                                         <View style={s.subjectPill}>
                                             <Text style={s.subjectPillText}>
-                                                {nearestExamInfo.exam.subject}
+                                                {nearestExamInfo.subjectLabel}
                                             </Text>
                                         </View>
                                         <Text style={s.examDateText}>
@@ -301,15 +363,20 @@ export default function HomeScreen() {
                                 <View
                                     style={[
                                         s.countdownPill,
-                                        nearestExamInfo.countdownTone === "urgent" && s.countdownUrgent,
-                                        nearestExamInfo.countdownTone === "soon" && s.countdownSoon,
+                                        nearestExamInfo.countdownTone ===
+                                            "urgent" && s.countdownUrgent,
+                                        nearestExamInfo.countdownTone ===
+                                            "soon" && s.countdownSoon,
                                     ]}
                                 >
                                     <Text
                                         style={[
                                             s.countdownText,
-                                            nearestExamInfo.countdownTone === "urgent" && s.countdownTextUrgent,
-                                            nearestExamInfo.countdownTone === "soon" && s.countdownTextSoon,
+                                            nearestExamInfo.countdownTone ===
+                                                "urgent" &&
+                                                s.countdownTextUrgent,
+                                            nearestExamInfo.countdownTone ===
+                                                "soon" && s.countdownTextSoon,
                                         ]}
                                     >
                                         {nearestExamInfo.countdownLabel}
@@ -329,15 +396,10 @@ export default function HomeScreen() {
                                     No upcoming exams scheduled
                                 </Text>
                                 <Text style={s.emptyCardSub}>
-                                    Add your upcoming tests and assignment deadlines to track countdowns.
+                                    Exams scheduled for your department will
+                                    appear here.
                                 </Text>
                             </View>
-                            <Pressable
-                                onPress={() => setActiveModal("upcoming-exams")}
-                                style={s.emptyAction}
-                            >
-                                <Text style={s.emptyActionText}>Add Exam</Text>
-                            </Pressable>
                         </View>
                     )}
                 </View>
@@ -369,21 +431,53 @@ export default function HomeScreen() {
                         </Pressable>
                     </View>
 
-                    {todaySchedule.length > 0 ? (
+                    {schedule.timetable.status === "unauthenticated" ? (
+                        <EmptyBlock
+                            icon="log-in-outline"
+                            title="Log in to see your timetable"
+                            text="Your timetable is based on your department and semester."
+                            actionLabel="Log in"
+                            onAction={() => router.push("/login" as never)}
+                        />
+                    ) : schedule.timetable.status === "loading" ? (
+                        <LoadingBlock label="Loading timetable..." />
+                    ) : schedule.timetable.status === "error" ? (
+                        <ErrorBlock
+                            title="Couldn't load timetable"
+                            message={schedule.timetable.message ?? undefined}
+                            onRetry={schedule.timetable.refresh}
+                        />
+                    ) : todaySchedule.length > 0 ? (
                         <View style={s.card}>
                             {todaySchedule.map((item, idx) => (
                                 <View
-                                    key={item.id}
+                                    key={item.entryId}
                                     style={[
                                         s.scheduleRow,
-                                        idx < todaySchedule.length - 1 && s.scheduleDivider,
+                                        idx < todaySchedule.length - 1 &&
+                                            s.scheduleDivider,
                                     ]}
                                 >
-                                    <Text style={s.scheduleTime}>{item.time}</Text>
+                                    <Text style={s.scheduleTime}>
+                                        {item.startTime}
+                                    </Text>
                                     <View style={{ flex: 1 }}>
-                                        <Text style={s.scheduleTitle}>{item.title}</Text>
+                                        <Text style={s.scheduleTitle}>
+                                            {item.subject?.subjectName ||
+                                                item.subject?.subjectId ||
+                                                `Subject #${item.subjectKey}`}
+                                        </Text>
                                         <Text style={s.scheduleLocation}>
-                                            {item.location}
+                                            {[
+                                                `${item.startTime}-${item.endTime}`,
+                                                item.classroom
+                                                    ? `Room: ${item.classroom}`
+                                                    : null,
+                                                item.teacher,
+                                                item.classType,
+                                            ]
+                                                .filter(Boolean)
+                                                .join(" \u2022 ")}
                                         </Text>
                                     </View>
                                 </View>
@@ -398,18 +492,24 @@ export default function HomeScreen() {
                             />
                             <View style={s.emptyCardBody}>
                                 <Text style={s.emptyCardTitle}>
-                                    No classes scheduled today
+                                    {timetableNeedsDivision
+                                        ? "Select your division"
+                                        : "No classes to show today"}
                                 </Text>
                                 <Text style={s.emptyCardSub}>
-                                    Add your daily lectures and lab timings to keep your routine organized.
+                                    {timetableEmptyText}
                                 </Text>
                             </View>
-                            <Pressable
-                                onPress={() => setActiveModal("timetable")}
-                                style={s.emptyAction}
-                            >
-                                <Text style={s.emptyActionText}>Add Class</Text>
-                            </Pressable>
+                            {timetableNeedsDivision && (
+                                <Pressable
+                                    onPress={() => setActiveModal("timetable")}
+                                    style={s.emptyAction}
+                                >
+                                    <Text style={s.emptyActionText}>
+                                        Choose Division
+                                    </Text>
+                                </Pressable>
+                            )}
                         </View>
                     )}
                 </View>
@@ -460,6 +560,8 @@ export default function HomeScreen() {
                                     style={({ pressed }) => [
                                         s.syllabusRow,
                                         idx < syllabusPreview.length - 1 && s.syllabusDivider,
+                                        idx < syllabusPreview.length - 1 &&
+                                            s.scheduleDivider,
                                         pressed && { opacity: 0.8 },
                                     ]}
                                 >
@@ -509,6 +611,10 @@ export default function HomeScreen() {
                                             color={theme.muted}
                                         />
                                     </View>
+                                    <Text style={s.syllabusTopicsCount}>
+                                        {item.completedCount} of{" "}
+                                        {item.totalCount} topics completed
+                                    </Text>
                                 </Pressable>
                             ))}
                         </View>
@@ -524,7 +630,8 @@ export default function HomeScreen() {
                                     No subjects available
                                 </Text>
                                 <Text style={s.emptyCardSub}>
-                                    Subjects will appear here when connected to the curriculum.
+                                    Subjects will appear here when connected to
+                                    the curriculum.
                                 </Text>
                             </View>
                         </View>
@@ -579,6 +686,26 @@ export default function HomeScreen() {
                                         {tool.subtitle}
                                     </Text>
                                 </View>
+                                <View style={s.toolIconWrapper}>
+                                    <Ionicons
+                                        name={tool.icon}
+                                        size={20}
+                                        color={theme.accent}
+                                    />
+                                </View>
+                                <View style={s.toolTextCol}>
+                                    <Text style={s.toolTitle}>
+                                        {tool.title}
+                                    </Text>
+                                    <Text style={s.toolSub}>
+                                        {tool.subtitle}
+                                    </Text>
+                                </View>
+                                <Ionicons
+                                    name="chevron-forward"
+                                    size={13}
+                                    color={theme.muted}
+                                />
                             </Pressable>
                         ))}
                     </View>
@@ -590,12 +717,11 @@ export default function HomeScreen() {
                 activeModal={activeModal}
                 onClose={() => setActiveModal(null)}
                 goals={goals}
-                schedule={schedule}
-                exams={exams}
+                timetable={schedule.timetable}
+                exams={schedule.exams}
+                onSelectDivision={schedule.selectDivision}
                 studyStats={studyStats}
                 onGoalsChange={setGoals}
-                onScheduleChange={setSchedule}
-                onExamsChange={setExams}
                 onStudyStatsChange={setStudyStats}
             />
         </AppShell>

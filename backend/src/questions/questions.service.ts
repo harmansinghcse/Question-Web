@@ -167,10 +167,11 @@ export class QuestionsService {
 
       const imagesByQuestion = new Map<number, QuestionImageItem[]>();
       for (const img of allImages) {
+        if (!img.imageUrl || !img.imageUrl.trim()) continue;
         const list = imagesByQuestion.get(img.quesId) ?? [];
         list.push({
           imageId: img.imageId,
-          imageUrl: img.imageUrl,
+          imageUrl: img.imageUrl.trim(),
           displayOrder: list.length,
         });
         imagesByQuestion.set(img.quesId, list);
@@ -424,10 +425,13 @@ export class QuestionsService {
       }
 
       // 1. Fetch images ordered by imageId (insertion sequence)
-      const images = await this.dataSource.manager.find(QuestionImage, {
+      const rawImages = await this.dataSource.manager.find(QuestionImage, {
         where: { quesId: id },
         order: { imageId: 'ASC' },
       });
+      const images = rawImages.filter(
+        (img) => img.imageUrl && img.imageUrl.trim().length > 0,
+      );
 
       // 2. Fetch associated topics
       const questionTopics = await this.dataSource.manager.find(QuestionTopic, {
@@ -545,7 +549,7 @@ export class QuestionsService {
         })),
         images: images.map((img, idx) => ({
           imageId: img.imageId,
-          imageUrl: img.imageUrl,
+          imageUrl: img.imageUrl.trim(),
           displayOrder: idx,
         })),
       };

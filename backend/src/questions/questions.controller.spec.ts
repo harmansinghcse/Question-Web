@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { QuestionsController } from './questions.controller';
 import { QuestionsService } from './questions.service';
 import { CloudinaryService } from './cloudinary.service';
+import { DepartmentsService } from '../departments/departments.service';
 
 describe('QuestionsController', () => {
   let controller: QuestionsController;
@@ -61,6 +62,10 @@ describe('QuestionsController', () => {
         {
           provide: CloudinaryService,
           useValue: mockCloudinaryService,
+        },
+        {
+          provide: DepartmentsService,
+          useValue: { resolveFromEmail: jest.fn().mockResolvedValue(null) },
         },
       ],
     }).compile();

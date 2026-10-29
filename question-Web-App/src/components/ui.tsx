@@ -3,9 +3,11 @@ import {
     ActivityIndicator,
     Platform,
     Pressable,
+    ScrollView,
     Text,
     View,
 } from "react-native";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import Markdown from "react-native-markdown-display";
 import { Ionicons } from "@expo/vector-icons";
@@ -550,6 +552,126 @@ export function MarkdownText({ children }: { children: string }) {
     );
 }
 
+/**
+ * Inline image gallery for QuestionCard.
+ * Displays attached images with clean aspect ratio, horizontal scrolling,
+ * and graceful fallback if an image fails to load.
+ */
+function QuestionCardImages({
+    images,
+    onPress,
+}: {
+    images: { imageId: number; imageUrl: string; displayOrder?: number }[];
+    onPress: () => void;
+}) {
+    const { theme } = useAppTheme();
+    const [failedIds, setFailedIds] = useState<Set<number>>(new Set());
+
+    const validImages = images.filter(
+        (img) => img && typeof img.imageUrl === "string" && img.imageUrl.trim().length > 0,
+    );
+
+    if (validImages.length === 0) return null;
+
+    return (
+        <View style={{ gap: 6 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                <Ionicons name="image-outline" size={13} color={theme.accent} />
+                <Text style={{ fontSize: 11, fontWeight: "700", color: theme.muted }}>
+                    Attached Images ({validImages.length})
+                </Text>
+            </View>
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ gap: 8, paddingRight: 4 }}
+            >
+                {validImages.map((img, idx) => {
+                    const hasFailed = failedIds.has(img.imageId);
+                    return (
+                        <Pressable
+                            key={img.imageId}
+                            onPress={onPress}
+                            accessibilityRole="button"
+                            accessibilityLabel={`View attached image ${idx + 1}`}
+                            style={({ pressed }) => ({
+                                width: 120,
+                                height: 80,
+                                borderRadius: 8,
+                                overflow: "hidden",
+                                borderWidth: 1,
+                                borderColor: theme.border,
+                                backgroundColor: theme.surfaceAlt,
+                                opacity: pressed ? 0.85 : 1,
+                            })}
+                        >
+                            {hasFailed ? (
+                                <View
+                                    style={{
+                                        flex: 1,
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        gap: 2,
+                                        padding: 4,
+                                    }}
+                                >
+                                    <Ionicons
+                                        name="alert-circle-outline"
+                                        size={18}
+                                        color={theme.muted}
+                                    />
+                                    <Text
+                                        style={{
+                                            fontSize: 9,
+                                            color: theme.muted,
+                                            fontWeight: "600",
+                                            textAlign: "center",
+                                        }}
+                                        numberOfLines={1}
+                                    >
+                                        Unavailable
+                                    </Text>
+                                </View>
+                            ) : (
+                                <Image
+                                    source={{ uri: img.imageUrl.trim() }}
+                                    style={{ width: "100%", height: "100%" }}
+                                    contentFit="cover"
+                                    transition={200}
+                                    onError={() =>
+                                        setFailedIds((prev) => new Set(prev).add(img.imageId))
+                                    }
+                                />
+                            )}
+                            <View
+                                style={{
+                                    position: "absolute",
+                                    top: 4,
+                                    left: 4,
+                                    backgroundColor: "rgba(0, 0, 0, 0.65)",
+                                    borderRadius: 4,
+                                    paddingHorizontal: 5,
+                                    paddingVertical: 1,
+                                }}
+                            >
+                                <Text
+                                    style={{
+                                        color: "#FFFFFF",
+                                        fontSize: 9,
+                                        fontWeight: "700",
+                                    }}
+                                >
+                                    #{idx + 1}
+                                </Text>
+                            </View>
+                        </Pressable>
+                    );
+                })}
+            </ScrollView>
+        </View>
+    );
+}
+
 const MAX_TOPIC_BADGES = 3;
 const COLLAPSED_HEIGHT = 140;
 
@@ -686,6 +808,14 @@ export function QuestionCard({
                         {expanded ? "Show less ↑" : "Read full question ↓"}
                     </Text>
                 </Pressable>
+            )}
+
+            {/* Attached images preview (if any) */}
+            {question.images && question.images.length > 0 && (
+                <QuestionCardImages
+                    images={question.images}
+                    onPress={openDetail}
+                />
             )}
 
             {/* Footer with topics + detail action */}

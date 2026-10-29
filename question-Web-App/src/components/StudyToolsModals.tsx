@@ -9,16 +9,16 @@ import {
     View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-
-import { Badge } from "./ui";
+import { useRouter } from "expo-router";
+import { Badge, EmptyBlock, ErrorBlock, LoadingBlock } from "./ui";
 import { useAppTheme } from "../providers/ThemeProvider";
 import {
     studyStorage,
-    type ExamItem,
-    type ScheduleItem,
     type StudyGoal,
     type StudyStats,
 } from "../services/study-storage";
+import type { MyTimetable, UpcomingExam } from "../services/api";
+import type { ApiSlice } from "../hooks/use-student-schedule";
 import type { AppTheme } from "../constants/theme";
 
 export type ActiveToolModal =
@@ -34,47 +34,38 @@ interface StudyToolsModalsProps {
     activeModal: ActiveToolModal;
     onClose: () => void;
     goals: StudyGoal[];
-    schedule: ScheduleItem[];
-    exams: ExamItem[];
+    timetable: ApiSlice<MyTimetable>;
+    exams: ApiSlice<UpcomingExam[]>;
+    onSelectDivision: (division: string | null) => void;
     studyStats: StudyStats;
     onGoalsChange: (goals: StudyGoal[]) => void;
-    onScheduleChange: (schedule: ScheduleItem[]) => void;
-    onExamsChange: (exams: ExamItem[]) => void;
     onStudyStatsChange: (stats: StudyStats) => void;
 }
 
 const FOCUS_DURATION = 25 * 60; // 25 minutes
+const DAYS_OF_WEEK = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"] as const;
 
 export default function StudyToolsModals({
     activeModal,
     onClose,
     goals,
-    schedule,
+    timetable,
     exams,
+    onSelectDivision,
     studyStats,
     onGoalsChange,
-    onScheduleChange,
-    onExamsChange,
     onStudyStatsChange,
 }: StudyToolsModalsProps) {
     const { theme } = useAppTheme();
     const s = useMemo(() => makeStyles(theme), [theme]);
 
-    // ── Focus Timer ─────────────────────────────────────────────────────────
+    // === Focus Timer ===
     const [timerSecondsLeft, setTimerSecondsLeft] = useState(FOCUS_DURATION);
     const [timerIsRunning, setTimerIsRunning] = useState(false);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-    // ── Inputs ──────────────────────────────────────────────────────────────
+    // === Inputs ===
     const [newGoalText, setNewGoalText] = useState("");
-    const [newClassTime, setNewClassTime] = useState("");
-    const [newClassTitle, setNewClassTitle] = useState("");
-    const [newClassLocation, setNewClassLocation] = useState("");
-    const [newExamSubject, setNewExamSubject] = useState("");
-    const [newExamTitle, setNewExamTitle] = useState("");
-    const [newExamDate, setNewExamDate] = useState("");
-
-    // Timestamp for exam countdown (safe against render-time impurity)
     const [currentTimestamp, setCurrentTimestamp] = useState(() => Date.now());
 
     useEffect(() => {
@@ -85,14 +76,15 @@ export default function StudyToolsModals({
         return () => clearInterval(intervalId);
     }, [activeModal]);
 
-    // Timer tick handler
     useEffect(() => {
         if (timerIsRunning) {
             timerRef.current = setInterval(() => {
                 setTimerSecondsLeft((prev) => {
                     if (prev <= 1) {
                         setTimerIsRunning(false);
-                        void studyStorage.recordStudySession(25).then(onStudyStatsChange);
+                        void studyStorage
+                            .recordStudySession(25)
+                            .then(onStudyStatsChange);
                         return FOCUS_DURATION;
                     }
                     return prev - 1;
@@ -107,7 +99,15 @@ export default function StudyToolsModals({
         };
     }, [timerIsRunning, onStudyStatsChange]);
 
-    // Goal Handlers
+    const router = useRouter();
+    const goToLogin = () => {
+        onClose();
+        router.push("/login" as never);
+    };
+    const timetableData = timetable.data;
+    const timetableEntries = timetableData?.timetable?.entries ?? [];
+    const examList = exams.data ?? [];
+
     const handleToggleGoal = async (id: string) => {
         const updated = await studyStorage.toggleGoal(id);
         onGoalsChange(updated);
@@ -125,38 +125,9 @@ export default function StudyToolsModals({
         onGoalsChange(updated);
     };
 
-    // Schedule Handlers
-    const handleAddClass = async () => {
-        if (!newClassTime.trim() || !newClassTitle.trim()) return;
-        const updated = await studyStorage.addScheduleItem({
-            time: newClassTime.trim(),
-            title: newClassTitle.trim(),
-            location: newClassLocation.trim() || "Online / TBA",
-            type: "lecture",
-        });
-        onScheduleChange(updated);
-        setNewClassTime("");
-        setNewClassTitle("");
-        setNewClassLocation("");
-    };
-
-    // Exam Handlers
-    const handleAddExam = async () => {
-        if (!newExamSubject.trim() || !newExamTitle.trim() || !newExamDate.trim()) return;
-        const updated = await studyStorage.addExam({
-            subject: newExamSubject.trim(),
-            title: newExamTitle.trim(),
-            date: newExamDate.trim(),
-        });
-        onExamsChange(updated);
-        setNewExamSubject("");
-        setNewExamTitle("");
-        setNewExamDate("");
-    };
-
     return (
         <>
-            {/* ── FOCUS TIMER MODAL ───────────────────────────────────────── */}
+            {/* === FOCUS TIMER MODAL === */}
             <Modal
                 visible={activeModal === "focus-timer"}
                 transparent
@@ -167,32 +138,50 @@ export default function StudyToolsModals({
                     <View style={s.modalDialog}>
                         <View style={s.modalHeader}>
                             <View style={s.modalTitleRow}>
-                                <Ionicons name="timer-outline" size={20} color={theme.accent} />
+                                <Ionicons
+                                    name="timer-outline"
+                                    size={20}
+                                    color={theme.accent}
+                                />
                                 <Text style={s.modalTitle}>Focus Timer</Text>
                             </View>
-                            <Pressable onPress={onClose} style={s.modalCloseBtn} accessibilityLabel="Close modal">
-                                <Ionicons name="close" size={18} color={theme.muted} />
+                            <Pressable
+                                onPress={onClose}
+                                style={s.modalCloseBtn}
+                            >
+                                <Ionicons
+                                    name="close"
+                                    size={18}
+                                    color={theme.muted}
+                                />
                             </Pressable>
                         </View>
-
                         <View style={s.timerCircleBox}>
                             <Text style={s.timerTime}>
                                 {Math.floor(timerSecondsLeft / 60)
                                     .toString()
                                     .padStart(2, "0")}
-                                :{(timerSecondsLeft % 60).toString().padStart(2, "0")}
+                                :
+                                {(timerSecondsLeft % 60)
+                                    .toString()
+                                    .padStart(2, "0")}
                             </Text>
                             <Text style={s.timerSub}>
-                                {timerIsRunning ? "Deep Focus Session" : "Ready to focus"}
+                                {timerIsRunning
+                                    ? "Deep Focus Session"
+                                    : "Ready to focus"}
                             </Text>
                         </View>
-
                         <View style={s.timerActions}>
                             <Pressable
-                                onPress={() => setTimerIsRunning((prev) => !prev)}
+                                onPress={() =>
+                                    setTimerIsRunning((prev) => !prev)
+                                }
                                 style={[
                                     s.timerMainBtn,
-                                    timerIsRunning && { backgroundColor: theme.danger },
+                                    timerIsRunning && {
+                                        backgroundColor: theme.danger,
+                                    },
                                 ]}
                             >
                                 <Ionicons
@@ -201,7 +190,9 @@ export default function StudyToolsModals({
                                     color="#FFFFFF"
                                 />
                                 <Text style={s.timerMainBtnText}>
-                                    {timerIsRunning ? "Pause" : "Start 25m Focus"}
+                                    {timerIsRunning
+                                        ? "Pause"
+                                        : "Start 25m Focus"}
                                 </Text>
                             </Pressable>
                             <Pressable
@@ -211,11 +202,14 @@ export default function StudyToolsModals({
                                 }}
                                 style={s.timerResetBtn}
                             >
-                                <Ionicons name="refresh" size={15} color={theme.muted} />
+                                <Ionicons
+                                    name="refresh"
+                                    size={15}
+                                    color={theme.muted}
+                                />
                                 <Text style={s.timerResetText}>Reset</Text>
                             </Pressable>
                         </View>
-
                         <Text style={s.timerStatsFooter}>
                             Total logged: {studyStats.totalMinutes} mins (
                             {studyStats.sessionsCompleted} sessions)
@@ -224,7 +218,7 @@ export default function StudyToolsModals({
                 </View>
             </Modal>
 
-            {/* ── DAILY PLANNER MODAL ─────────────────────────────────────── */}
+            {/* === DAILY PLANNER MODAL === */}
             <Modal
                 visible={activeModal === "daily-planner"}
                 transparent
@@ -235,14 +229,26 @@ export default function StudyToolsModals({
                     <View style={s.modalDialog}>
                         <View style={s.modalHeader}>
                             <View style={s.modalTitleRow}>
-                                <Ionicons name="checkbox-outline" size={20} color={theme.accent} />
-                                <Text style={s.modalTitle}>Daily Study Goals</Text>
+                                <Ionicons
+                                    name="checkbox-outline"
+                                    size={20}
+                                    color={theme.accent}
+                                />
+                                <Text style={s.modalTitle}>
+                                    Daily Study Goals
+                                </Text>
                             </View>
-                            <Pressable onPress={onClose} style={s.modalCloseBtn} accessibilityLabel="Close modal">
-                                <Ionicons name="close" size={18} color={theme.muted} />
+                            <Pressable
+                                onPress={onClose}
+                                style={s.modalCloseBtn}
+                            >
+                                <Ionicons
+                                    name="close"
+                                    size={18}
+                                    color={theme.muted}
+                                />
                             </Pressable>
                         </View>
-
                         <View style={s.inputRow}>
                             <TextInput
                                 value={newGoalText}
@@ -252,17 +258,30 @@ export default function StudyToolsModals({
                                 style={s.textInput}
                                 onSubmitEditing={handleAddGoal}
                             />
-                            <Pressable onPress={handleAddGoal} style={s.addGoalBtn} accessibilityLabel="Add goal">
-                                <Ionicons name="add" size={18} color="#FFFFFF" />
+                            <Pressable
+                                onPress={handleAddGoal}
+                                style={s.addGoalBtn}
+                            >
+                                <Ionicons
+                                    name="add"
+                                    size={18}
+                                    color="#FFFFFF"
+                                />
                             </Pressable>
                         </View>
-
                         <ScrollView style={{ maxHeight: 280, marginTop: 12 }}>
                             {goals.map((g) => (
                                 <View key={g.id} style={s.modalGoalRow}>
                                     <Pressable
-                                        onPress={() => void handleToggleGoal(g.id)}
-                                        style={{ flexDirection: "row", alignItems: "center", flex: 1, gap: 10 }}
+                                        onPress={() =>
+                                            void handleToggleGoal(g.id)
+                                        }
+                                        style={{
+                                            flexDirection: "row",
+                                            alignItems: "center",
+                                            flex: 1,
+                                            gap: 10,
+                                        }}
                                     >
                                         <Ionicons
                                             name={
@@ -271,21 +290,27 @@ export default function StudyToolsModals({
                                                     : "ellipse-outline"
                                             }
                                             size={18}
-                                            color={g.completed ? theme.success : theme.muted}
+                                            color={
+                                                g.completed
+                                                    ? theme.success
+                                                    : theme.muted
+                                            }
                                         />
                                         <Text
                                             style={[
                                                 s.modalGoalText,
-                                                g.completed && s.goalTextCompleted,
+                                                g.completed &&
+                                                    s.goalTextCompleted,
                                             ]}
                                         >
                                             {g.text}
                                         </Text>
                                     </Pressable>
                                     <Pressable
-                                        onPress={() => void handleDeleteGoal(g.id)}
+                                        onPress={() =>
+                                            void handleDeleteGoal(g.id)
+                                        }
                                         hitSlop={8}
-                                        accessibilityLabel="Delete goal"
                                     >
                                         <Ionicons
                                             name="trash-outline"
@@ -300,7 +325,7 @@ export default function StudyToolsModals({
                 </View>
             </Modal>
 
-            {/* ── TIMETABLE MODAL ─────────────────────────────────────────── */}
+            {/* === TIMETABLE MODAL === */}
             <Modal
                 visible={activeModal === "timetable"}
                 transparent
@@ -311,61 +336,273 @@ export default function StudyToolsModals({
                     <View style={s.modalDialog}>
                         <View style={s.modalHeader}>
                             <View style={s.modalTitleRow}>
-                                <Ionicons name="time-outline" size={20} color={theme.accent} />
-                                <Text style={s.modalTitle}>Class Timetable</Text>
+                                <Ionicons
+                                    name="time-outline"
+                                    size={20}
+                                    color={theme.accent}
+                                />
+                                <Text style={s.modalTitle}>
+                                    Full Class Timetable
+                                </Text>
                             </View>
-                            <Pressable onPress={onClose} style={s.modalCloseBtn} accessibilityLabel="Close modal">
-                                <Ionicons name="close" size={18} color={theme.muted} />
+                            <Pressable
+                                onPress={onClose}
+                                style={s.modalCloseBtn}
+                            >
+                                <Ionicons
+                                    name="close"
+                                    size={18}
+                                    color={theme.muted}
+                                />
                             </Pressable>
                         </View>
-
-                        <ScrollView style={{ maxHeight: 220, marginVertical: 10 }}>
-                            {schedule.map((item) => (
-                                <View key={item.id} style={s.modalScheduleRow}>
-                                    <Text style={s.modalScheduleTime}>{item.time}</Text>
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={s.modalScheduleTitle}>{item.title}</Text>
-                                        <Text style={s.modalScheduleLoc}>{item.location}</Text>
-                                    </View>
-                                </View>
-                            ))}
+                        <ScrollView
+                            style={{ maxHeight: 400, marginVertical: 10 }}
+                            showsVerticalScrollIndicator={false}
+                        >
+                            {timetable.status === "unauthenticated" ? (
+                                <EmptyBlock
+                                    icon="log-in-outline"
+                                    title="Log in to see your timetable"
+                                    text="Your timetable is based on your department and semester."
+                                    actionLabel="Log in"
+                                    onAction={goToLogin}
+                                />
+                            ) : timetable.status === "loading" ? (
+                                <LoadingBlock label="Loading timetable..." />
+                            ) : timetable.status === "error" ? (
+                                <ErrorBlock
+                                    title="Couldn't load timetable"
+                                    message={timetable.message ?? undefined}
+                                    onRetry={timetable.refresh}
+                                />
+                            ) : (
+                                <>
+                                    {!!timetableData && (
+                                        <Text
+                                            style={{
+                                                color: theme.muted,
+                                                fontSize: 12,
+                                                marginBottom: 10,
+                                            }}
+                                        >
+                                            {[
+                                                timetableData.deptName,
+                                                `Semester ${timetableData.semester}`,
+                                                timetableData.division
+                                                    ? `Division ${timetableData.division}`
+                                                    : null,
+                                                timetableData.timetable
+                                                    ?.academicYear,
+                                            ]
+                                                .filter(Boolean)
+                                                .join(" \u2022 ")}
+                                        </Text>
+                                    )}
+                                    {!!timetableData &&
+                                        timetableData.divisions.length > 1 && (
+                                            <View
+                                                style={{
+                                                    flexDirection: "row",
+                                                    flexWrap: "wrap",
+                                                    gap: 8,
+                                                    marginBottom: 12,
+                                                }}
+                                            >
+                                                {timetableData.divisions.map(
+                                                    (d) => {
+                                                        const active =
+                                                            d ===
+                                                            timetableData.division;
+                                                        return (
+                                                            <Pressable
+                                                                key={d}
+                                                                onPress={() =>
+                                                                    onSelectDivision(
+                                                                        d,
+                                                                    )
+                                                                }
+                                                                style={{
+                                                                    paddingHorizontal: 14,
+                                                                    paddingVertical: 6,
+                                                                    borderRadius: 16,
+                                                                    borderWidth: 1,
+                                                                    borderColor:
+                                                                        active
+                                                                            ? theme.accent
+                                                                            : theme.border,
+                                                                    backgroundColor:
+                                                                        active
+                                                                            ? theme.accent
+                                                                            : theme.surfaceAlt,
+                                                                }}
+                                                            >
+                                                                <Text
+                                                                    style={{
+                                                                        fontSize: 12,
+                                                                        fontWeight:
+                                                                            "700",
+                                                                        color: active
+                                                                            ? "#FFFFFF"
+                                                                            : theme.text,
+                                                                    }}
+                                                                >
+                                                                    {`Div ${d}`}
+                                                                </Text>
+                                                            </Pressable>
+                                                        );
+                                                    },
+                                                )}
+                                            </View>
+                                        )}
+                                    {timetableEntries.length > 0 ? (
+                                        DAYS_OF_WEEK.map((day) => {
+                                            const dayEntries = timetableEntries
+                                                .filter(
+                                                    (e) => e.dayOfWeek === day,
+                                                )
+                                                .sort((a, b) =>
+                                                    a.startTime.localeCompare(
+                                                        b.startTime,
+                                                    ),
+                                                );
+                                            if (dayEntries.length === 0)
+                                                return null;
+                                            return (
+                                                <View
+                                                    key={day}
+                                                    style={{ marginBottom: 12 }}
+                                                >
+                                                    <Text
+                                                        style={{
+                                                            fontSize: 13,
+                                                            fontWeight: "700",
+                                                            color: theme.accent,
+                                                            marginBottom: 8,
+                                                        }}
+                                                    >
+                                                        {day}
+                                                    </Text>
+                                                    {dayEntries.map((item) => (
+                                                        <View
+                                                            key={item.entryId}
+                                                            style={
+                                                                s.modalScheduleRow
+                                                            }
+                                                        >
+                                                            <View
+                                                                style={{
+                                                                    width: 72,
+                                                                }}
+                                                            >
+                                                                <Text
+                                                                    style={
+                                                                        s.modalScheduleTime
+                                                                    }
+                                                                >
+                                                                    {
+                                                                        item.startTime
+                                                                    }
+                                                                </Text>
+                                                                <Text
+                                                                    style={
+                                                                        s.modalScheduleLoc
+                                                                    }
+                                                                >
+                                                                    {
+                                                                        item.endTime
+                                                                    }
+                                                                </Text>
+                                                            </View>
+                                                            <View
+                                                                style={{
+                                                                    flex: 1,
+                                                                }}
+                                                            >
+                                                                <Text
+                                                                    style={
+                                                                        s.modalScheduleTitle
+                                                                    }
+                                                                >
+                                                                    {item
+                                                                        .subject
+                                                                        ?.subjectName ||
+                                                                        item
+                                                                            .subject
+                                                                            ?.subjectId ||
+                                                                        `Subject #${item.subjectKey}`}{" "}
+                                                                    <Text
+                                                                        style={{
+                                                                            fontSize: 10,
+                                                                            color: theme.muted,
+                                                                            fontWeight:
+                                                                                "400",
+                                                                        }}
+                                                                    >
+                                                                        (
+                                                                        {
+                                                                            item.classType
+                                                                        }
+                                                                        )
+                                                                    </Text>
+                                                                </Text>
+                                                                {!!item.classroom && (
+                                                                    <Text
+                                                                        style={
+                                                                            s.modalScheduleLoc
+                                                                        }
+                                                                    >
+                                                                        Room:{" "}
+                                                                        {
+                                                                            item.classroom
+                                                                        }
+                                                                    </Text>
+                                                                )}
+                                                                {!!item.teacher && (
+                                                                    <Text
+                                                                        style={
+                                                                            s.modalScheduleLoc
+                                                                        }
+                                                                    >
+                                                                        Teacher:{" "}
+                                                                        {
+                                                                            item.teacher
+                                                                        }
+                                                                    </Text>
+                                                                )}
+                                                            </View>
+                                                        </View>
+                                                    ))}
+                                                </View>
+                                            );
+                                        })
+                                    ) : (
+                                        <Text
+                                            style={{
+                                                color: theme.muted,
+                                                fontSize: 13,
+                                                textAlign: "center",
+                                                marginTop: 20,
+                                            }}
+                                        >
+                                            {!timetableData
+                                                ? "No timetable data."
+                                                : timetableData.divisions
+                                                        .length === 0
+                                                  ? "No active timetable has been published for your department and semester yet."
+                                                  : !timetableData.timetable
+                                                    ? "Select your division above to view your timetable."
+                                                    : "This timetable has no classes yet."}
+                                        </Text>
+                                    )}
+                                </>
+                            )}
                         </ScrollView>
-
-                        {/* Quick add class */}
-                        <View style={s.addClassBox}>
-                            <Text style={s.addClassBoxTitle}>Add Class / Lecture</Text>
-                            <View style={{ flexDirection: "row", gap: 8, marginTop: 6 }}>
-                                <TextInput
-                                    value={newClassTime}
-                                    onChangeText={setNewClassTime}
-                                    placeholder="Time (e.g. 11:30 AM)"
-                                    placeholderTextColor={theme.muted}
-                                    style={[s.textInput, { flex: 1 }]}
-                                />
-                                <TextInput
-                                    value={newClassLocation}
-                                    onChangeText={setNewClassLocation}
-                                    placeholder="Room (e.g. LT-1)"
-                                    placeholderTextColor={theme.muted}
-                                    style={[s.textInput, { flex: 1 }]}
-                                />
-                            </View>
-                            <TextInput
-                                value={newClassTitle}
-                                onChangeText={setNewClassTitle}
-                                placeholder="Subject title (e.g. DAA Lecture)"
-                                placeholderTextColor={theme.muted}
-                                style={[s.textInput, { marginTop: 8 }]}
-                            />
-                            <Pressable onPress={handleAddClass} style={s.saveClassBtn}>
-                                <Text style={s.saveClassBtnText}>{"Add to Today's Schedule"}</Text>
-                            </Pressable>
-                        </View>
                     </View>
                 </View>
             </Modal>
 
-            {/* ── UPCOMING EXAMS MODAL ────────────────────────────────────── */}
+            {/* === UPCOMING EXAMS MODAL === */}
             <Modal
                 visible={activeModal === "upcoming-exams"}
                 transparent
@@ -376,75 +613,141 @@ export default function StudyToolsModals({
                     <View style={s.modalDialog}>
                         <View style={s.modalHeader}>
                             <View style={s.modalTitleRow}>
-                                <Ionicons name="calendar-outline" size={20} color={theme.warning} />
+                                <Ionicons
+                                    name="calendar-outline"
+                                    size={20}
+                                    color={theme.warning}
+                                />
                                 <Text style={s.modalTitle}>Upcoming Exams</Text>
                             </View>
-                            <Pressable onPress={onClose} style={s.modalCloseBtn} accessibilityLabel="Close modal">
-                                <Ionicons name="close" size={18} color={theme.muted} />
+                            <Pressable
+                                onPress={onClose}
+                                style={s.modalCloseBtn}
+                            >
+                                <Ionicons
+                                    name="close"
+                                    size={18}
+                                    color={theme.muted}
+                                />
                             </Pressable>
                         </View>
-
-                        <ScrollView style={{ maxHeight: 220, marginTop: 12 }}>
-                            {exams.map((exam) => {
-                                const diffDays = currentTimestamp > 0
-                                    ? Math.ceil(
-                                          (new Date(exam.date).getTime() - currentTimestamp) /
-                                              (1000 * 60 * 60 * 24),
-                                      )
-                                    : 0;
-                                return (
-                                    <View key={exam.id} style={s.examCard}>
-                                        <View style={{ flex: 1 }}>
-                                            <Badge label={exam.subject} color={theme.warning} />
-                                            <Text style={s.examTitle}>{exam.title}</Text>
-                                            <Text style={s.examDate}>{exam.date}</Text>
+                        <ScrollView
+                            style={{ maxHeight: 300, marginTop: 12 }}
+                            showsVerticalScrollIndicator={false}
+                        >
+                            {exams.status === "unauthenticated" ? (
+                                <EmptyBlock
+                                    icon="log-in-outline"
+                                    title="Log in to see upcoming exams"
+                                    text="Exams are shown for your department once you are signed in."
+                                    actionLabel="Log in"
+                                    onAction={goToLogin}
+                                />
+                            ) : exams.status === "loading" ? (
+                                <LoadingBlock label="Loading upcoming exams..." />
+                            ) : exams.status === "error" ? (
+                                <ErrorBlock
+                                    title="Couldn't load upcoming exams"
+                                    message={exams.message ?? undefined}
+                                    onRetry={exams.refresh}
+                                />
+                            ) : examList.length > 0 ? (
+                                examList.map((exam) => {
+                                    const examTime = new Date(exam.examDate);
+                                    const diffDays = Math.ceil(
+                                        (examTime.getTime() - currentTimestamp) /
+                                            (1000 * 60 * 60 * 24),
+                                    );
+                                    const details = [
+                                        exam.venue ? `Venue: ${exam.venue}` : null,
+                                        exam.durationMinutes
+                                            ? `${exam.durationMinutes} min`
+                                            : null,
+                                        exam.semester
+                                            ? `Sem ${exam.semester}`
+                                            : null,
+                                    ].filter(Boolean);
+                                    return (
+                                        <View
+                                            key={exam.examId}
+                                            style={s.examCard}
+                                        >
+                                            <View style={{ flex: 1 }}>
+                                                <Badge
+                                                    label={
+                                                        exam.subject
+                                                            ?.subjectName ||
+                                                        exam.subject
+                                                            ?.subjectId ||
+                                                        exam.department
+                                                            ?.deptName ||
+                                                        "Exam"
+                                                    }
+                                                    color={theme.warning}
+                                                />
+                                                <Text style={s.examTitle}>
+                                                    {exam.title}
+                                                </Text>
+                                                <Text style={s.examDate}>
+                                                    {examTime.toLocaleString(
+                                                        "en-US",
+                                                        {
+                                                            weekday: "short",
+                                                            month: "short",
+                                                            day: "numeric",
+                                                            hour: "2-digit",
+                                                            minute: "2-digit",
+                                                        },
+                                                    )}
+                                                </Text>
+                                                {details.length > 0 && (
+                                                    <Text style={s.examDate}>
+                                                        {details.join(" \u2022 ")}
+                                                    </Text>
+                                                )}
+                                                {!!exam.instructions && (
+                                                    <Text
+                                                        style={s.examDate}
+                                                        numberOfLines={3}
+                                                    >
+                                                        {exam.instructions}
+                                                    </Text>
+                                                )}
+                                            </View>
+                                            <View style={s.examCountdownBox}>
+                                                <Text
+                                                    style={s.examCountdownDays}
+                                                >
+                                                    {diffDays > 0 ? diffDays : 0}
+                                                </Text>
+                                                <Text
+                                                    style={s.examCountdownLabel}
+                                                >
+                                                    days left
+                                                </Text>
+                                            </View>
                                         </View>
-                                        <View style={s.examCountdownBox}>
-                                            <Text style={s.examCountdownDays}>
-                                                {diffDays > 0 ? diffDays : 0}
-                                            </Text>
-                                            <Text style={s.examCountdownLabel}>days left</Text>
-                                        </View>
-                                    </View>
-                                );
-                            })}
+                                    );
+                                })
+                            ) : (
+                                <Text
+                                    style={{
+                                        color: theme.muted,
+                                        fontSize: 13,
+                                        textAlign: "center",
+                                        marginVertical: 20,
+                                    }}
+                                >
+                                    No upcoming exams have been scheduled for
+                                    your department.
+                                </Text>
+                            )}
                         </ScrollView>
-
-                        {/* Add exam form */}
-                        <View style={s.addClassBox}>
-                            <Text style={s.addClassBoxTitle}>Add Upcoming Exam</Text>
-                            <View style={{ flexDirection: "row", gap: 8, marginTop: 6 }}>
-                                <TextInput
-                                    value={newExamSubject}
-                                    onChangeText={setNewExamSubject}
-                                    placeholder="Subject (e.g. DBMS)"
-                                    placeholderTextColor={theme.muted}
-                                    style={[s.textInput, { flex: 1 }]}
-                                />
-                                <TextInput
-                                    value={newExamDate}
-                                    onChangeText={setNewExamDate}
-                                    placeholder="Date (YYYY-MM-DD)"
-                                    placeholderTextColor={theme.muted}
-                                    style={[s.textInput, { flex: 1 }]}
-                                />
-                            </View>
-                            <TextInput
-                                value={newExamTitle}
-                                onChangeText={setNewExamTitle}
-                                placeholder="Exam title (e.g. End-Sem Practical)"
-                                placeholderTextColor={theme.muted}
-                                style={[s.textInput, { marginTop: 8 }]}
-                            />
-                            <Pressable onPress={handleAddExam} style={[s.saveClassBtn, { backgroundColor: theme.warning }]}>
-                                <Text style={s.saveClassBtnText}>Add Exam</Text>
-                            </Pressable>
-                        </View>
                     </View>
                 </View>
             </Modal>
 
-            {/* ── STUDY REPORT MODAL ──────────────────────────────────────── */}
+            {/* === STUDY REPORT MODAL === */}
             <Modal
                 visible={activeModal === "study-report"}
                 transparent
@@ -455,44 +758,62 @@ export default function StudyToolsModals({
                     <View style={s.modalDialog}>
                         <View style={s.modalHeader}>
                             <View style={s.modalTitleRow}>
-                                <Ionicons name="bar-chart-outline" size={20} color={theme.accent} />
-                                <Text style={s.modalTitle}>Weekly Study Report</Text>
+                                <Ionicons
+                                    name="bar-chart-outline"
+                                    size={20}
+                                    color={theme.accent}
+                                />
+                                <Text style={s.modalTitle}>
+                                    Weekly Study Report
+                                </Text>
                             </View>
-                            <Pressable onPress={onClose} style={s.modalCloseBtn} accessibilityLabel="Close modal">
-                                <Ionicons name="close" size={18} color={theme.muted} />
+                            <Pressable
+                                onPress={onClose}
+                                style={s.modalCloseBtn}
+                            >
+                                <Ionicons
+                                    name="close"
+                                    size={18}
+                                    color={theme.muted}
+                                />
                             </Pressable>
                         </View>
-
                         <View style={s.reportSummary}>
                             <View style={s.reportStat}>
                                 <Text style={s.reportStatNumber}>
                                     {studyStats.totalMinutes}m
                                 </Text>
-                                <Text style={s.reportStatLabel}>Study Focus Time</Text>
+                                <Text style={s.reportStatLabel}>
+                                    Study Focus Time
+                                </Text>
                             </View>
                             <View style={s.reportStat}>
                                 <Text style={s.reportStatNumber}>
                                     {studyStats.sessionsCompleted}
                                 </Text>
-                                <Text style={s.reportStatLabel}>Pomodoro Blocks</Text>
+                                <Text style={s.reportStatLabel}>
+                                    Pomodoro Blocks
+                                </Text>
                             </View>
                             <View style={s.reportStat}>
                                 <Text style={s.reportStatNumber}>
-                                    {goals.filter((g) => g.completed).length}/{goals.length}
+                                    {goals.filter((g) => g.completed).length}/
+                                    {goals.length}
                                 </Text>
-                                <Text style={s.reportStatLabel}>Goals Done</Text>
+                                <Text style={s.reportStatLabel}>
+                                    Goals Done
+                                </Text>
                             </View>
                         </View>
-
                         <Text style={s.reportNotice}>
-                            Based on your recorded timer sessions and completed syllabus tasks
-                            stored safely on your device.
+                            Based on your recorded timer sessions and completed
+                            syllabus tasks stored safely on your device.
                         </Text>
                     </View>
                 </View>
             </Modal>
 
-            {/* ── STUDY REMINDERS MODAL ───────────────────────────────────── */}
+            {/* === STUDY REMINDERS MODAL === */}
             <Modal
                 visible={activeModal === "study-reminders"}
                 transparent
@@ -503,34 +824,61 @@ export default function StudyToolsModals({
                     <View style={s.modalDialog}>
                         <View style={s.modalHeader}>
                             <View style={s.modalTitleRow}>
-                                <Ionicons name="notifications-outline" size={20} color={theme.accent} />
-                                <Text style={s.modalTitle}>Study Reminders</Text>
+                                <Ionicons
+                                    name="notifications-outline"
+                                    size={20}
+                                    color={theme.accent}
+                                />
+                                <Text style={s.modalTitle}>
+                                    Study Reminders
+                                </Text>
                             </View>
-                            <Pressable onPress={onClose} style={s.modalCloseBtn} accessibilityLabel="Close modal">
-                                <Ionicons name="close" size={18} color={theme.muted} />
+                            <Pressable
+                                onPress={onClose}
+                                style={s.modalCloseBtn}
+                            >
+                                <Ionicons
+                                    name="close"
+                                    size={18}
+                                    color={theme.muted}
+                                />
                             </Pressable>
                         </View>
-
                         <View style={{ gap: 10, marginTop: 14 }}>
                             {[
-                                { title: "Daily Study Reminder", time: "08:00 PM" },
-                                { title: "Upcoming Exam Review", time: "09:30 AM" },
-                                { title: "Topic Revision Alert", time: "05:00 PM" },
+                                {
+                                    title: "Daily Study Reminder",
+                                    time: "08:00 PM",
+                                },
+                                {
+                                    title: "Upcoming Exam Review",
+                                    time: "09:30 AM",
+                                },
+                                {
+                                    title: "Topic Revision Alert",
+                                    time: "05:00 PM",
+                                },
                             ].map((rem, i) => (
                                 <View key={i} style={s.reminderItem}>
                                     <View>
-                                        <Text style={s.reminderTitle}>{rem.title}</Text>
-                                        <Text style={s.reminderTime}>{rem.time}</Text>
+                                        <Text style={s.reminderTitle}>
+                                            {rem.title}
+                                        </Text>
+                                        <Text style={s.reminderTime}>
+                                            {rem.time}
+                                        </Text>
                                     </View>
-                                    <Badge label="Active" color={theme.success} />
+                                    <Badge
+                                        label="Active"
+                                        color={theme.success}
+                                    />
                                 </View>
                             ))}
                         </View>
-
                         <Text style={s.reminderFooterNote}>
-                            In-app reminders are active during study hours. Push notification
-                            scheduling will integrate with native device permissions in a
-                            future update.
+                            In-app reminders are active during study hours. Push
+                            notification scheduling will integrate with native
+                            device permissions in a future update.
                         </Text>
                     </View>
                 </View>
@@ -566,16 +914,8 @@ function makeStyles(t: AppTheme) {
             borderBottomWidth: 1,
             borderBottomColor: t.border,
         },
-        modalTitleRow: {
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 8,
-        },
-        modalTitle: {
-            color: t.text,
-            fontSize: 16,
-            fontWeight: "700",
-        },
+        modalTitleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+        modalTitle: { color: t.text, fontSize: 16, fontWeight: "700" },
         modalCloseBtn: {
             width: 28,
             height: 28,
@@ -624,11 +964,7 @@ function makeStyles(t: AppTheme) {
             borderRadius: 8,
             backgroundColor: t.accent,
         },
-        timerMainBtnText: {
-            color: "#FFFFFF",
-            fontSize: 13,
-            fontWeight: "700",
-        },
+        timerMainBtnText: { color: "#FFFFFF", fontSize: 13, fontWeight: "700" },
         timerResetBtn: {
             flexDirection: "row",
             alignItems: "center",
@@ -640,22 +976,14 @@ function makeStyles(t: AppTheme) {
             borderWidth: 1,
             borderColor: t.border,
         },
-        timerResetText: {
-            color: t.text,
-            fontSize: 13,
-            fontWeight: "600",
-        },
+        timerResetText: { color: t.text, fontSize: 13, fontWeight: "600" },
         timerStatsFooter: {
             color: t.muted,
             fontSize: 11,
             textAlign: "center",
             marginTop: 12,
         },
-        inputRow: {
-            flexDirection: "row",
-            gap: 8,
-            alignItems: "center",
-        },
+        inputRow: { flexDirection: "row", gap: 8, alignItems: "center" },
         textInput: {
             flex: 1,
             backgroundColor: t.surfaceAlt,
@@ -683,11 +1011,7 @@ function makeStyles(t: AppTheme) {
             borderBottomWidth: 1,
             borderBottomColor: t.border,
         },
-        modalGoalText: {
-            color: t.text,
-            fontSize: 13,
-            fontWeight: "500",
-        },
+        modalGoalText: { color: t.text, fontSize: 13, fontWeight: "500" },
         goalTextCompleted: {
             color: t.muted,
             textDecorationLine: "line-through",
@@ -706,41 +1030,8 @@ function makeStyles(t: AppTheme) {
             fontWeight: "700",
             width: 72,
         },
-        modalScheduleTitle: {
-            color: t.text,
-            fontSize: 13,
-            fontWeight: "600",
-        },
-        modalScheduleLoc: {
-            color: t.muted,
-            fontSize: 11,
-            marginTop: 2,
-        },
-        addClassBox: {
-            marginTop: 12,
-            padding: 12,
-            borderRadius: 10,
-            backgroundColor: t.surfaceAlt,
-            borderWidth: 1,
-            borderColor: t.border,
-        },
-        addClassBoxTitle: {
-            color: t.text,
-            fontSize: 12,
-            fontWeight: "700",
-        },
-        saveClassBtn: {
-            marginTop: 10,
-            paddingVertical: 8,
-            borderRadius: 8,
-            backgroundColor: t.accent,
-            alignItems: "center",
-        },
-        saveClassBtnText: {
-            color: "#FFFFFF",
-            fontSize: 12,
-            fontWeight: "700",
-        },
+        modalScheduleTitle: { color: t.text, fontSize: 13, fontWeight: "600" },
+        modalScheduleLoc: { color: t.muted, fontSize: 11, marginTop: 2 },
         examCard: {
             flexDirection: "row",
             alignItems: "center",
@@ -758,11 +1049,7 @@ function makeStyles(t: AppTheme) {
             fontWeight: "700",
             marginTop: 4,
         },
-        examDate: {
-            color: t.muted,
-            fontSize: 11,
-            marginTop: 2,
-        },
+        examDate: { color: t.muted, fontSize: 11, marginTop: 2 },
         examCountdownBox: {
             alignItems: "center",
             justifyContent: "center",
@@ -778,11 +1065,7 @@ function makeStyles(t: AppTheme) {
             fontSize: 16,
             fontWeight: "800",
         },
-        examCountdownLabel: {
-            color: t.muted,
-            fontSize: 10,
-            fontWeight: "600",
-        },
+        examCountdownLabel: { color: t.muted, fontSize: 10, fontWeight: "600" },
         reportSummary: {
             flexDirection: "row",
             alignItems: "center",
@@ -791,15 +1074,8 @@ function makeStyles(t: AppTheme) {
             borderBottomWidth: 1,
             borderBottomColor: t.border,
         },
-        reportStat: {
-            alignItems: "center",
-            flex: 1,
-        },
-        reportStatNumber: {
-            color: t.text,
-            fontSize: 20,
-            fontWeight: "800",
-        },
+        reportStat: { alignItems: "center", flex: 1 },
+        reportStatNumber: { color: t.text, fontSize: 20, fontWeight: "800" },
         reportStatLabel: {
             color: t.muted,
             fontSize: 11,
@@ -823,16 +1099,8 @@ function makeStyles(t: AppTheme) {
             borderWidth: 1,
             borderColor: t.border,
         },
-        reminderTitle: {
-            color: t.text,
-            fontSize: 13,
-            fontWeight: "600",
-        },
-        reminderTime: {
-            color: t.muted,
-            fontSize: 11,
-            marginTop: 2,
-        },
+        reminderTitle: { color: t.text, fontSize: 13, fontWeight: "600" },
+        reminderTime: { color: t.muted, fontSize: 11, marginTop: 2 },
         reminderFooterNote: {
             color: t.muted,
             fontSize: 11,
