@@ -270,6 +270,18 @@ export default function StudyToolsModals({
                             </Pressable>
                         </View>
                         <ScrollView style={{ maxHeight: 280, marginTop: 12 }}>
+                            {goals.length === 0 && (
+                                <Text
+                                    style={{
+                                        color: theme.muted,
+                                        fontSize: 13,
+                                        textAlign: "center",
+                                        marginVertical: 20,
+                                    }}
+                                >
+                                    No goals yet. Add one above to get started.
+                                </Text>
+                            )}
                             {goals.map((g) => (
                                 <View key={g.id} style={s.modalGoalRow}>
                                     <Pressable
@@ -844,41 +856,16 @@ export default function StudyToolsModals({
                                 />
                             </Pressable>
                         </View>
-                        <View style={{ gap: 10, marginTop: 14 }}>
-                            {[
-                                {
-                                    title: "Daily Study Reminder",
-                                    time: "08:00 PM",
-                                },
-                                {
-                                    title: "Upcoming Exam Review",
-                                    time: "09:30 AM",
-                                },
-                                {
-                                    title: "Topic Revision Alert",
-                                    time: "05:00 PM",
-                                },
-                            ].map((rem, i) => (
-                                <View key={i} style={s.reminderItem}>
-                                    <View>
-                                        <Text style={s.reminderTitle}>
-                                            {rem.title}
-                                        </Text>
-                                        <Text style={s.reminderTime}>
-                                            {rem.time}
-                                        </Text>
-                                    </View>
-                                    <Badge
-                                        label="Active"
-                                        color={theme.success}
-                                    />
-                                </View>
-                            ))}
-                        </View>
-                        <Text style={s.reminderFooterNote}>
-                            In-app reminders are active during study hours. Push
-                            notification scheduling will integrate with native
-                            device permissions in a future update.
+                        <Text
+                            style={{
+                                color: theme.muted,
+                                fontSize: 13,
+                                textAlign: "center",
+                                marginVertical: 24,
+                            }}
+                        >
+                            You have no reminders set. Reminders are not
+                            available yet.
                         </Text>
                     </View>
                 </View>

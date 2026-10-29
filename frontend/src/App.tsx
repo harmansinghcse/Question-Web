@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useHealthCheck } from "./hooks/useHealthCheck";
 import { useDashboardStats } from "./hooks/useDashboardStats";
 import AddQuestionForm from "./components/AddQuestionForm";
@@ -10,9 +10,11 @@ import QuizAdminManagement from "./components/QuizAdminManagement";
 import PromptStudio from "./components/PromptStudio";
 import UpcomingExamManagement from "./components/UpcomingExamManagement";
 import TimetableManagement from "./components/TimetableManagement";
+import SyllabusTracker from "./components/SyllabusTracker";
 
 type ViewSection =
     | "overview"
+    | "syllabus-tracker"
     | "revision"
     | "quiz-admin"
     | "prompt-studio"
@@ -33,6 +35,12 @@ export default function App() {
     const { state: stats, reload: loadStats } = useDashboardStats();
 
     const [view, setView] = useState<ViewSection>("overview");
+    const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+    const selectView = (next: ViewSection) => {
+        setView(next);
+        setMobileNavOpen(false);
+    };
 
     const handleRetry = () => {
         checkHealth();
@@ -41,8 +49,22 @@ export default function App() {
 
     return (
         <div className="min-h-screen bg-neutral-950 text-neutral-200 font-sans flex">
-            {/* Sidebar - Removed conflicting 'flex' class, keeping 'hidden md:flex' */}
-            <aside className="w-64 bg-neutral-900 border-r border-neutral-800 hidden md:flex flex-col shrink-0">
+            {/* Mobile Sidebar Backdrop */}
+            {mobileNavOpen && (
+                <div
+                    onClick={() => setMobileNavOpen(false)}
+                    className="fixed inset-0 z-30 bg-black/60 md:hidden"
+                />
+            )}
+
+            {/* Sidebar */}
+            <aside
+                className={`w-64 bg-neutral-900 border-r border-neutral-800 flex-col shrink-0 ${
+                    mobileNavOpen
+                        ? "fixed inset-y-0 left-0 z-40 flex"
+                        : "hidden md:flex"
+                }`}
+            >
                 <div className="h-16 flex items-center px-6 border-b border-neutral-800">
                     <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded bg-red-900/40 border border-red-500/50 flex items-center justify-center text-red-500 font-bold">
@@ -54,7 +76,10 @@ export default function App() {
                     </div>
                 </div>
 
-                <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
+                <nav
+                    onClick={() => setMobileNavOpen(false)}
+                    className="flex-1 p-4 space-y-1.5 overflow-y-auto"
+                >
                     {/* 1. Overview */}
                     <a
                         href="#overview"
@@ -175,6 +200,45 @@ export default function App() {
                             Student Tools
                         </p>
                     </div>
+
+                    <a
+                        href="#syllabus-tracker"
+                        aria-current={
+                            view === "syllabus-tracker" ? "page" : undefined
+                        }
+                        onClick={(e) => {
+                            e.preventDefault();
+                            selectView("syllabus-tracker");
+                        }}
+                        className={
+                            view === "syllabus-tracker" ? NAV_ACTIVE : NAV_IDLE
+                        }
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className={
+                                view === "syllabus-tracker"
+                                    ? "text-red-500"
+                                    : ""
+                            }
+                        >
+                            <circle cx="6" cy="6" r="3" />
+                            <circle cx="18" cy="6" r="3" />
+                            <circle cx="12" cy="18" r="3" />
+                            <line x1="8.7" y1="7.4" x2="10.8" y2="15.3" />
+                            <line x1="15.3" y1="7.4" x2="13.2" y2="15.3" />
+                            <line x1="9" y1="6" x2="15" y2="6" />
+                        </svg>
+                        <span>Syllabus Tracker</span>
+                    </a>
 
                     <a
                         href="#revision"
@@ -413,10 +477,33 @@ export default function App() {
             {/* Main Content Area */}
             <main className="flex-1 flex flex-col min-w-0">
                 {/* Top Bar */}
-                <header className="h-16 bg-neutral-950 border-b border-neutral-800 flex items-center justify-between px-8 shrink-0">
-                    <div className="flex items-center gap-4">
-                        <h2 className="text-lg font-medium text-neutral-100">
+                <header className="h-16 bg-neutral-950 border-b border-neutral-800 flex items-center justify-between px-4 sm:px-8 shrink-0">
+                    <div className="flex items-center gap-3 sm:gap-4">
+                        <button
+                            type="button"
+                            onClick={() => setMobileNavOpen((prev) => !prev)}
+                            className="md:hidden rounded-lg border border-neutral-800 bg-neutral-900 p-2 text-neutral-300 hover:text-white"
+                            aria-label="Toggle navigation menu"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="18"
+                                height="18"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            >
+                                <line x1="3" y1="6" x2="21" y2="6" />
+                                <line x1="3" y1="12" x2="21" y2="12" />
+                                <line x1="3" y1="18" x2="21" y2="18" />
+                            </svg>
+                        </button>
+                        <h2 className="text-base sm:text-lg font-medium text-neutral-100">
                             {view === "overview" && "Dashboard Overview"}
+                            {view === "syllabus-tracker" && "Syllabus Tracker"}
                             {view === "timetables" && "Timetable Management"}
                             {view === "upcoming-exams" && "Upcoming Exams"}
                             {view === "revision" && "Quiz-Based Revision"}
@@ -488,7 +575,8 @@ export default function App() {
                 </header>
 
                 {/* Page Content */}
-                <div className="flex-1 p-8 overflow-y-auto">
+                <div className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+                    {view === "syllabus-tracker" && <SyllabusTracker />}
                     {view === "revision" && <QuizRevision />}
                     {view === "quiz-admin" && <QuizAdminManagement />}
                     {view === "prompt-studio" && <PromptStudio />}
@@ -658,6 +746,43 @@ export default function App() {
                                     <p className="text-xs text-neutral-400 mt-1">
                                         Schedule and track short-term upcoming
                                         exams.
+                                    </p>
+                                </button>
+
+                                <button
+                                    onClick={() => setView("syllabus-tracker")}
+                                    className="p-5 bg-gradient-to-br from-red-950/35 to-neutral-900 hover:from-red-950/55 hover:to-neutral-850 border border-red-500/35 hover:border-red-500/60 rounded-xl text-left transition-all group shadow-lg shadow-red-950/20"
+                                >
+                                    <div className="w-9 h-9 rounded-lg bg-red-600 text-white flex items-center justify-center mb-3 group-hover:scale-105 transition-transform shadow-md shadow-red-600/30">
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            width="18"
+                                            height="18"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        >
+                                            <circle cx="6" cy="6" r="3" />
+                                            <circle cx="18" cy="6" r="3" />
+                                            <circle cx="12" cy="18" r="3" />
+                                            <line x1="8.7" y1="7.4" x2="10.8" y2="15.3" />
+                                            <line x1="15.3" y1="7.4" x2="13.2" y2="15.3" />
+                                            <line x1="9" y1="6" x2="15" y2="6" />
+                                        </svg>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <h4 className="text-sm font-semibold text-white">
+                                            Syllabus Tracker
+                                        </h4>
+                                        <span className="text-[10px] uppercase font-bold text-red-300 bg-red-500/20 px-1.5 py-0.5 rounded">
+                                            Student
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-neutral-400 mt-1">
+                                        Record dated lecture coverage and inspect historical quiz portions.
                                     </p>
                                 </button>
 

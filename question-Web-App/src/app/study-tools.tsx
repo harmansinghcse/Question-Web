@@ -82,12 +82,22 @@ export default function StudyToolsScreen() {
             action: () => router.push("/quiz" as never),
         },
         {
-            id: "syllabus",
+            id: "syllabus-tracker",
             title: "Syllabus Tracker",
-            subtitle: "Curriculum progress and topic mastery across semesters",
+            subtitle:
+                "Record dated lecture coverage, reconstruct quiz portions, and track pace",
+            icon: "git-network-outline" as const,
+            stat: "Dated history & analytics",
+            action: () => router.push("/syllabus-tracker" as never),
+        },
+        {
+            id: "syllabus",
+            title: "Course Syllabus",
+            subtitle:
+                "Browse subjects, chapters, and topics across semesters",
             icon: "book-outline" as const,
-            stat: "Browse subjects",
-            action: () => router.push("/syllabus"),
+            stat: "Browse curriculum",
+            action: () => router.push("/syllabus" as never),
         },
         {
             id: "timetable",

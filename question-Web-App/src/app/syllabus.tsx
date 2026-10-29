@@ -384,6 +384,22 @@ export default function SyllabusScreen() {
                     <Text style={styles.topBarTitle}>Syllabus</Text>
 
                     <View style={styles.topBarRight}>
+                        <Pressable
+                            onPress={() =>
+                                router.push(
+                                    (selectedSubjectKey != null
+                                        ? `/syllabus-tracker?subjectKey=${selectedSubjectKey}`
+                                        : "/syllabus-tracker") as never,
+                                )
+                            }
+                            style={styles.trackerLinkBtn}
+                            accessibilityRole="button"
+                            accessibilityLabel="Open Syllabus Tracker"
+                        >
+                            <Text style={styles.trackerLinkText}>
+                                Track Coverage →
+                            </Text>
+                        </Pressable>
                         {studentProfile && (
                             <View style={styles.profileBadge}>
                                 <Text style={styles.profileBadgeText}>
@@ -650,8 +666,22 @@ function makeStyles(t: AppTheme) {
             color: t.text,
         },
         topBarRight: {
-            minWidth: 40,
-            alignItems: "flex-end",
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 8,
+        },
+        trackerLinkBtn: {
+            backgroundColor: t.accent + "1F",
+            borderWidth: 1,
+            borderColor: t.accent + "55",
+            paddingHorizontal: 10,
+            paddingVertical: 5,
+            borderRadius: 7,
+        },
+        trackerLinkText: {
+            fontSize: 11,
+            fontWeight: "700",
+            color: t.accent,
         },
         profileBadge: {
             backgroundColor: t.accent + "22",

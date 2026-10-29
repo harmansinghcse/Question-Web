@@ -72,8 +72,9 @@ export function useStudentSchedule() {
             division &&
             timetable.data.division !== division
         ) {
-            void studyStorage.setTimetableDivision(null);
-            setDivisionState(null);
+            void studyStorage.setTimetableDivision(null).then(() => {
+                setDivisionState(null);
+            });
         }
     }, [timetable.status, timetable.data, division]);
 
@@ -85,9 +86,11 @@ export function useStudentSchedule() {
     // Refresh whenever the screen is focused again (skip the initial focus,
     // which is already covered by the initial fetch).
     const timetableRefresh = useRef(timetable.refresh);
-    timetableRefresh.current = timetable.refresh;
     const examsRefresh = useRef(exams.refresh);
-    examsRefresh.current = exams.refresh;
+    useEffect(() => {
+        timetableRefresh.current = timetable.refresh;
+        examsRefresh.current = exams.refresh;
+    }, [timetable.refresh, exams.refresh]);
     const skipFirstFocus = useRef(true);
     useFocusEffect(
         useCallback(() => {

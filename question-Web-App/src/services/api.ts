@@ -115,6 +115,8 @@ async function request<T>(
     }
 }
 
+export { request as apiRequest };
+
 // --- Types ---
 
 export interface Subject {

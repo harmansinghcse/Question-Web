@@ -1,12 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "expo-router";
-import {
-    Pressable,
-    StyleSheet,
-    Text,
-    View,
-} from "react-native";
-import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import AppShell, { useLayout } from "../components/AppShell";
@@ -22,11 +16,13 @@ import StudyToolsModals, {
 } from "../components/StudyToolsModals";
 import { useAppTheme } from "../providers/ThemeProvider";
 import { useAuth } from "../providers/AuthProvider";
-import { api, type Subject } from "../services/api";
+import {
+    syllabusTrackerApi,
+    type TrackerContextResponse,
+} from "../services/syllabus-tracker-api";
 import { useApiData } from "../hooks/use-api-data";
 import { useStudentSchedule } from "../hooks/use-student-schedule";
 import {
-    sortSubjects,
     subjectCode,
     subjectDisplayName,
 } from "../constants/subjects";
@@ -42,7 +38,7 @@ const DAY_KEYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 export default function HomeScreen() {
     const router = useRouter();
     const { theme } = useAppTheme();
-    const { user } = useAuth();
+    const { user, isAuthenticated, isRestoring } = useAuth();
     const { isWide } = useLayout();
     const s = useMemo(() => makeStyles(theme), [theme]);
 
@@ -53,9 +49,7 @@ export default function HomeScreen() {
         sessionsCompleted: 0,
         lastStudyDate: new Date().toISOString(),
     });
-    const [completedTopicIds, setCompletedTopicIds] = useState<Set<number>>(
-        new Set(),
-    );
+    // Real Syllabus Tracker context for authenticated students
 
     // ── Active Modal ────────────────────────────────────────────────────────
     const [activeModal, setActiveModal] = useState<ActiveToolModal>(null);
@@ -65,16 +59,13 @@ export default function HomeScreen() {
         let isMounted = true;
         async function loadStoredData() {
             try {
-                const [storedGoals, storedStats, storedTopics] =
-                    await Promise.all([
-                        studyStorage.getGoals(),
-                        studyStorage.getStudyStats(),
-                        studyStorage.getCompletedTopics(),
-                    ]);
+                const [storedGoals, storedStats] = await Promise.all([
+                    studyStorage.getGoals(),
+                    studyStorage.getStudyStats(),
+                ]);
                 if (isMounted) {
                     setGoals(storedGoals);
                     setStudyStats(storedStats);
-                    setCompletedTopicIds(storedTopics);
                 }
             } catch {
                 // Silently fallback to defaults
@@ -87,17 +78,18 @@ export default function HomeScreen() {
     }, []);
 
     // ── Backend Data ─────────────────────────────────────────────────────────
-    const fetchSubjects = useCallback(() => api.getSubjects(), []);
-    const subjectsState = useApiData<Subject[]>(fetchSubjects);
+    const canFetchTracker = isAuthenticated && !isRestoring;
+    const fetchTrackerContext = useCallback(
+        () => syllabusTrackerApi.getContext(),
+        [],
+    );
+    const trackerState = useApiData<TrackerContextResponse>(
+        fetchTrackerContext,
+        canFetchTracker,
+    );
 
     // Real timetable + upcoming exams (department/semester resolved by the backend)
     const schedule = useStudentSchedule();
-
-    const subjects = useMemo(() => {
-        if (subjectsState.status !== "success" || !subjectsState.data)
-            return [];
-        return sortSubjects(subjectsState.data);
-    }, [subjectsState]);
 
     // Backend exams (already department/semester scoped and unexpired)
     const upcomingExams = useMemo(
@@ -190,34 +182,26 @@ export default function HomeScreen() {
 
     // ── Today's Schedule (at most 3 entries on Home) ────────────────────────
 
-    // ── Syllabus Progress Preview (at most 3 subject rows) ───────────────────
+    // ── Syllabus Progress Preview (at most 3 subject rows from real backend records) ───
     const syllabusPreview = useMemo(() => {
-        if (!subjects || subjects.length === 0) return [];
-        return subjects.slice(0, 3).map((sub) => {
-            const totalCount = sub.credits ? sub.credits * 3 : 12;
-            const completedCount = Math.min(
-                totalCount,
-                Array.from(completedTopicIds).filter(
-                    (id) => Math.abs(id % 100) === sub.subjectKey % 100,
-                ).length,
-            );
-            const percentage =
-                totalCount > 0
-                    ? Math.min(
-                          100,
-                          Math.round((completedCount / totalCount) * 100),
-                      )
-                    : 0;
-            return {
-                subjectKey: sub.subjectKey,
-                code: subjectCode(sub),
-                name: subjectDisplayName(sub),
-                completedCount,
-                totalCount,
-                percentage,
-            };
-        });
-    }, [subjects, completedTopicIds]);
+        if (!canFetchTracker || trackerState.status !== "success" || !trackerState.data) {
+            return [];
+        }
+        const ctx = trackerState.data;
+        const sem = ctx.academicContext.currentSemester;
+        const semSubjects = sem
+            ? ctx.subjects.filter((sub) => sub.semester === sem)
+            : [];
+        const list = semSubjects.length > 0 ? semSubjects : ctx.subjects;
+        return list.slice(0, 3).map((sub) => ({
+            subjectKey: sub.subjectKey,
+            code: subjectCode(sub),
+            name: subjectDisplayName(sub),
+            completedCount: sub.coveredTopics,
+            totalCount: sub.totalTopics,
+            percentage: sub.coveragePercent,
+        }));
+    }, [canFetchTracker, trackerState]);
 
     // ── 4 Study Tools Shortcuts (Balanced 2x2 grid) ──────────────────────────
     const homeStudyTools = useMemo(
@@ -310,7 +294,6 @@ export default function HomeScreen() {
                                 Upcoming Exam
                             </Text>
                         </View>
-                        <Text style={s.sectionTitle}>Upcoming Exam</Text>
                         <Pressable
                             onPress={() => setActiveModal("upcoming-exams")}
                             accessibilityRole="button"
@@ -525,12 +508,14 @@ export default function HomeScreen() {
                             <Text style={s.sectionTitle}>Syllabus Tracker</Text>
                         </View>
                         <Pressable
-                            onPress={() => router.push("/syllabus" as never)}
+                            onPress={() =>
+                                router.push("/syllabus-tracker" as never)
+                            }
                             accessibilityRole="button"
-                            accessibilityLabel="View full syllabus"
+                            accessibilityLabel="Open Syllabus Tracker"
                             style={s.actionLink}
                         >
-                            <Text style={s.actionLinkText}>View All</Text>
+                            <Text style={s.actionLinkText}>Open Tracker</Text>
                             <Ionicons
                                 name="chevron-forward"
                                 size={13}
@@ -539,13 +524,21 @@ export default function HomeScreen() {
                         </Pressable>
                     </View>
 
-                    {subjectsState.status === "loading" ? (
-                        <LoadingBlock label="Loading syllabus progress..." />
-                    ) : subjectsState.status === "error" ? (
+                    {!isAuthenticated && !isRestoring ? (
+                        <EmptyBlock
+                            icon="git-network-outline"
+                            title="Log in to track syllabus coverage"
+                            text="Record lecture-by-lecture topics and inspect coverage as of any quiz or exam date."
+                            actionLabel="Log in"
+                            onAction={() => router.push("/login" as never)}
+                        />
+                    ) : isRestoring || trackerState.status === "loading" ? (
+                        <LoadingBlock label="Loading syllabus coverage..." />
+                    ) : trackerState.status === "error" ? (
                         <ErrorBlock
-                            title="Couldn't load subjects"
-                            message={subjectsState.message}
-                            onRetry={subjectsState.refresh}
+                            title="Couldn't load syllabus coverage"
+                            message={trackerState.message}
+                            onRetry={trackerState.refresh}
                         />
                     ) : syllabusPreview.length > 0 ? (
                         <View style={s.card}>
@@ -554,7 +547,7 @@ export default function HomeScreen() {
                                     key={item.subjectKey}
                                     onPress={() =>
                                         router.push(
-                                            `/syllabus?subjectKey=${encodeURIComponent(item.subjectKey)}` as never,
+                                            `/syllabus-tracker?subjectKey=${encodeURIComponent(item.subjectKey)}` as never,
                                         )
                                     }
                                     style={({ pressed }) => [
@@ -602,7 +595,7 @@ export default function HomeScreen() {
                                                 color={theme.muted}
                                             />
                                             <Text style={s.syllabusTopicsCount}>
-                                                {item.completedCount} of {item.totalCount} topics completed
+                                                {item.completedCount} of {item.totalCount} unique topics covered
                                             </Text>
                                         </View>
                                         <Ionicons
@@ -611,10 +604,6 @@ export default function HomeScreen() {
                                             color={theme.muted}
                                         />
                                     </View>
-                                    <Text style={s.syllabusTopicsCount}>
-                                        {item.completedCount} of{" "}
-                                        {item.totalCount} topics completed
-                                    </Text>
                                 </Pressable>
                             ))}
                         </View>
@@ -686,26 +675,6 @@ export default function HomeScreen() {
                                         {tool.subtitle}
                                     </Text>
                                 </View>
-                                <View style={s.toolIconWrapper}>
-                                    <Ionicons
-                                        name={tool.icon}
-                                        size={20}
-                                        color={theme.accent}
-                                    />
-                                </View>
-                                <View style={s.toolTextCol}>
-                                    <Text style={s.toolTitle}>
-                                        {tool.title}
-                                    </Text>
-                                    <Text style={s.toolSub}>
-                                        {tool.subtitle}
-                                    </Text>
-                                </View>
-                                <Ionicons
-                                    name="chevron-forward"
-                                    size={13}
-                                    color={theme.muted}
-                                />
                             </Pressable>
                         ))}
                     </View>

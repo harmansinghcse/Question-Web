@@ -27,6 +27,7 @@ export type NavKey =
     | "revision"
     | "questions"
     | "syllabus"
+    | "tracker"
     | "resources"
     | "account";
 
@@ -95,12 +96,15 @@ export default function AppShell({
     active,
     children,
     rightPanel,
+    floatingFooter,
     hideTopSearch = false,
 }: {
     active: NavKey;
     children: ReactNode;
     /** Shown beside the content on screens >= 1120px wide */
     rightPanel?: ReactNode;
+    /** Viewport-pinned footer rendered above bottom navigation */
+    floatingFooter?: ReactNode;
     hideTopSearch?: boolean;
 }) {
     const router = useRouter();
@@ -223,7 +227,8 @@ export default function AppShell({
                                         (active === "questions" ||
                                             active === "resources")) ||
                                     (item.key === "tools" &&
-                                        active === "syllabus");
+                                        (active === "syllabus" ||
+                                            active === "tracker"));
                                 return (
                                     <Pressable
                                         key={item.key}
@@ -430,7 +435,13 @@ export default function AppShell({
                                 {
                                     paddingHorizontal: isWide ? 32 : 16,
                                     paddingTop: isWide ? 24 : 14,
-                                    paddingBottom: isWide ? 40 : 80,
+                                    paddingBottom: floatingFooter
+                                        ? isWide
+                                            ? 110
+                                            : 140
+                                        : isWide
+                                          ? 40
+                                          : 80,
                                 },
                             ]}
                             keyboardShouldPersistTaps="handled"
@@ -452,6 +463,7 @@ export default function AppShell({
                             </ScrollView>
                         ) : null}
                     </View>
+                    {floatingFooter}
                 </View>
             </View>
 
@@ -470,7 +482,8 @@ export default function AppShell({
                             (item.key === "learn" &&
                                 (active === "questions" ||
                                     active === "resources")) ||
-                            (item.key === "tools" && active === "syllabus");
+                            (item.key === "tools" &&
+                                (active === "syllabus" || active === "tracker"));
                         return (
                             <Pressable
                                 key={item.key}
@@ -517,7 +530,7 @@ function makeStyles(t: AppTheme) {
     return StyleSheet.create({
         screen: { flex: 1, backgroundColor: t.background },
         body: { flex: 1, flexDirection: "row" },
-        contentArea: { flex: 1 },
+        contentArea: { flex: 1, position: "relative" },
         mainRow: { flex: 1, flexDirection: "row" },
         mainContent: {
             width: "100%",
