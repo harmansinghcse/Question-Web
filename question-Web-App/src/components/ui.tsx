@@ -123,8 +123,8 @@ export function Pill({
                 flexDirection: "row",
                 alignItems: "center",
                 gap: 6,
-                paddingHorizontal: 13,
-                paddingVertical: 7,
+                paddingHorizontal: 14,
+                height: 36,
                 borderRadius: 8,
                 borderWidth: 1,
                 borderColor: active ? activeBg : theme.border,
@@ -868,17 +868,17 @@ export function QuestionCard({
                 >
                     <Text
                         style={{
-                            color: theme.textSecondary,
+                            color: theme.accent,
                             fontSize: 11,
                             fontWeight: "600",
                         }}
                     >
-                        Details
+                        View Question
                     </Text>
                     <Ionicons
-                        name="chevron-forward"
+                        name="arrow-forward"
                         size={12}
-                        color={theme.textSecondary}
+                        color={theme.accent}
                     />
                 </Pressable>
             </View>

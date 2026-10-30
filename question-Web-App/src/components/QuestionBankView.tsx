@@ -208,11 +208,11 @@ export default function QuestionBankView({
 
             {/* Search */}
             <View style={s.searchBox}>
-                <Ionicons name="search" size={18} color={theme.muted} />
+                <Ionicons name="search-outline" size={19} color={theme.muted} />
                 <TextInput
                     value={search}
                     onChangeText={setSearch}
-                    placeholder="Search by keyword, topic, or question ID..."
+                    placeholder="Search questions, topics, or keywords..."
                     placeholderTextColor={theme.muted}
                     returnKeyType="search"
                     accessibilityLabel="Search questions"
@@ -364,18 +364,27 @@ export default function QuestionBankView({
 
             {/* Results header */}
             <View style={s.resultsHeader}>
-                <Text style={s.resultsTitle}>
-                    {total === null
-                        ? "Questions"
-                        : `${total.toLocaleString()} ${total === 1 ? "question" : "questions"}`}
-                </Text>
+                <View>
+                    <Text style={s.resultsEyebrow}>AVAILABLE QUESTIONS</Text>
+                    <Text style={s.resultsTitle}>
+                        {total === null
+                            ? "All Questions"
+                            : `${total.toLocaleString()} ${total === 1 ? "question found" : "questions found"}`}
+                    </Text>
+                </View>
                 {filtersActive && (
                     <Pressable
                         onPress={clearFilters}
                         accessibilityRole="button"
                         accessibilityLabel="Clear all filters"
                         hitSlop={8}
+                        style={s.clearBtn}
                     >
+                        <Ionicons
+                            name="close-circle-outline"
+                            size={14}
+                            color={theme.accent}
+                        />
                         <Text style={s.clearLink}>Clear filters</Text>
                     </Pressable>
                 )}
@@ -480,12 +489,13 @@ function makeStyles(t: AppTheme) {
             flexDirection: "row",
             alignItems: "center",
             gap: 10,
-            paddingHorizontal: 12,
-            borderRadius: 10,
+            paddingHorizontal: 14,
+            height: 50,
+            borderRadius: 12,
             borderWidth: 1,
             borderColor: t.border,
             backgroundColor: t.surface,
-            marginBottom: 12,
+            marginBottom: 14,
         },
         searchInput: {
             flex: 1,
@@ -494,26 +504,31 @@ function makeStyles(t: AppTheme) {
             paddingVertical: 10,
         },
 
-        pillRow: { gap: 8, paddingRight: 8 },
-        subjectBlock: { marginTop: 14, marginBottom: 18, gap: 8 },
+        pillRow: { gap: 8, paddingRight: 8, paddingVertical: 2 },
+        subjectBlock: { marginTop: 14, marginBottom: 18, gap: 10 },
         subjectLabelRow: {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
         },
-        filterLabel: { color: t.muted, fontSize: 11, fontWeight: "600", letterSpacing: 0.5 },
+        filterLabel: {
+            color: t.muted,
+            fontSize: 11,
+            fontWeight: "700",
+            letterSpacing: 0.6,
+        },
         segmentedRow: {
             flexDirection: "row",
             gap: 2,
             backgroundColor: t.surfaceAlt,
-            padding: 2,
+            padding: 3,
             borderRadius: 8,
             borderWidth: 1,
             borderColor: t.border,
         },
         segmentPill: {
             paddingVertical: 4,
-            paddingHorizontal: 8,
+            paddingHorizontal: 10,
             borderRadius: 6,
         },
         segmentPillActive: {
@@ -558,30 +573,61 @@ function makeStyles(t: AppTheme) {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
-            marginBottom: 12,
+            marginBottom: 14,
+            paddingTop: 4,
         },
-        resultsTitle: { color: t.text, fontSize: 15, fontWeight: "700" },
-        clearLink: { color: t.accent, fontSize: 13, fontWeight: "600" },
+        resultsEyebrow: {
+            fontSize: 11,
+            fontWeight: "700",
+            color: t.muted,
+            letterSpacing: 0.5,
+            marginBottom: 2,
+        },
+        resultsTitle: {
+            color: t.text,
+            fontSize: 16,
+            fontWeight: "800",
+            letterSpacing: -0.2,
+        },
+        clearBtn: {
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 4,
+            paddingHorizontal: 10,
+            paddingVertical: 5,
+            borderRadius: 6,
+            backgroundColor: t.surfaceAlt,
+            borderWidth: 1,
+            borderColor: t.border,
+        },
+        clearLink: {
+            color: t.accent,
+            fontSize: 12,
+            fontWeight: "600",
+        },
 
         pager: {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
-            marginTop: 20,
+            marginTop: 22,
+            paddingTop: 16,
+            borderTopWidth: 1,
+            borderTopColor: t.border,
         },
         pagerButton: {
             flexDirection: "row",
             alignItems: "center",
-            gap: 4,
-            paddingHorizontal: 12,
-            paddingVertical: 8,
-            borderRadius: 8,
+            gap: 6,
+            paddingHorizontal: 14,
+            height: 40,
+            borderRadius: 10,
             borderWidth: 1,
             borderColor: t.border,
             backgroundColor: t.surface,
         },
         pagerDisabled: { opacity: 0.4 },
         pagerText: { color: t.text, fontSize: 13, fontWeight: "600" },
-        pagerInfo: { color: t.muted, fontSize: 13 },
+        pagerInfo: { color: t.muted, fontSize: 13, fontWeight: "500" },
     });
 }

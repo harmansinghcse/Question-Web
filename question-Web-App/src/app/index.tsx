@@ -6,7 +6,7 @@ import {
     Text,
     View,
 } from "react-native";
-import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+
 import { Ionicons } from "@expo/vector-icons";
 
 import AppShell, { useLayout } from "../components/AppShell";
@@ -686,26 +686,6 @@ export default function HomeScreen() {
                                         {tool.subtitle}
                                     </Text>
                                 </View>
-                                <View style={s.toolIconWrapper}>
-                                    <Ionicons
-                                        name={tool.icon}
-                                        size={20}
-                                        color={theme.accent}
-                                    />
-                                </View>
-                                <View style={s.toolTextCol}>
-                                    <Text style={s.toolTitle}>
-                                        {tool.title}
-                                    </Text>
-                                    <Text style={s.toolSub}>
-                                        {tool.subtitle}
-                                    </Text>
-                                </View>
-                                <Ionicons
-                                    name="chevron-forward"
-                                    size={13}
-                                    color={theme.muted}
-                                />
                             </Pressable>
                         ))}
                     </View>
