@@ -91,7 +91,7 @@ export function useStudentSchedule() {
     useEffect(() => {
         timetableRefresh.current = timetable.refresh;
         examsRefresh.current = exams.refresh;
-    });
+    }, [timetable.refresh, exams.refresh]);
     const skipFirstFocus = useRef(true);
     useFocusEffect(
         useCallback(() => {

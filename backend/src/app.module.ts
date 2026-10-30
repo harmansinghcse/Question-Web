@@ -15,6 +15,7 @@ import { SourcesModule } from './sources/sources.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { QuizModule } from './quiz/quiz.module';
+import { SyllabusTrackerModule } from './syllabus-tracker/syllabus-tracker.module';
 import { UpcomingExamsModule } from './upcoming-exams/upcoming-exams.module';
 import { TimetablesModule } from './timetables/timetables.module';
 import * as fs from 'fs';
@@ -76,6 +77,7 @@ import * as path from 'path';
     QuizModule,
     UpcomingExamsModule,
     TimetablesModule,
+    SyllabusTrackerModule,
   ],
   controllers: [AppController],
   providers: [AppService],

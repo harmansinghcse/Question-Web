@@ -20,26 +20,12 @@ export interface StudyStats {
     lastStudyDate: string;
 }
 
-// Initial defaults tailored for SVNIT students
-const DEFAULT_GOALS: StudyGoal[] = [
-    {
-        id: "1",
-        text: "Complete DBMS Unit 2 (Relational Algebra)",
-        completed: true,
-        createdAt: new Date().toISOString(),
-    },
-    {
-        id: "2",
-        text: "Practise 10 MCQs on Indexing & B-Trees",
-        completed: false,
-        createdAt: new Date().toISOString(),
-    },
-    {
-        id: "3",
-        text: "Revise AI heuristic search notes",
-        completed: false,
-        createdAt: new Date().toISOString(),
-    },
+// Goals seeded by older app versions. They were placeholder data, so they are
+// stripped from storage instead of being shown to the user.
+const LEGACY_SEED_GOALS: { id: string; text: string }[] = [
+    { id: "1", text: "Complete DBMS Unit 2 (Relational Algebra)" },
+    { id: "2", text: "Practise 10 MCQs on Indexing & B-Trees" },
+    { id: "3", text: "Revise AI heuristic search notes" },
 ];
 
 export const studyStorage = {
@@ -81,16 +67,24 @@ export const studyStorage = {
     async getGoals(): Promise<StudyGoal[]> {
         try {
             const raw = await AsyncStorage.getItem(STORAGE_KEYS.TODAY_GOALS);
-            if (!raw) {
+            if (!raw) return [];
+            const parsed = JSON.parse(raw) as StudyGoal[];
+            if (!Array.isArray(parsed)) return [];
+            const cleaned = parsed.filter(
+                (g) =>
+                    !LEGACY_SEED_GOALS.some(
+                        (l) => l.id === g.id && l.text === g.text,
+                    ),
+            );
+            if (cleaned.length !== parsed.length) {
                 await AsyncStorage.setItem(
                     STORAGE_KEYS.TODAY_GOALS,
-                    JSON.stringify(DEFAULT_GOALS),
+                    JSON.stringify(cleaned),
                 );
-                return DEFAULT_GOALS;
             }
-            return JSON.parse(raw);
+            return cleaned;
         } catch {
-            return DEFAULT_GOALS;
+            return [];
         }
     },
     async saveGoals(goals: StudyGoal[]): Promise<void> {
@@ -159,8 +153,8 @@ export const studyStorage = {
             const raw = await AsyncStorage.getItem(STORAGE_KEYS.STUDY_STATS);
             if (!raw) {
                 return {
-                    totalMinutes: 45,
-                    sessionsCompleted: 2,
+                    totalMinutes: 0,
+                    sessionsCompleted: 0,
                     lastStudyDate: new Date().toISOString(),
                 };
             }
