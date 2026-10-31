@@ -2514,12 +2514,17 @@ function makeStyles(palette: TrackerPalette) {
             color: palette.text,
         },
         workspaceTabs: {
+<<<<<<< HEAD
             width: "100%",
+=======
+            flexDirection: "row",
+>>>>>>> 354e6d3a44964a625b08746d90e1ecf67d857dc6
             backgroundColor: palette.surface,
             borderRadius: 12,
             borderWidth: 1,
             borderColor: palette.border,
             padding: 4,
+<<<<<<< HEAD
             overflow: "hidden",
         },
         workspaceTabsContent: {
@@ -2533,27 +2538,43 @@ function makeStyles(palette: TrackerPalette) {
             flexShrink: 1,
             flexBasis: 0,
             minWidth: 138,
+=======
+            gap: 4,
+        },
+        workspaceTabBtn: {
+            flex: 1,
+>>>>>>> 354e6d3a44964a625b08746d90e1ecf67d857dc6
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "center",
             gap: 6,
             paddingVertical: 9,
+<<<<<<< HEAD
             paddingHorizontal: 12,
             borderRadius: 9,
             overflow: "hidden",
+=======
+            borderRadius: 9,
+>>>>>>> 354e6d3a44964a625b08746d90e1ecf67d857dc6
         },
         workspaceTabBtnActive: {
             backgroundColor: palette.purple,
         },
+<<<<<<< HEAD
         workspaceTabIcon: {
             flexShrink: 0,
         },
+=======
+>>>>>>> 354e6d3a44964a625b08746d90e1ecf67d857dc6
         workspaceTabText: {
             fontSize: 12,
             fontWeight: "700",
             color: palette.textSecondary,
+<<<<<<< HEAD
             flexShrink: 1,
             minWidth: 0,
+=======
+>>>>>>> 354e6d3a44964a625b08746d90e1ecf67d857dc6
         },
         workspaceTabTextActive: {
             color: "#FFFFFF",
