@@ -2514,22 +2514,12 @@ function makeStyles(palette: TrackerPalette) {
             color: palette.text,
         },
         workspaceTabs: {
-<<<<<<<<< Temporary merge branch 1
-            flexDirection: "row",
-=========
             width: "100%",
->>>>>>>>> Temporary merge branch 2
             backgroundColor: palette.surface,
             borderRadius: 12,
             borderWidth: 1,
             borderColor: palette.border,
             padding: 4,
-<<<<<<<<< Temporary merge branch 1
-            gap: 4,
-        },
-        workspaceTabBtn: {
-            flex: 1,
-=========
             overflow: "hidden",
         },
         workspaceTabsContent: {
@@ -2543,38 +2533,27 @@ function makeStyles(palette: TrackerPalette) {
             flexShrink: 1,
             flexBasis: 0,
             minWidth: 138,
->>>>>>>>> Temporary merge branch 2
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "center",
             gap: 6,
             paddingVertical: 9,
-<<<<<<<<< Temporary merge branch 1
-            borderRadius: 9,
-=========
             paddingHorizontal: 12,
             borderRadius: 9,
             overflow: "hidden",
->>>>>>>>> Temporary merge branch 2
         },
         workspaceTabBtnActive: {
             backgroundColor: palette.purple,
         },
-<<<<<<<<< Temporary merge branch 1
-=========
         workspaceTabIcon: {
             flexShrink: 0,
         },
->>>>>>>>> Temporary merge branch 2
         workspaceTabText: {
             fontSize: 12,
             fontWeight: "700",
             color: palette.textSecondary,
-<<<<<<<<< Temporary merge branch 1
-=========
             flexShrink: 1,
             minWidth: 0,
->>>>>>>>> Temporary merge branch 2
         },
         workspaceTabTextActive: {
             color: "#FFFFFF",
