@@ -36,7 +36,11 @@ export default function QuizRevisionHistoryScreen() {
             setAttempts(res.items || []);
             setTotal(res.total || 0);
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to load attempt history.");
+            setError(
+                err instanceof Error
+                    ? err.message
+                    : "Failed to load attempt history.",
+            );
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -44,7 +48,9 @@ export default function QuizRevisionHistoryScreen() {
     }, []);
 
     useEffect(() => {
-        const timer = setTimeout(() => { void loadHistory(1); }, 0);
+        const timer = setTimeout(() => {
+            void loadHistory(1);
+        }, 0);
         return () => clearTimeout(timer);
     }, [loadHistory]);
 
@@ -71,20 +77,28 @@ export default function QuizRevisionHistoryScreen() {
     };
 
     return (
-        <AppShell active="revision">
+        <AppShell active="revision" scrollable={false}>
             <View style={s.container}>
                 {/* Header */}
                 <View style={s.headerRow}>
                     <Pressable
                         onPress={() => router.back()}
-                        style={({ pressed }) => [s.backBtn, pressed && { opacity: 0.8 }]}
+                        style={({ pressed }) => [
+                            s.backBtn,
+                            pressed && { opacity: 0.8 },
+                        ]}
                     >
-                        <Ionicons name="arrow-back" size={18} color={theme.text} />
+                        <Ionicons
+                            name="arrow-back"
+                            size={18}
+                            color={theme.text}
+                        />
                     </Pressable>
                     <View style={{ flex: 1 }}>
                         <Text style={s.headerTitle}>Revision History</Text>
                         <Text style={s.headerSub}>
-                            {total} completed practice {total === 1 ? "session" : "sessions"}
+                            {total} completed practice{" "}
+                            {total === 1 ? "session" : "sessions"}
                         </Text>
                     </View>
                 </View>
@@ -92,36 +106,57 @@ export default function QuizRevisionHistoryScreen() {
                 {loading && !refreshing ? (
                     <View style={s.centerBox}>
                         <ActivityIndicator size="large" color={theme.accent} />
-                        <Text style={s.loadingText}>Loading past attempts...</Text>
+                        <Text style={s.loadingText}>
+                            Loading past attempts...
+                        </Text>
                     </View>
                 ) : error ? (
                     <View style={s.errorBox}>
-                        <Ionicons name="alert-circle-outline" size={28} color={theme.danger} />
+                        <Ionicons
+                            name="alert-circle-outline"
+                            size={28}
+                            color={theme.danger}
+                        />
                         <Text style={s.errorText}>{error}</Text>
-                        <Pressable onPress={() => loadHistory(1)} style={s.retryBtn}>
+                        <Pressable
+                            onPress={() => loadHistory(1)}
+                            style={s.retryBtn}
+                        >
                             <Text style={s.retryBtnText}>Retry</Text>
                         </Pressable>
                     </View>
                 ) : attempts.length === 0 ? (
                     <View style={s.emptyCard}>
                         <View style={s.emptyIconWrap}>
-                            <Ionicons name="flash-outline" size={32} color={theme.accent} />
+                            <Ionicons
+                                name="flash-outline"
+                                size={32}
+                                color={theme.accent}
+                            />
                         </View>
-                        <Text style={s.emptyTitle}>No Revision Attempts Yet</Text>
+                        <Text style={s.emptyTitle}>
+                            No Revision Attempts Yet
+                        </Text>
                         <Text style={s.emptySub}>
                             Start a quiz revision to test your knowledge with MCQs, Fillups, and True/False questions.
                         </Text>
                         <Pressable
-                            onPress={() => router.replace("/quiz-revision" as never)}
+                            onPress={() =>
+                                router.replace("/quiz-revision" as never)
+                            }
                             style={s.startBtn}
                         >
-                            <Text style={s.startBtnText}>Start Your First Revision</Text>
+                            <Text style={s.startBtnText}>
+                                Start Your First Revision
+                            </Text>
                         </Pressable>
                     </View>
                 ) : (
                     <FlatList
+                        style={{ flex: 1, minHeight: 0 }}
                         data={attempts}
                         keyExtractor={(item) => String(item.attemptId)}
+                        showsVerticalScrollIndicator={false}
                         refreshControl={
                             <RefreshControl
                                 refreshing={refreshing}
@@ -137,7 +172,11 @@ export default function QuizRevisionHistoryScreen() {
                                     onPress={() =>
                                         router.push({
                                             pathname: "/quiz-revision/results",
-                                            params: { attemptId: String(item.attemptId) },
+                                            params: {
+                                                attemptId: String(
+                                                    item.attemptId,
+                                                ),
+                                            },
                                         } as never)
                                     }
                                     style={({ pressed }) => [
@@ -146,17 +185,26 @@ export default function QuizRevisionHistoryScreen() {
                                     ]}
                                 >
                                     <View style={s.attemptTop}>
-                                        <View style={{ flex: 1 }}>
-                                            <Text style={s.subjectName} numberOfLines={1}>
+                                        <View style={{ flex: 1, minWidth: 0 }}>
+                                            <Text
+                                                style={s.subjectName}
+                                                numberOfLines={1}
+                                            >
                                                 {item.subjectName}
                                             </Text>
                                             {item.chapterName ? (
-                                                <Text style={s.chapterName} numberOfLines={1}>
+                                                <Text
+                                                    style={s.chapterName}
+                                                    numberOfLines={1}
+                                                >
                                                     {item.chapterName}
                                                 </Text>
                                             ) : null}
                                             <Text style={s.attemptDate}>
-                                                {formatDate(item.createdAt)} • {formatDuration(item.timeSpentSeconds)}
+                                                {formatDate(item.createdAt)} •{" "}
+                                                {formatDuration(
+                                                    item.timeSpentSeconds,
+                                                )}
                                             </Text>
                                         </View>
 
@@ -164,32 +212,70 @@ export default function QuizRevisionHistoryScreen() {
                                             <Text
                                                 style={[
                                                     s.accuracyText,
-                                                    isPassing ? { color: theme.success } : { color: theme.warning },
+                                                    isPassing
+                                                        ? {
+                                                              color: theme.success,
+                                                          }
+                                                        : {
+                                                              color: theme.warning,
+                                                          },
                                                 ]}
                                             >
                                                 {item.accuracyPercentage}%
                                             </Text>
                                             <Text style={s.scoreText}>
-                                                {item.score}/{item.totalQuestions}
+                                                {item.score}/
+                                                {item.totalQuestions}
                                             </Text>
                                         </View>
                                     </View>
 
                                     <View style={s.attemptFooter}>
                                         <View style={s.badgePills}>
-                                            <View style={[s.miniPill, s.pillGreen]}>
-                                                <Text style={[s.miniPillText, { color: theme.success }]}>
+                                            <View
+                                                style={[
+                                                    s.miniPill,
+                                                    s.pillGreen,
+                                                ]}
+                                            >
+                                                <Text
+                                                    style={[
+                                                        s.miniPillText,
+                                                        {
+                                                            color: theme.success,
+                                                        },
+                                                    ]}
+                                                >
                                                     ✓ {item.correctCount}
                                                 </Text>
                                             </View>
-                                            <View style={[s.miniPill, s.pillRed]}>
-                                                <Text style={[s.miniPillText, { color: theme.danger }]}>
+                                            <View
+                                                style={[s.miniPill, s.pillRed]}
+                                            >
+                                                <Text
+                                                    style={[
+                                                        s.miniPillText,
+                                                        { color: theme.danger },
+                                                    ]}
+                                                >
                                                     ✕ {item.incorrectCount}
                                                 </Text>
                                             </View>
                                             {item.unansweredCount > 0 && (
-                                                <View style={[s.miniPill, s.pillGray]}>
-                                                    <Text style={[s.miniPillText, { color: theme.textSecondary }]}>
+                                                <View
+                                                    style={[
+                                                        s.miniPill,
+                                                        s.pillGray,
+                                                    ]}
+                                                >
+                                                    <Text
+                                                        style={[
+                                                            s.miniPillText,
+                                                            {
+                                                                color: theme.textSecondary,
+                                                            },
+                                                        ]}
+                                                    >
                                                         – {item.unansweredCount}
                                                     </Text>
                                                 </View>
@@ -197,8 +283,14 @@ export default function QuizRevisionHistoryScreen() {
                                         </View>
 
                                         <View style={s.reviewArrow}>
-                                            <Text style={s.reviewLink}>Review</Text>
-                                            <Ionicons name="chevron-forward" size={14} color={theme.accent} />
+                                            <Text style={s.reviewLink}>
+                                                Review
+                                            </Text>
+                                            <Ionicons
+                                                name="chevron-forward"
+                                                size={14}
+                                                color={theme.accent}
+                                            />
                                         </View>
                                     </View>
                                 </Pressable>
@@ -214,8 +306,9 @@ export default function QuizRevisionHistoryScreen() {
 function makeStyles(t: AppTheme) {
     return StyleSheet.create({
         container: {
+            flex: 1,
+            minHeight: 0,
             gap: 16,
-            paddingBottom: 40,
             width: "100%",
             maxWidth: 880,
             alignSelf: "center",
@@ -328,6 +421,7 @@ function makeStyles(t: AppTheme) {
         },
         listContent: {
             gap: 12,
+            paddingBottom: 96,
         },
         attemptCard: {
             backgroundColor: t.surface,

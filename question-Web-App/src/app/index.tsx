@@ -39,7 +39,7 @@ export default function HomeScreen() {
     const router = useRouter();
     const { theme } = useAppTheme();
     const { user, isAuthenticated, isRestoring } = useAuth();
-    const { isWide } = useLayout();
+    const { isWide, isCompact } = useLayout();
     const s = useMemo(() => makeStyles(theme), [theme]);
 
     // ── Local Storage Data ───────────────────────────────────────────────────
@@ -206,28 +206,28 @@ export default function HomeScreen() {
             {
                 id: "planner",
                 title: "Daily Planner",
-                subtitle: `${goals.filter((g) => g.completed).length} of ${goals.length} tasks`,
+                subtitle: `${goals.filter((g) => g.completed).length} of ${goals.length} tasks done`,
                 icon: "checkbox-outline" as const,
                 onPress: () => setActiveModal("daily-planner"),
             },
             {
                 id: "report",
                 title: "Study Report",
-                subtitle: `${studyStats.totalMinutes}m logged`,
+                subtitle: `${studyStats.totalMinutes}m logged • ${studyStats.sessionsCompleted} sessions`,
                 icon: "bar-chart-outline" as const,
                 onPress: () => setActiveModal("study-report"),
             },
             {
                 id: "timer",
                 title: "Focus Timer",
-                subtitle: "25m Pomodoro",
+                subtitle: "25m Pomodoro sessions",
                 icon: "timer-outline" as const,
                 onPress: () => setActiveModal("focus-timer"),
             },
             {
                 id: "reminders",
                 title: "Study Reminders",
-                subtitle: "Daily alerts",
+                subtitle: "Custom daily alerts",
                 icon: "notifications-outline" as const,
                 onPress: () => setActiveModal("study-reminders"),
             },
@@ -244,7 +244,7 @@ export default function HomeScreen() {
                         <View style={s.bannerTextCol}>
                             <View style={s.greetingBadge}>
                                 <Ionicons name="sparkles" size={12} color={theme.accent} />
-                                <Text style={s.bannerGreeting}>
+                                <Text style={s.bannerGreeting} numberOfLines={1}>
                                     {greeting}, {displayName}
                                 </Text>
                             </View>
@@ -254,24 +254,44 @@ export default function HomeScreen() {
                             <Text style={s.bannerSubtitle}>
                                 Stay consistent, master your coursework, and keep tracking your progress.
                             </Text>
-                            <Pressable
-                                onPress={() => setActiveModal("daily-planner")}
-                                accessibilityRole="button"
-                                accessibilityLabel="Go to Daily Plan"
-                                style={({ pressed }) => [
-                                    s.bannerButton,
-                                    pressed && { opacity: 0.85 },
-                                ]}
-                            >
-                                <Text style={s.bannerButtonText}>
-                                    Open Daily Plan
-                                </Text>
-                                <Ionicons
-                                    name="arrow-forward"
-                                    size={14}
-                                    color="#FFFFFF"
-                                />
-                            </Pressable>
+                            <View style={s.bannerActionsRow}>
+                                <Pressable
+                                    onPress={() => setActiveModal("daily-planner")}
+                                    accessibilityRole="button"
+                                    accessibilityLabel="Go to Daily Plan"
+                                    style={({ pressed }) => [
+                                        s.bannerButton,
+                                        pressed && { opacity: 0.85 },
+                                    ]}
+                                >
+                                    <Text style={s.bannerButtonText}>
+                                        Open Daily Plan
+                                    </Text>
+                                    <Ionicons
+                                        name="arrow-forward"
+                                        size={14}
+                                        color="#FFFFFF"
+                                    />
+                                </Pressable>
+                                <Pressable
+                                    onPress={() => router.push("/learn" as never)}
+                                    accessibilityRole="button"
+                                    accessibilityLabel="Browse Question Bank"
+                                    style={({ pressed }) => [
+                                        s.bannerSecondaryButton,
+                                        pressed && { opacity: 0.85 },
+                                    ]}
+                                >
+                                    <Ionicons
+                                        name="book-outline"
+                                        size={14}
+                                        color={theme.text}
+                                    />
+                                    <Text style={s.bannerSecondaryButtonText}>
+                                        Question Bank
+                                    </Text>
+                                </Pressable>
+                            </View>
                         </View>
                         {isWide && (
                             <View style={s.bannerIllustrationWrapper}>
@@ -281,7 +301,7 @@ export default function HomeScreen() {
                     </View>
                 </View>
 
-                {/* 2. UPCOMING EXAM */}
+                {/* 2. UPCOMING EXAMS AND TESTS */}
                 <View style={s.section}>
                     <View style={s.sectionHeader}>
                         <View style={s.sectionHeaderLeft}>
@@ -330,10 +350,13 @@ export default function HomeScreen() {
                             ]}
                         >
                             <View style={s.examRow}>
-                                <View style={{ flex: 1, gap: 6 }}>
+                                <View style={{ flex: 1, minWidth: 0, gap: 6 }}>
                                     <View style={s.examTagRow}>
-                                        <View style={s.subjectPill}>
-                                            <Text style={s.subjectPillText}>
+                                        <View style={[s.subjectPill, { flexShrink: 1 }]}>
+                                            <Text
+                                                style={s.subjectPillText}
+                                                numberOfLines={1}
+                                            >
                                                 {nearestExamInfo.subjectLabel}
                                             </Text>
                                         </View>
@@ -341,7 +364,7 @@ export default function HomeScreen() {
                                             {nearestExamInfo.formattedDate}
                                         </Text>
                                     </View>
-                                    <Text style={s.examTitle} numberOfLines={1}>
+                                    <Text style={s.examTitle} numberOfLines={2}>
                                         {nearestExamInfo.exam.title}
                                     </Text>
                                 </View>
@@ -443,7 +466,7 @@ export default function HomeScreen() {
                                             {item.endTime}
                                         </Text>
                                     </View>
-                                    <View style={{ flex: 1, gap: 2 }}>
+                                    <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
                                         <Text style={s.scheduleTitle} numberOfLines={1}>
                                             {item.subject?.subjectName ||
                                                 item.subject?.subjectId ||
@@ -554,7 +577,10 @@ export default function HomeScreen() {
                                     <View style={s.syllabusHeaderRow}>
                                         <View style={s.syllabusCodeRow}>
                                             <View style={s.subjectPill}>
-                                                <Text style={s.subjectPillText}>
+                                                <Text
+                                                    style={s.subjectPillText}
+                                                    numberOfLines={1}
+                                                >
                                                     {item.code}
                                                 </Text>
                                             </View>
@@ -628,10 +654,28 @@ export default function HomeScreen() {
                             <View style={s.sectionAccentBar} />
                             <Text style={s.sectionTitle}>Study Tools</Text>
                         </View>
+                        <Pressable
+                            onPress={() => router.push("/study-tools" as never)}
+                            accessibilityRole="button"
+                            accessibilityLabel="Open all study tools"
+                            style={s.actionLink}
+                        >
+                            <Text style={s.actionLinkText}>All Tools</Text>
+                            <Ionicons
+                                name="chevron-forward"
+                                size={14}
+                                color={theme.accent}
+                            />
+                        </Pressable>
                     </View>
 
                     <View style={s.toolsGrid}>
-                        <View style={s.toolsRow}>
+                        <View
+                            style={[
+                                s.toolsRow,
+                                isCompact && { flexDirection: "column" },
+                            ]}
+                        >
                             {homeStudyTools.slice(0, 2).map((tool) => (
                                 <Pressable
                                     key={tool.id}
@@ -663,14 +707,19 @@ export default function HomeScreen() {
                                         <Text style={s.toolTitle} numberOfLines={1}>
                                             {tool.title}
                                         </Text>
-                                        <Text style={s.toolSub} numberOfLines={1}>
+                                        <Text style={s.toolSub} numberOfLines={2}>
                                             {tool.subtitle}
                                         </Text>
                                     </View>
                                 </Pressable>
                             ))}
                         </View>
-                        <View style={s.toolsRow}>
+                        <View
+                            style={[
+                                s.toolsRow,
+                                isCompact && { flexDirection: "column" },
+                            ]}
+                        >
                             {homeStudyTools.slice(2, 4).map((tool) => (
                                 <Pressable
                                     key={tool.id}
@@ -702,7 +751,7 @@ export default function HomeScreen() {
                                         <Text style={s.toolTitle} numberOfLines={1}>
                                             {tool.title}
                                         </Text>
-                                        <Text style={s.toolSub} numberOfLines={1}>
+                                        <Text style={s.toolSub} numberOfLines={2}>
                                             {tool.subtitle}
                                         </Text>
                                     </View>
@@ -756,11 +805,12 @@ function makeStyles(t: AppTheme) {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
+            gap: 12,
         },
         bannerTextCol: {
             flex: 1,
+            minWidth: 0,
             gap: 6,
-            paddingRight: 12,
         },
         greetingBadge: {
             flexDirection: "row",
@@ -771,11 +821,13 @@ function makeStyles(t: AppTheme) {
             paddingVertical: 3,
             borderRadius: 6,
             backgroundColor: t.accentSoft,
+            maxWidth: "100%",
         },
         bannerGreeting: {
             color: t.accent,
             fontSize: 12,
             fontWeight: "700",
+            flexShrink: 1,
         },
         bannerHeadline: {
             color: t.text,
@@ -788,10 +840,16 @@ function makeStyles(t: AppTheme) {
             color: t.textSecondary,
             fontSize: 13,
             lineHeight: 19,
-            marginBottom: 6,
+            marginBottom: 4,
+        },
+        bannerActionsRow: {
+            flexDirection: "row",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 10,
+            marginTop: 4,
         },
         bannerButton: {
-            alignSelf: "flex-start",
             flexDirection: "row",
             alignItems: "center",
             gap: 7,
@@ -799,7 +857,6 @@ function makeStyles(t: AppTheme) {
             borderRadius: 9,
             paddingHorizontal: 16,
             paddingVertical: 9,
-            marginTop: 4,
             shadowColor: t.accent,
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.2,
@@ -811,11 +868,28 @@ function makeStyles(t: AppTheme) {
             fontSize: 13,
             fontWeight: "700",
         },
+        bannerSecondaryButton: {
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 6,
+            backgroundColor: t.surfaceAlt,
+            borderWidth: 1,
+            borderColor: t.border,
+            borderRadius: 9,
+            paddingHorizontal: 14,
+            paddingVertical: 9,
+        },
+        bannerSecondaryButtonText: {
+            color: t.text,
+            fontSize: 13,
+            fontWeight: "700",
+        },
         bannerIllustrationWrapper: {
             alignItems: "center",
             justifyContent: "center",
             width: 90,
             height: 90,
+            flexShrink: 0,
         },
 
         // ── Shared Section Styles ───────────────────────────────────────────
@@ -826,11 +900,14 @@ function makeStyles(t: AppTheme) {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
+            gap: 8,
         },
         sectionHeaderLeft: {
             flexDirection: "row",
             alignItems: "center",
             gap: 9,
+            flex: 1,
+            minWidth: 0,
         },
         sectionAccentBar: {
             width: 3.5,
@@ -849,6 +926,7 @@ function makeStyles(t: AppTheme) {
             alignItems: "center",
             gap: 3,
             paddingVertical: 2,
+            flexShrink: 0,
         },
         actionLinkText: {
             color: t.accent,
@@ -877,11 +955,12 @@ function makeStyles(t: AppTheme) {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
-            gap: 14,
+            gap: 12,
         },
         examTagRow: {
             flexDirection: "row",
             alignItems: "center",
+            flexWrap: "wrap",
             gap: 8,
         },
         subjectPill: {
@@ -891,6 +970,7 @@ function makeStyles(t: AppTheme) {
             borderRadius: 6,
             borderWidth: 1,
             borderColor: t.border,
+            maxWidth: "100%",
         },
         subjectPillText: {
             color: t.textSecondary,
@@ -914,6 +994,7 @@ function makeStyles(t: AppTheme) {
             borderRadius: 8,
             borderWidth: 1,
             borderColor: t.border,
+            flexShrink: 0,
         },
         countdownUrgent: {
             backgroundColor: t.surfaceAlt,
@@ -940,14 +1021,15 @@ function makeStyles(t: AppTheme) {
             flexDirection: "row",
             alignItems: "center",
             paddingVertical: 11,
-            gap: 16,
+            gap: 14,
         },
         scheduleDivider: {
             borderBottomWidth: 1,
             borderBottomColor: t.border,
         },
         timeBlock: {
-            width: 76,
+            width: 72,
+            flexShrink: 0,
         },
         scheduleTime: {
             color: t.accent,
@@ -992,18 +1074,21 @@ function makeStyles(t: AppTheme) {
             alignItems: "center",
             gap: 9,
             flex: 1,
+            minWidth: 0,
         },
         syllabusName: {
             color: t.text,
             fontSize: 14,
             fontWeight: "600",
             flex: 1,
+            minWidth: 0,
         },
         syllabusPctBadge: {
             backgroundColor: t.accentSoft,
             paddingHorizontal: 8,
             paddingVertical: 3,
             borderRadius: 6,
+            flexShrink: 0,
         },
         syllabusPctText: {
             color: t.accent,
@@ -1018,16 +1103,20 @@ function makeStyles(t: AppTheme) {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
+            gap: 8,
         },
         syllabusTopicsCountCol: {
             flexDirection: "row",
             alignItems: "center",
             gap: 6,
+            flex: 1,
+            minWidth: 0,
         },
         syllabusTopicsCount: {
             color: t.textSecondary,
             fontSize: 12,
             fontWeight: "500",
+            flexShrink: 1,
         },
 
         // ── 5. Four Study Tools Cards ───────────────────────────────────────
@@ -1040,12 +1129,13 @@ function makeStyles(t: AppTheme) {
         },
         toolCard: {
             flex: 1,
+            minWidth: 0,
             backgroundColor: t.surface,
             borderRadius: 14,
             borderWidth: 1,
             borderColor: t.border,
             padding: 14,
-            minHeight: 110,
+            minHeight: 112,
             justifyContent: "space-between",
         },
         toolCardTop: {
@@ -1073,18 +1163,19 @@ function makeStyles(t: AppTheme) {
             justifyContent: "center",
         },
         toolCardBottom: {
-            gap: 2,
-            marginTop: 8,
+            gap: 3,
+            marginTop: 10,
         },
         toolTitle: {
             color: t.text,
-            fontSize: 13,
+            fontSize: 14,
             fontWeight: "700",
             letterSpacing: -0.1,
         },
         toolSub: {
             color: t.textSecondary,
             fontSize: 11,
+            lineHeight: 15,
             fontWeight: "500",
         },
 
@@ -1106,9 +1197,11 @@ function makeStyles(t: AppTheme) {
             backgroundColor: t.accentSoft,
             alignItems: "center",
             justifyContent: "center",
+            flexShrink: 0,
         },
         emptyCardBody: {
             flex: 1,
+            minWidth: 0,
             gap: 2,
         },
         emptyCardTitle: {
@@ -1128,6 +1221,7 @@ function makeStyles(t: AppTheme) {
             borderRadius: 8,
             borderWidth: 1,
             borderColor: t.border,
+            flexShrink: 0,
         },
         emptyActionText: {
             color: t.accent,

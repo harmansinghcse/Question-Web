@@ -232,6 +232,21 @@ export default function PromptStudioScreen() {
         setPage(1);
     };
 
+    const hasBrowserFilters =
+        search.trim().length > 0 ||
+        selectedSemester !== null ||
+        selectedSubjectKey !== null ||
+        selectedQuesType !== null;
+
+    const resetBrowserFilters = () => {
+        setSearch("");
+        setDebounced("");
+        setSelectedSemester(null);
+        setSelectedSubjectKey(null);
+        setSelectedQuesType(null);
+        setPage(1);
+    };
+
     // Fetch Questions
     const fetchQuestions = useCallback(
         () =>
@@ -461,6 +476,7 @@ export default function PromptStudioScreen() {
                                 styles.tabButtonText,
                                 tab === "browser" && styles.tabButtonTextActive,
                             ]}
+                            numberOfLines={1}
                         >
                             1. Browse ({totalQuestions})
                         </Text>
@@ -480,6 +496,7 @@ export default function PromptStudioScreen() {
                                 styles.tabButtonText,
                                 tab === "selected" && styles.tabButtonTextActive,
                             ]}
+                            numberOfLines={1}
                         >
                             2. Selected ({selectedQuestions.size})
                         </Text>
@@ -499,6 +516,7 @@ export default function PromptStudioScreen() {
                                 styles.tabButtonText,
                                 tab === "prompt" && styles.tabButtonTextActive,
                             ]}
+                            numberOfLines={1}
                         >
                             3. Export Prompt
                         </Text>
@@ -532,7 +550,14 @@ export default function PromptStudioScreen() {
 
                         {/* Semester Filter Pills */}
                         <View style={styles.filterSection}>
-                            <Text style={styles.filterLabel}>FILTER BY SEMESTER</Text>
+                            <View style={styles.filterHeaderRow}>
+                                <Text style={styles.filterLabel}>FILTER BY SEMESTER</Text>
+                                {hasBrowserFilters && (
+                                    <Pressable onPress={resetBrowserFilters} hitSlop={8}>
+                                        <Text style={styles.clearFiltersLink}>Clear all filters</Text>
+                                    </Pressable>
+                                )}
+                            </View>
                             <ScrollView
                                 horizontal
                                 showsHorizontalScrollIndicator={false}
@@ -770,6 +795,14 @@ export default function PromptStudioScreen() {
                                 <Text style={styles.emptyText}>
                                     Try clearing your search keyword or switching subjects.
                                 </Text>
+                                {hasBrowserFilters && (
+                                    <Pressable
+                                        onPress={resetBrowserFilters}
+                                        style={styles.browseButton}
+                                    >
+                                        <Text style={styles.browseButtonText}>Reset Filters</Text>
+                                    </Pressable>
+                                )}
                             </View>
                         ) : (
                             <View style={styles.questionsList}>
@@ -1133,6 +1166,7 @@ function makeStyles(t: AppTheme) {
             maxWidth: 1040,
             alignSelf: "center",
             gap: 18,
+            paddingBottom: 24,
         },
         header: {
             gap: 4,
@@ -1142,6 +1176,8 @@ function makeStyles(t: AppTheme) {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: 8,
         },
         headerTitleWrap: { gap: 4 },
         eyebrow: {
@@ -1195,6 +1231,7 @@ function makeStyles(t: AppTheme) {
             justifyContent: "center",
             gap: 6,
             paddingVertical: 10,
+            paddingHorizontal: 6,
             borderRadius: 10,
             backgroundColor: "transparent",
         },
@@ -1205,6 +1242,7 @@ function makeStyles(t: AppTheme) {
             fontSize: 12,
             fontWeight: "700",
             color: t.muted,
+            flexShrink: 1,
         },
         tabButtonTextActive: {
             color: "#FFFFFF",
@@ -1229,11 +1267,21 @@ function makeStyles(t: AppTheme) {
         searchInput: { flex: 1, color: t.text, fontSize: 13 },
 
         filterSection: { gap: 6 },
+        filterHeaderRow: {
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+        },
         filterLabel: {
             color: t.muted,
             fontSize: 10,
             fontWeight: "800",
             letterSpacing: 1,
+        },
+        clearFiltersLink: {
+            color: t.accent,
+            fontSize: 11,
+            fontWeight: "700",
         },
         pillRow: { gap: 8, paddingVertical: 2 },
         pill: {
@@ -1271,6 +1319,8 @@ function makeStyles(t: AppTheme) {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: 8,
             paddingVertical: 4,
         },
         actionCount: { color: t.muted, fontSize: 12 },
@@ -1305,8 +1355,9 @@ function makeStyles(t: AppTheme) {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
+            gap: 8,
         },
-        metaRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+        metaRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 6, flex: 1 },
         typeBadge: {
             backgroundColor: t.surfaceAlt,
             borderWidth: 1,
@@ -1394,6 +1445,8 @@ function makeStyles(t: AppTheme) {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: 8,
             marginBottom: 4,
         },
         sectionTitle: { color: t.text, fontSize: 15, fontWeight: "800" },
@@ -1440,6 +1493,7 @@ function makeStyles(t: AppTheme) {
             gap: 8,
             backgroundColor: t.accent,
             paddingVertical: 14,
+            paddingHorizontal: 16,
             borderRadius: 12,
             marginTop: 6,
         },
@@ -1473,9 +1527,10 @@ function makeStyles(t: AppTheme) {
         taskTitleActive: { color: t.accent },
         taskDesc: { color: t.muted, fontSize: 12, lineHeight: 17 },
 
-        styleRow: { flexDirection: "row", gap: 10 },
+        styleRow: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
         styleBtn: {
             flex: 1,
+            minWidth: 96,
             backgroundColor: t.surface,
             borderWidth: 1,
             borderColor: t.border,
@@ -1506,6 +1561,8 @@ function makeStyles(t: AppTheme) {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: 8,
         },
         statPill: {
             backgroundColor: t.surfaceAlt,
@@ -1604,6 +1661,7 @@ function makeStyles(t: AppTheme) {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
+            flexWrap: "wrap",
             gap: 12,
         },
         floatingInfo: { flexDirection: "row", alignItems: "center", gap: 8 },

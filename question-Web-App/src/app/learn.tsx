@@ -12,13 +12,13 @@ import { Ionicons } from "@expo/vector-icons";
 
 import AppShell from "../components/AppShell";
 import QuestionBankView from "../components/QuestionBankView";
-import { EmptyBlock } from "../components/ui";
+import { EmptyBlock, Pill } from "../components/ui";
 import { useAppTheme } from "../providers/ThemeProvider";
 import type { AppTheme } from "../constants/theme";
 
 type LearnTab = "questions" | "resources";
 
-interface AcademicResource {
+export interface AcademicResource {
     id: string;
     title: string;
     author: string;
@@ -38,7 +38,8 @@ export const FEATURED_RESOURCES: AcademicResource[] = [
         subject: "Database Management Systems",
         subjectKey: "CS201",
         semester: 3,
-        description: "Primary reference book covering relational algebra, SQL, indexing, and transaction management.",
+        description:
+            "Primary reference book covering relational algebra, SQL, indexing, and transaction management.",
     },
     {
         id: "res-2",
@@ -48,7 +49,8 @@ export const FEATURED_RESOURCES: AcademicResource[] = [
         subject: "Computer Organization",
         subjectKey: "CS203",
         semester: 3,
-        description: "Standard text for processor datapath, pipelining, cache memory hierarchies, and virtual memory.",
+        description:
+            "Standard text for processor datapath, pipelining, cache memory hierarchies, and virtual memory.",
     },
     {
         id: "res-3",
@@ -58,7 +60,8 @@ export const FEATURED_RESOURCES: AcademicResource[] = [
         subject: "Discrete Mathematics",
         subjectKey: "CS205",
         semester: 3,
-        description: "Comprehensive guide to set theory, logic, combinatorics, graph theory, and proof techniques.",
+        description:
+            "Comprehensive guide to set theory, logic, combinatorics, graph theory, and proof techniques.",
     },
     {
         id: "res-4",
@@ -68,7 +71,8 @@ export const FEATURED_RESOURCES: AcademicResource[] = [
         subject: "Object-Oriented Programming",
         subjectKey: "CS207",
         semester: 3,
-        description: "Foundational guide covering classes, inheritance, polymorphism, templates, and exception handling.",
+        description:
+            "Foundational guide covering classes, inheritance, polymorphism, templates, and exception handling.",
     },
     {
         id: "res-5",
@@ -78,7 +82,8 @@ export const FEATURED_RESOURCES: AcademicResource[] = [
         subject: "Academic Regulations",
         subjectKey: "SVNIT",
         semester: 4,
-        description: "Official course scheme, credit structure, and semester-wise examination evaluation policy.",
+        description:
+            "Official course scheme, credit structure, and semester-wise examination evaluation policy.",
     },
     {
         id: "res-6",
@@ -88,7 +93,8 @@ export const FEATURED_RESOURCES: AcademicResource[] = [
         subject: "Data Structures & Algorithms",
         subjectKey: "CS202",
         semester: 4,
-        description: "Classic text on asymptotic complexity, divide-and-conquer, dynamic programming, and graph algorithms.",
+        description:
+            "Classic text on asymptotic complexity, divide-and-conquer, dynamic programming, and graph algorithms.",
     },
     {
         id: "res-7",
@@ -98,11 +104,34 @@ export const FEATURED_RESOURCES: AcademicResource[] = [
         subject: "Operating Systems",
         subjectKey: "CS204",
         semester: 4,
-        description: "Comprehensive coverage of processes, threads, synchronization, memory management, and file systems.",
+        description:
+            "Comprehensive coverage of processes, threads, synchronization, memory management, and file systems.",
+    },
+    {
+        id: "res-8",
+        title: "DBMS Complete Lecture Notes & SQL Workbook",
+        author: "CSE Faculty Notes",
+        type: "Lecture Notes",
+        subject: "Database Management Systems",
+        subjectKey: "CS201",
+        semester: 3,
+        description:
+            "Structured lecture summaries covering ER modeling, normalization (1NF–BCNF), and concurrency control.",
+    },
+    {
+        id: "res-9",
+        title: "Operating Systems Kernel & Scheduling Notes",
+        author: "CSE Faculty Notes",
+        type: "Lecture Notes",
+        subject: "Operating Systems",
+        subjectKey: "CS204",
+        semester: 4,
+        description:
+            "Concise revision notes for CPU scheduling, deadlocks, paging, and disk scheduling algorithms.",
     },
 ];
 
-const RESOURCE_CATEGORIES: {
+export const RESOURCE_CATEGORIES: {
     key: string;
     label: string;
     icon: React.ComponentProps<typeof Ionicons>["name"];
@@ -113,7 +142,9 @@ const RESOURCE_CATEGORIES: {
     { key: "Curriculum", label: "Curriculum", icon: "school-outline" },
 ];
 
-function getResourceTypeIcon(type: AcademicResource["type"]): React.ComponentProps<typeof Ionicons>["name"] {
+export function getResourceTypeIcon(
+    type: string,
+): React.ComponentProps<typeof Ionicons>["name"] {
     switch (type) {
         case "Book":
             return "book-outline";
@@ -126,8 +157,325 @@ function getResourceTypeIcon(type: AcademicResource["type"]): React.ComponentPro
     }
 }
 
-export default function LearnScreen() {
+export function StudyResourcesCatalogView() {
     const router = useRouter();
+    const { theme } = useAppTheme();
+    const s = useMemo(() => makeStyles(theme), [theme]);
+
+    const [resourceFilter, setResourceFilter] = useState<string>("All");
+    const [selectedSemester, setSelectedSemester] = useState<number | null>(
+        null,
+    );
+    const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
+    const [resourceSearch, setResourceSearch] = useState<string>("");
+
+    const availableSemesters = useMemo(() => {
+        const set = new Set<number>();
+        for (const r of FEATURED_RESOURCES) {
+            if (r.semester) set.add(r.semester);
+        }
+        return Array.from(set).sort((a, b) => a - b);
+    }, []);
+
+    const availableSubjects = useMemo(() => {
+        const list =
+            selectedSemester === null
+                ? FEATURED_RESOURCES
+                : FEATURED_RESOURCES.filter(
+                      (r) => r.semester === selectedSemester,
+                  );
+        const map = new Map<string, string>();
+        for (const r of list) {
+            map.set(r.subjectKey, `${r.subjectKey} — ${r.subject}`);
+        }
+        return Array.from(map.entries()).map(([key, label]) => ({
+            key,
+            label,
+        }));
+    }, [selectedSemester]);
+
+    const filteredResources = useMemo(() => {
+        let list = FEATURED_RESOURCES;
+        if (resourceFilter !== "All") {
+            list = list.filter((r) => r.type === resourceFilter);
+        }
+        if (selectedSemester !== null) {
+            list = list.filter((r) => r.semester === selectedSemester);
+        }
+        if (selectedSubject !== null) {
+            list = list.filter((r) => r.subjectKey === selectedSubject);
+        }
+        if (resourceSearch.trim().length > 0) {
+            const q = resourceSearch.toLowerCase().trim();
+            list = list.filter(
+                (r) =>
+                    r.title.toLowerCase().includes(q) ||
+                    r.author.toLowerCase().includes(q) ||
+                    r.subject.toLowerCase().includes(q) ||
+                    r.subjectKey.toLowerCase().includes(q) ||
+                    r.description.toLowerCase().includes(q),
+            );
+        }
+        return list;
+    }, [resourceFilter, selectedSemester, selectedSubject, resourceSearch]);
+
+    const hasActiveFilters =
+        resourceFilter !== "All" ||
+        selectedSemester !== null ||
+        selectedSubject !== null ||
+        resourceSearch.trim().length > 0;
+
+    function resetFilters() {
+        setResourceFilter("All");
+        setSelectedSemester(null);
+        setSelectedSubject(null);
+        setResourceSearch("");
+    }
+
+    return (
+        <View style={s.resourcesContainer}>
+            {/* Resource Search */}
+            <View style={s.searchBox}>
+                <Ionicons
+                    name="search-outline"
+                    size={18}
+                    color={theme.textSecondary}
+                />
+                <TextInput
+                    value={resourceSearch}
+                    onChangeText={setResourceSearch}
+                    placeholder="Search books, author, subject, or notes..."
+                    placeholderTextColor={theme.muted}
+                    style={s.searchInput}
+                />
+                {resourceSearch.length > 0 && (
+                    <Pressable
+                        onPress={() => setResourceSearch("")}
+                        accessibilityRole="button"
+                        accessibilityLabel="Clear search"
+                        hitSlop={8}
+                    >
+                        <Ionicons
+                            name="close-circle"
+                            size={18}
+                            color={theme.muted}
+                        />
+                    </Pressable>
+                )}
+            </View>
+
+            {/* Category Filter */}
+            <View style={s.filterGroup}>
+                <Text style={s.filterGroupLabel}>CATEGORY</Text>
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={s.filterRow}
+                >
+                    {RESOURCE_CATEGORIES.map((cat) => (
+                        <Pill
+                            key={cat.key}
+                            label={cat.label}
+                            icon={cat.icon}
+                            compact
+                            active={resourceFilter === cat.key}
+                            onPress={() => setResourceFilter(cat.key)}
+                        />
+                    ))}
+                </ScrollView>
+            </View>
+
+            {/* Semester Filter */}
+            <View style={s.filterGroup}>
+                <Text style={s.filterGroupLabel}>SEMESTER</Text>
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={s.filterRow}
+                >
+                    <Pill
+                        label="All Semesters"
+                        compact
+                        active={selectedSemester === null}
+                        onPress={() => {
+                            setSelectedSemester(null);
+                        }}
+                    />
+                    {availableSemesters.map((sem) => (
+                        <Pill
+                            key={sem}
+                            label={`Sem ${sem}`}
+                            compact
+                            active={selectedSemester === sem}
+                            onPress={() => {
+                                const next =
+                                    selectedSemester === sem ? null : sem;
+                                setSelectedSemester(next);
+                                setSelectedSubject(null);
+                            }}
+                        />
+                    ))}
+                </ScrollView>
+            </View>
+
+            {/* Subject Filter */}
+            <View style={s.filterGroup}>
+                <Text style={s.filterGroupLabel}>SUBJECT</Text>
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={s.filterRow}
+                >
+                    <Pill
+                        label="All Subjects"
+                        compact
+                        active={selectedSubject === null}
+                        onPress={() => setSelectedSubject(null)}
+                    />
+                    {availableSubjects.map((sub) => (
+                        <Pill
+                            key={sub.key}
+                            label={sub.label}
+                            compact
+                            active={selectedSubject === sub.key}
+                            onPress={() =>
+                                setSelectedSubject(
+                                    selectedSubject === sub.key
+                                        ? null
+                                        : sub.key,
+                                )
+                            }
+                        />
+                    ))}
+                </ScrollView>
+            </View>
+
+            {/* Results summary & Clear All */}
+            <View style={s.resultsHeader}>
+                <Text style={s.resultsCountText}>
+                    Showing {filteredResources.length} of{" "}
+                    {FEATURED_RESOURCES.length} study resources
+                </Text>
+                {hasActiveFilters && (
+                    <Pressable
+                        onPress={resetFilters}
+                        accessibilityRole="button"
+                        style={s.clearBtn}
+                    >
+                        <Ionicons
+                            name="close-circle-outline"
+                            size={14}
+                            color={theme.accent}
+                        />
+                        <Text style={s.clearBtnText}>Clear all</Text>
+                    </Pressable>
+                )}
+            </View>
+
+            {/* Resource Cards */}
+            {filteredResources.length === 0 ? (
+                <EmptyBlock
+                    icon="book-outline"
+                    title="No resources found"
+                    text="Try clearing your search query or choosing another semester or category."
+                    actionLabel="Reset filters"
+                    onAction={resetFilters}
+                />
+            ) : (
+                <View style={s.resourceList}>
+                    {filteredResources.map((res) => (
+                        <View key={res.id} style={s.resourceCard}>
+                            <View style={s.resHeaderRow}>
+                                <View style={s.resTagsRow}>
+                                    <View style={s.subjectPill}>
+                                        <Text style={s.subjectPillText}>
+                                            {res.subjectKey}
+                                        </Text>
+                                    </View>
+                                    {res.semester && (
+                                        <View style={s.semPill}>
+                                            <Text style={s.semPillText}>
+                                                Sem {res.semester}
+                                            </Text>
+                                        </View>
+                                    )}
+                                </View>
+                                <View style={s.resTypeBadge}>
+                                    <Ionicons
+                                        name={getResourceTypeIcon(res.type)}
+                                        size={13}
+                                        color={theme.accent}
+                                    />
+                                    <Text style={s.resTypeText}>
+                                        {res.type}
+                                    </Text>
+                                </View>
+                            </View>
+
+                            <Text style={s.resTitle}>{res.title}</Text>
+
+                            <View style={s.authorRow}>
+                                <Ionicons
+                                    name="person-outline"
+                                    size={13}
+                                    color={theme.textSecondary}
+                                />
+                                <Text
+                                    style={s.resAuthor}
+                                    numberOfLines={1}
+                                >
+                                    {res.author}
+                                </Text>
+                            </View>
+
+                            <Text style={s.resDesc} numberOfLines={3}>
+                                {res.description}
+                            </Text>
+
+                            <View style={s.resFooter}>
+                                <View style={s.resSubjectRow}>
+                                    <Ionicons
+                                        name="school-outline"
+                                        size={13}
+                                        color={theme.textSecondary}
+                                    />
+                                    <Text
+                                        style={s.resSubjectName}
+                                        numberOfLines={1}
+                                    >
+                                        {res.subject}
+                                    </Text>
+                                </View>
+                                <Pressable
+                                    onPress={() =>
+                                        router.push("/syllabus" as never)
+                                    }
+                                    accessibilityRole="button"
+                                    accessibilityLabel={`View ${res.title} in syllabus`}
+                                    style={({ pressed }) => [
+                                        s.resActionBtn,
+                                        pressed && { opacity: 0.8 },
+                                    ]}
+                                >
+                                    <Text style={s.resActionBtnText}>
+                                        View in Syllabus
+                                    </Text>
+                                    <Ionicons
+                                        name="arrow-forward"
+                                        size={13}
+                                        color={theme.accent}
+                                    />
+                                </Pressable>
+                            </View>
+                        </View>
+                    ))}
+                </View>
+            )}
+        </View>
+    );
+}
+
+export default function LearnScreen() {
     const { theme } = useAppTheme();
     const s = useMemo(() => makeStyles(theme), [theme]);
     const params = useLocalSearchParams<{ tab?: string }>();
@@ -144,28 +492,6 @@ export default function LearnScreen() {
             setActiveTab(params.tab);
         }
     }
-
-    const [resourceFilter, setResourceFilter] = useState<string>("All");
-    const [resourceSearch, setResourceSearch] = useState<string>("");
-
-    const filteredResources = useMemo(() => {
-        let list = FEATURED_RESOURCES;
-        if (resourceFilter !== "All") {
-            list = list.filter((r) => r.type === resourceFilter);
-        }
-        if (resourceSearch.trim().length > 0) {
-            const q = resourceSearch.toLowerCase().trim();
-            list = list.filter(
-                (r) =>
-                    r.title.toLowerCase().includes(q) ||
-                    r.author.toLowerCase().includes(q) ||
-                    r.subject.toLowerCase().includes(q) ||
-                    r.subjectKey.toLowerCase().includes(q) ||
-                    r.description.toLowerCase().includes(q),
-            );
-        }
-        return list;
-    }, [resourceFilter, resourceSearch]);
 
     return (
         <AppShell active="learn" hideTopSearch>
@@ -211,6 +537,7 @@ export default function LearnScreen() {
                                 activeTab === "questions" &&
                                     s.tabButtonTextActive,
                             ]}
+                            numberOfLines={1}
                         >
                             Question Bank
                         </Text>
@@ -244,6 +571,7 @@ export default function LearnScreen() {
                                 activeTab === "resources" &&
                                     s.tabButtonTextActive,
                             ]}
+                            numberOfLines={1}
                         >
                             Study Resources
                         </Text>
@@ -254,170 +582,7 @@ export default function LearnScreen() {
                 {activeTab === "questions" ? (
                     <QuestionBankView showHeader={false} />
                 ) : (
-                    <View style={s.resourcesContainer}>
-                        {/* Resource Search */}
-                        <View style={s.searchBox}>
-                            <Ionicons
-                                name="search-outline"
-                                size={18}
-                                color={theme.textSecondary}
-                            />
-                            <TextInput
-                                value={resourceSearch}
-                                onChangeText={setResourceSearch}
-                                placeholder="Search books, author, subject, or notes..."
-                                placeholderTextColor={theme.muted}
-                                style={s.searchInput}
-                            />
-                            {resourceSearch.length > 0 && (
-                                <Pressable
-                                    onPress={() => setResourceSearch("")}
-                                    hitSlop={8}
-                                >
-                                    <Ionicons
-                                        name="close-circle"
-                                        size={18}
-                                        color={theme.muted}
-                                    />
-                                </Pressable>
-                            )}
-                        </View>
-
-                        {/* Resource Category Filter */}
-                        <ScrollView
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                            contentContainerStyle={s.filterRow}
-                        >
-                            {RESOURCE_CATEGORIES.map((cat) => {
-                                const isSel = resourceFilter === cat.key;
-                                return (
-                                    <Pressable
-                                        key={cat.key}
-                                        onPress={() => setResourceFilter(cat.key)}
-                                        accessibilityRole="button"
-                                        accessibilityLabel={`Filter by ${cat.label}`}
-                                        style={[
-                                            s.filterPill,
-                                            isSel && s.filterPillActive,
-                                        ]}
-                                    >
-                                        <Ionicons
-                                            name={cat.icon}
-                                            size={14}
-                                            color={isSel ? theme.accent : theme.textSecondary}
-                                        />
-                                        <Text
-                                            style={[
-                                                s.filterPillText,
-                                                isSel &&
-                                                    s.filterPillTextActive,
-                                            ]}
-                                        >
-                                            {cat.label}
-                                        </Text>
-                                    </Pressable>
-                                );
-                            })}
-                        </ScrollView>
-
-                        {/* Resource Cards */}
-                        {filteredResources.length === 0 ? (
-                            <EmptyBlock
-                                icon="book-outline"
-                                title="No resources found"
-                                text="Try clearing your search query or choosing another category."
-                                actionLabel="Show all resources"
-                                onAction={() => {
-                                    setResourceFilter("All");
-                                    setResourceSearch("");
-                                }}
-                            />
-                        ) : (
-                            <View style={s.resourceList}>
-                                {filteredResources.map((res) => (
-                                    <View key={res.id} style={s.resourceCard}>
-                                        <View style={s.resHeaderRow}>
-                                            <View style={s.resTagsRow}>
-                                                <View style={s.subjectPill}>
-                                                    <Text style={s.subjectPillText}>
-                                                        {res.subjectKey}
-                                                    </Text>
-                                                </View>
-                                                {res.semester && (
-                                                    <View style={s.semPill}>
-                                                        <Text style={s.semPillText}>
-                                                            Sem {res.semester}
-                                                        </Text>
-                                                    </View>
-                                                )}
-                                            </View>
-                                            <View style={s.resTypeBadge}>
-                                                <Ionicons
-                                                    name={getResourceTypeIcon(res.type)}
-                                                    size={13}
-                                                    color={theme.accent}
-                                                />
-                                                <Text style={s.resTypeText}>
-                                                    {res.type}
-                                                </Text>
-                                            </View>
-                                        </View>
-
-                                        <Text style={s.resTitle}>{res.title}</Text>
-
-                                        <View style={s.authorRow}>
-                                            <Ionicons
-                                                name="person-outline"
-                                                size={13}
-                                                color={theme.textSecondary}
-                                            />
-                                            <Text style={s.resAuthor}>
-                                                {res.author}
-                                            </Text>
-                                        </View>
-
-                                        <Text style={s.resDesc} numberOfLines={2}>
-                                            {res.description}
-                                        </Text>
-
-                                        <View style={s.resFooter}>
-                                            <View style={s.resSubjectRow}>
-                                                <Ionicons
-                                                    name="school-outline"
-                                                    size={13}
-                                                    color={theme.textSecondary}
-                                                />
-                                                <Text style={s.resSubjectName} numberOfLines={1}>
-                                                    {res.subject}
-                                                </Text>
-                                            </View>
-                                            <Pressable
-                                                onPress={() =>
-                                                    router.push("/syllabus")
-                                                }
-                                                accessibilityRole="button"
-                                                accessibilityLabel={`View ${res.title} in syllabus`}
-                                                style={({ pressed }) => [
-                                                    s.resActionBtn,
-                                                    pressed && { opacity: 0.8 },
-                                                ]}
-                                            >
-                                                <Text style={s.resActionBtnText}>
-                                                    View in Syllabus
-                                                </Text>
-                                                <Ionicons
-                                                    name="arrow-forward"
-                                                    size={13}
-                                                    color={theme.accent}
-                                                />
-                                            </Pressable>
-                                        </View>
-                                    </View>
-                                ))}
-                            </View>
-                        )}
-                    </View>
+                    <StudyResourcesCatalogView />
                 )}
             </View>
         </AppShell>
@@ -476,6 +641,7 @@ function makeStyles(t: AppTheme) {
             justifyContent: "center",
             gap: 8,
             paddingVertical: 10,
+            paddingHorizontal: 8,
             borderRadius: 9,
         },
         tabButtonActive: {
@@ -492,6 +658,7 @@ function makeStyles(t: AppTheme) {
             fontSize: 13,
             fontWeight: "600",
             color: t.textSecondary,
+            flexShrink: 1,
         },
         tabButtonTextActive: {
             color: t.accent,
@@ -513,37 +680,51 @@ function makeStyles(t: AppTheme) {
         },
         searchInput: {
             flex: 1,
+            minWidth: 0,
             color: t.text,
             fontSize: 13,
             padding: 0,
         },
+        filterGroup: {
+            gap: 6,
+        },
+        filterGroupLabel: {
+            color: t.textSecondary,
+            fontSize: 11,
+            fontWeight: "700",
+            letterSpacing: 0.8,
+        },
         filterRow: {
             gap: 8,
             paddingVertical: 2,
+            paddingRight: 8,
         },
-        filterPill: {
+        resultsHeader: {
             flexDirection: "row",
             alignItems: "center",
-            gap: 7,
-            height: 38,
-            paddingHorizontal: 14,
-            borderRadius: 10,
-            backgroundColor: t.surface,
-            borderWidth: 1,
-            borderColor: t.border,
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: 8,
+            marginTop: 2,
         },
-        filterPillActive: {
-            backgroundColor: t.accentSoft,
-            borderColor: t.accent,
-        },
-        filterPillText: {
+        resultsCountText: {
             fontSize: 12,
             fontWeight: "600",
             color: t.textSecondary,
         },
-        filterPillTextActive: {
-            color: t.accent,
+        clearBtn: {
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 4,
+            paddingHorizontal: 10,
+            paddingVertical: 5,
+            borderRadius: 8,
+            backgroundColor: t.accentSoft,
+        },
+        clearBtnText: {
+            fontSize: 12,
             fontWeight: "700",
+            color: t.accent,
         },
         resourceList: {
             gap: 14,
@@ -560,10 +741,13 @@ function makeStyles(t: AppTheme) {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: 8,
         },
         resTagsRow: {
             flexDirection: "row",
             alignItems: "center",
+            flexWrap: "wrap",
             gap: 8,
         },
         subjectPill: {
@@ -619,6 +803,7 @@ function makeStyles(t: AppTheme) {
             fontSize: 12,
             color: t.textSecondary,
             fontWeight: "500",
+            flex: 1,
         },
         resDesc: {
             fontSize: 13,
@@ -629,6 +814,8 @@ function makeStyles(t: AppTheme) {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: 10,
             marginTop: 4,
             paddingTop: 12,
             borderTopWidth: 1,
@@ -639,12 +826,13 @@ function makeStyles(t: AppTheme) {
             alignItems: "center",
             gap: 6,
             flex: 1,
-            marginRight: 8,
+            minWidth: 150,
         },
         resSubjectName: {
             fontSize: 12,
             fontWeight: "500",
             color: t.textSecondary,
+            flex: 1,
         },
         resActionBtn: {
             flexDirection: "row",
@@ -656,6 +844,7 @@ function makeStyles(t: AppTheme) {
             backgroundColor: t.accentSoft,
             borderWidth: 1,
             borderColor: t.accent + "25",
+            flexShrink: 0,
         },
         resActionBtnText: {
             fontSize: 12,

@@ -37,16 +37,29 @@ export default function QuizRevisionHomeScreen() {
     const [, setTopics] = useState<QuizTopicMeta[]>([]);
 
     // User selections
-    const [selectedSubjectKey, setSelectedSubjectKey] = useState<number | null>(null);
-    const [selectedChapterId, setSelectedChapterId] = useState<number | null>(null);
+    const [selectedSemester, setSelectedSemester] = useState<number | null>(
+        null,
+    );
+    const [selectedSubjectKey, setSelectedSubjectKey] = useState<number | null>(
+        null,
+    );
+    const [selectedChapterId, setSelectedChapterId] = useState<number | null>(
+        null,
+    );
     const [selectedTopicIds, setSelectedTopicIds] = useState<number[]>([]);
-    const [selectedType, setSelectedType] = useState<"ALL" | "MCQ" | "FILLUPS" | "TRUE_FALSE">("ALL");
-    const [selectedDifficulty, setSelectedDifficulty] = useState<"ALL" | "EASY" | "MEDIUM" | "HARD">("ALL");
+    const [selectedType, setSelectedType] = useState<
+        "ALL" | "MCQ" | "FILLUPS" | "TRUE_FALSE"
+    >("ALL");
+    const [selectedDifficulty, setSelectedDifficulty] = useState<
+        "ALL" | "EASY" | "MEDIUM" | "HARD"
+    >("ALL");
     const [questionLimit, setQuestionLimit] = useState<number>(10);
 
     // Live counts
     const [loadingCounts, setLoadingCounts] = useState(false);
-    const [countsData, setCountsData] = useState<QuizCountsResponse | null>(null);
+    const [countsData, setCountsData] = useState<QuizCountsResponse | null>(
+        null,
+    );
     const [starting, setStarting] = useState(false);
 
     // 1. Fetch metadata on mount
@@ -63,14 +76,22 @@ export default function QuizRevisionHomeScreen() {
                 setTopics(res.topics || []);
 
                 if (res.subjects && res.subjects.length > 0) {
-                    // Pick a subject that has active revision questions available
-                    const subjectsWithQs = res.subjects.filter((sub) => (sub.questionCount || 0) > 0);
-                    const initialSubject = subjectsWithQs.length > 0 ? subjectsWithQs[0] : res.subjects[0];
+                    const subjectsWithQs = res.subjects.filter(
+                        (sub) => (sub.questionCount || 0) > 0,
+                    );
+                    const initialSubject =
+                        subjectsWithQs.length > 0
+                            ? subjectsWithQs[0]
+                            : res.subjects[0];
                     setSelectedSubjectKey(initialSubject.subjectKey);
                 }
             } catch (err) {
                 if (mounted) {
-                    setMetaError(err instanceof Error ? err.message : "Failed to load subjects.");
+                    setMetaError(
+                        err instanceof Error
+                            ? err.message
+                            : "Failed to load subjects.",
+                    );
                 }
             } finally {
                 if (mounted) setLoadingMeta(false);
@@ -89,9 +110,29 @@ export default function QuizRevisionHomeScreen() {
             const countB = b.questionCount || 0;
             if (countA > 0 && countB === 0) return -1;
             if (countA === 0 && countB > 0) return 1;
-            return a.semester - b.semester || a.subjectName.localeCompare(b.subjectName);
+            return (
+                a.semester - b.semester ||
+                a.subjectName.localeCompare(b.subjectName)
+            );
         });
     }, [subjects]);
+
+    const availableSemesters = useMemo(() => {
+        const sems = new Set<number>();
+        for (const sub of sortedSubjects) {
+            if (typeof sub.semester === "number" && sub.semester > 0) {
+                sems.add(sub.semester);
+            }
+        }
+        return Array.from(sems).sort((a, b) => a - b);
+    }, [sortedSubjects]);
+
+    const displayedSubjects = useMemo(() => {
+        if (selectedSemester === null) return sortedSubjects;
+        return sortedSubjects.filter(
+            (sub) => sub.semester === selectedSemester,
+        );
+    }, [sortedSubjects, selectedSemester]);
 
     // Filtered chapters for current subject
     const subjectChapters = useMemo(() => {
@@ -107,7 +148,8 @@ export default function QuizRevisionHomeScreen() {
     }, [chapters, selectedChapterId]);
 
     // Total available count across filters
-    const availableCount = countsData?.total ?? countsData?.availableQuestions ?? 0;
+    const availableCount =
+        countsData?.total ?? countsData?.availableQuestions ?? 0;
 
     // 2. Fetch live question counts when configuration changes
     useEffect(() => {
@@ -120,9 +162,16 @@ export default function QuizRevisionHomeScreen() {
                 const res = await api.getQuizCounts({
                     subjectKey: selectedSubjectKey!,
                     chapterId: selectedChapterId ?? undefined,
-                    topicIds: selectedTopicIds.length > 0 ? selectedTopicIds : undefined,
-                    difficulty: selectedDifficulty === "ALL" ? undefined : selectedDifficulty,
-                    questionType: selectedType === "ALL" ? undefined : selectedType,
+                    topicIds:
+                        selectedTopicIds.length > 0
+                            ? selectedTopicIds
+                            : undefined,
+                    difficulty:
+                        selectedDifficulty === "ALL"
+                            ? undefined
+                            : selectedDifficulty,
+                    questionType:
+                        selectedType === "ALL" ? undefined : selectedType,
                 });
                 if (!cancelled) {
                     setCountsData(res);
@@ -138,17 +187,49 @@ export default function QuizRevisionHomeScreen() {
         return () => {
             cancelled = true;
         };
-    }, [selectedSubjectKey, selectedChapterId, selectedTopicIds, selectedType, selectedDifficulty]);
+    }, [
+        selectedSubjectKey,
+        selectedChapterId,
+        selectedTopicIds,
+        selectedType,
+        selectedDifficulty,
+    ]);
+
+    const hasCustomFilters =
+        selectedSemester !== null ||
+        selectedChapterId !== null ||
+        selectedTopicIds.length > 0 ||
+        selectedType !== "ALL" ||
+        selectedDifficulty !== "ALL" ||
+        questionLimit !== 10;
+
+    const resetConfiguration = () => {
+        setSelectedSemester(null);
+        setSelectedChapterId(null);
+        setSelectedTopicIds([]);
+        setSelectedType("ALL");
+        setSelectedDifficulty("ALL");
+        setQuestionLimit(10);
+        if (sortedSubjects.length > 0) {
+            setSelectedSubjectKey(sortedSubjects[0].subjectKey);
+        }
+    };
 
     // Handle Start Revision
     const handleStartRevision = async () => {
         if (!selectedSubjectKey) {
-            Alert.alert("Select Subject", "Please choose a subject to begin revision.");
+            Alert.alert(
+                "Select Subject",
+                "Please choose a subject to begin revision.",
+            );
             return;
         }
 
         if (!countsData || availableCount === 0) {
-            Alert.alert("No Questions Available", "Try picking another topic, chapter, or question format.");
+            Alert.alert(
+                "No Questions Available",
+                "Try picking another topic, chapter, or question format.",
+            );
             return;
         }
 
@@ -157,8 +238,12 @@ export default function QuizRevisionHomeScreen() {
             const res = await api.startQuiz({
                 subjectKey: selectedSubjectKey,
                 chapterId: selectedChapterId ?? undefined,
-                topicIds: selectedTopicIds.length > 0 ? selectedTopicIds : undefined,
-                difficulty: selectedDifficulty === "ALL" ? undefined : selectedDifficulty,
+                topicIds:
+                    selectedTopicIds.length > 0 ? selectedTopicIds : undefined,
+                difficulty:
+                    selectedDifficulty === "ALL"
+                        ? undefined
+                        : selectedDifficulty,
                 questionType: selectedType,
                 count: questionLimit,
                 limit: questionLimit,
@@ -173,7 +258,12 @@ export default function QuizRevisionHomeScreen() {
                 },
             } as never);
         } catch (err) {
-            Alert.alert("Error Starting Quiz", err instanceof Error ? err.message : "Failed to start quiz session.");
+            Alert.alert(
+                "Error Starting Quiz",
+                err instanceof Error
+                    ? err.message
+                    : "Failed to start quiz session.",
+            );
         } finally {
             setStarting(false);
         }
@@ -181,7 +271,7 @@ export default function QuizRevisionHomeScreen() {
 
     const toggleTopic = (id: number) => {
         setSelectedTopicIds((prev) =>
-            prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]
+            prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id],
         );
     };
 
@@ -193,20 +283,59 @@ export default function QuizRevisionHomeScreen() {
                     <View style={s.headerContent}>
                         <View style={s.badgeRow}>
                             <View style={s.quizBadge}>
-                                <Ionicons name="flash" size={13} color={theme.accent} />
-                                <Text style={s.quizBadgeText}>Interactive Quiz Engine</Text>
+                                <Ionicons
+                                    name="flash"
+                                    size={13}
+                                    color={theme.accent}
+                                />
+                                <Text style={s.quizBadgeText}>
+                                    Interactive Quiz Engine
+                                </Text>
                             </View>
-                            <Pressable
-                                onPress={() => router.push("/quiz-revision/history" as never)}
-                                style={({ pressed }) => [s.historyBtn, pressed && { opacity: 0.8 }]}
-                            >
-                                <Ionicons name="time-outline" size={14} color={theme.textSecondary} />
-                                <Text style={s.historyBtnText}>Attempt History</Text>
-                            </Pressable>
+                            <View style={s.headerRightActions}>
+                                {hasCustomFilters && (
+                                    <Pressable
+                                        onPress={resetConfiguration}
+                                        style={({ pressed }) => [
+                                            s.resetConfigBtn,
+                                            pressed && { opacity: 0.8 },
+                                        ]}
+                                    >
+                                        <Ionicons
+                                            name="refresh-outline"
+                                            size={13}
+                                            color={theme.accent}
+                                        />
+                                        <Text style={s.resetConfigText}>
+                                            Reset
+                                        </Text>
+                                    </Pressable>
+                                )}
+                                <Pressable
+                                    onPress={() =>
+                                        router.push(
+                                            "/quiz-revision/history" as never,
+                                        )
+                                    }
+                                    style={({ pressed }) => [
+                                        s.historyBtn,
+                                        pressed && { opacity: 0.8 },
+                                    ]}
+                                >
+                                    <Ionicons
+                                        name="time-outline"
+                                        size={14}
+                                        color={theme.textSecondary}
+                                    />
+                                    <Text style={s.historyBtnText}>
+                                        Attempt History
+                                    </Text>
+                                </Pressable>
+                            </View>
                         </View>
                         <Text style={s.title}>Quiz & Revision</Text>
                         <Text style={s.subtitle}>
-                            Configure your custom practice session by course, chapter, format, and difficulty.
+                            Configure your custom practice session by semester, course, chapter, format, and difficulty.
                         </Text>
                     </View>
                 </View>
@@ -214,38 +343,162 @@ export default function QuizRevisionHomeScreen() {
                 {loadingMeta ? (
                     <View style={s.loadingBox}>
                         <ActivityIndicator size="large" color={theme.accent} />
-                        <Text style={s.loadingText}>Loading curriculum and available questions...</Text>
+                        <Text style={s.loadingText}>
+                            Loading curriculum and available questions...
+                        </Text>
                     </View>
                 ) : metaError ? (
                     <View style={s.errorBox}>
-                        <Ionicons name="alert-circle-outline" size={24} color={theme.danger} />
+                        <Ionicons
+                            name="alert-circle-outline"
+                            size={24}
+                            color={theme.danger}
+                        />
                         <Text style={s.errorText}>{metaError}</Text>
                     </View>
                 ) : (
                     <View style={s.formGrid}>
+                        {/* Semester Filter */}
+                        {availableSemesters.length > 0 && (
+                            <View style={s.section}>
+                                <Text style={s.sectionTitle}>
+                                    Filter by Semester
+                                </Text>
+                                <ScrollView
+                                    horizontal
+                                    showsHorizontalScrollIndicator={false}
+                                    contentContainerStyle={s.pillScroll}
+                                >
+                                    <Pressable
+                                        onPress={() =>
+                                            setSelectedSemester(null)
+                                        }
+                                        style={[
+                                            s.pillCompact,
+                                            selectedSemester === null &&
+                                                s.pillActive,
+                                        ]}
+                                    >
+                                        <Text
+                                            style={[
+                                                s.pillText,
+                                                selectedSemester === null &&
+                                                    s.pillTextActive,
+                                            ]}
+                                        >
+                                            All Semesters
+                                        </Text>
+                                    </Pressable>
+                                    {availableSemesters.map((sem) => {
+                                        const isSel = selectedSemester === sem;
+                                        return (
+                                            <Pressable
+                                                key={sem}
+                                                onPress={() => {
+                                                    const next = isSel
+                                                        ? null
+                                                        : sem;
+                                                    setSelectedSemester(next);
+                                                    if (next !== null) {
+                                                        const semSubs =
+                                                            sortedSubjects.filter(
+                                                                (s) =>
+                                                                    s.semester ===
+                                                                    next,
+                                                            );
+                                                        if (
+                                                            semSubs.length >
+                                                                0 &&
+                                                            !semSubs.some(
+                                                                (s) =>
+                                                                    s.subjectKey ===
+                                                                    selectedSubjectKey,
+                                                            )
+                                                        ) {
+                                                            setSelectedSubjectKey(
+                                                                semSubs[0]
+                                                                    .subjectKey,
+                                                            );
+                                                            setSelectedChapterId(
+                                                                null,
+                                                            );
+                                                            setSelectedTopicIds(
+                                                                [],
+                                                            );
+                                                        }
+                                                    }
+                                                }}
+                                                style={[
+                                                    s.pillCompact,
+                                                    isSel && s.pillActive,
+                                                ]}
+                                            >
+                                                <Text
+                                                    style={[
+                                                        s.pillText,
+                                                        isSel &&
+                                                            s.pillTextActive,
+                                                    ]}
+                                                >
+                                                    Sem {sem}
+                                                </Text>
+                                            </Pressable>
+                                        );
+                                    })}
+                                </ScrollView>
+                            </View>
+                        )}
+
                         {/* 1. Subject Selection */}
                         <View style={s.section}>
-                            <Text style={s.sectionTitle}>1. Select Subject</Text>
-                            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.pillScroll}>
-                                {sortedSubjects.map((sub) => {
-                                    const isSel = sub.subjectKey === selectedSubjectKey;
-                                    const hasQuestions = (sub.questionCount || 0) > 0;
+                            <Text style={s.sectionTitle}>
+                                1. Select Subject
+                            </Text>
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={s.pillScroll}
+                            >
+                                {displayedSubjects.map((sub) => {
+                                    const isSel =
+                                        sub.subjectKey === selectedSubjectKey;
+                                    const hasQuestions =
+                                        (sub.questionCount || 0) > 0;
                                     return (
                                         <Pressable
                                             key={sub.subjectKey}
                                             onPress={() => {
-                                                setSelectedSubjectKey(sub.subjectKey);
+                                                setSelectedSubjectKey(
+                                                    sub.subjectKey,
+                                                );
                                                 setSelectedChapterId(null);
                                                 setSelectedTopicIds([]);
                                             }}
-                                            style={[s.pill, isSel && s.pillActive]}
+                                            style={[
+                                                s.pill,
+                                                isSel && s.pillActive,
+                                            ]}
                                         >
                                             <Ionicons
-                                                name={isSel ? "book" : "book-outline"}
+                                                name={
+                                                    isSel
+                                                        ? "book"
+                                                        : "book-outline"
+                                                }
                                                 size={14}
-                                                color={isSel ? "#FFF" : theme.textSecondary}
+                                                color={
+                                                    isSel
+                                                        ? "#FFF"
+                                                        : theme.textSecondary
+                                                }
                                             />
-                                            <Text style={[s.pillText, isSel && s.pillTextActive]}>
+                                            <Text
+                                                style={[
+                                                    s.pillText,
+                                                    isSel && s.pillTextActive,
+                                                ]}
+                                                numberOfLines={1}
+                                            >
                                                 {sub.subjectName}
                                             </Text>
                                             {hasQuestions && (
@@ -263,7 +516,9 @@ export default function QuizRevisionHomeScreen() {
                                                         style={{
                                                             fontSize: 10,
                                                             fontWeight: "700",
-                                                            color: isSel ? "#FFF" : theme.accent,
+                                                            color: isSel
+                                                                ? "#FFF"
+                                                                : theme.accent,
                                                         }}
                                                     >
                                                         {sub.questionCount} Qs
@@ -280,35 +535,74 @@ export default function QuizRevisionHomeScreen() {
                         {subjectChapters.length > 0 && (
                             <View style={s.section}>
                                 <View style={s.rowBetween}>
-                                    <Text style={s.sectionTitle}>2. Chapter Filter (Optional)</Text>
+                                    <Text style={s.sectionTitle}>
+                                        2. Chapter Filter (Optional)
+                                    </Text>
                                     {selectedChapterId && (
-                                        <Pressable onPress={() => { setSelectedChapterId(null); setSelectedTopicIds([]); }}>
-                                            <Text style={s.clearText}>Clear</Text>
+                                        <Pressable
+                                            onPress={() => {
+                                                setSelectedChapterId(null);
+                                                setSelectedTopicIds([]);
+                                            }}
+                                        >
+                                            <Text style={s.clearText}>
+                                                Clear
+                                            </Text>
                                         </Pressable>
                                     )}
                                 </View>
-                                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.pillScroll}>
+                                <ScrollView
+                                    horizontal
+                                    showsHorizontalScrollIndicator={false}
+                                    contentContainerStyle={s.pillScroll}
+                                >
                                     <Pressable
-                                        onPress={() => { setSelectedChapterId(null); setSelectedTopicIds([]); }}
-                                        style={[s.pill, !selectedChapterId && s.pillActive]}
+                                        onPress={() => {
+                                            setSelectedChapterId(null);
+                                            setSelectedTopicIds([]);
+                                        }}
+                                        style={[
+                                            s.pill,
+                                            !selectedChapterId && s.pillActive,
+                                        ]}
                                     >
-                                        <Text style={[s.pillText, !selectedChapterId && s.pillTextActive]}>
+                                        <Text
+                                            style={[
+                                                s.pillText,
+                                                !selectedChapterId &&
+                                                    s.pillTextActive,
+                                            ]}
+                                        >
                                             All Chapters
                                         </Text>
                                     </Pressable>
                                     {subjectChapters.map((ch) => {
-                                        const isSel = ch.chapterId === selectedChapterId;
+                                        const isSel =
+                                            ch.chapterId === selectedChapterId;
                                         return (
                                             <Pressable
                                                 key={ch.chapterId}
                                                 onPress={() => {
-                                                    setSelectedChapterId(ch.chapterId);
+                                                    setSelectedChapterId(
+                                                        ch.chapterId,
+                                                    );
                                                     setSelectedTopicIds([]);
                                                 }}
-                                                style={[s.pill, isSel && s.pillActive]}
+                                                style={[
+                                                    s.pill,
+                                                    isSel && s.pillActive,
+                                                ]}
                                             >
-                                                <Text style={[s.pillText, isSel && s.pillTextActive]}>
-                                                    Ch {ch.chapterNo}: {ch.chapterName}
+                                                <Text
+                                                    style={[
+                                                        s.pillText,
+                                                        isSel &&
+                                                            s.pillTextActive,
+                                                    ]}
+                                                    numberOfLines={1}
+                                                >
+                                                    Ch {ch.chapterNo}:{" "}
+                                                    {ch.chapterName}
                                                 </Text>
                                             </Pressable>
                                         );
@@ -320,22 +614,60 @@ export default function QuizRevisionHomeScreen() {
                         {/* 3. Topics (if chapter selected) */}
                         {chapterTopics.length > 0 && (
                             <View style={s.section}>
-                                <Text style={s.sectionTitle}>3. Specific Topics ({selectedTopicIds.length} selected)</Text>
+                                <View style={s.rowBetween}>
+                                    <Text style={s.sectionTitle}>
+                                        3. Specific Topics (
+                                        {selectedTopicIds.length} selected)
+                                    </Text>
+                                    {selectedTopicIds.length > 0 && (
+                                        <Pressable
+                                            onPress={() =>
+                                                setSelectedTopicIds([])
+                                            }
+                                        >
+                                            <Text style={s.clearText}>
+                                                Clear Topics
+                                            </Text>
+                                        </Pressable>
+                                    )}
+                                </View>
                                 <View style={s.chipsWrap}>
                                     {chapterTopics.map((top) => {
-                                        const isSel = selectedTopicIds.includes(top.topicId);
+                                        const isSel =
+                                            selectedTopicIds.includes(
+                                                top.topicId,
+                                            );
                                         return (
                                             <Pressable
                                                 key={top.topicId}
-                                                onPress={() => toggleTopic(top.topicId)}
-                                                style={[s.chip, isSel && s.chipActive]}
+                                                onPress={() =>
+                                                    toggleTopic(top.topicId)
+                                                }
+                                                style={[
+                                                    s.chip,
+                                                    isSel && s.chipActive,
+                                                ]}
                                             >
                                                 <Ionicons
-                                                    name={isSel ? "checkbox" : "square-outline"}
+                                                    name={
+                                                        isSel
+                                                            ? "checkbox"
+                                                            : "square-outline"
+                                                    }
                                                     size={13}
-                                                    color={isSel ? theme.accent : theme.muted}
+                                                    color={
+                                                        isSel
+                                                            ? theme.accent
+                                                            : theme.muted
+                                                    }
                                                 />
-                                                <Text style={[s.chipText, isSel && s.chipTextActive]}>
+                                                <Text
+                                                    style={[
+                                                        s.chipText,
+                                                        isSel &&
+                                                            s.chipTextActive,
+                                                    ]}
+                                                >
                                                     {top.topicName}
                                                 </Text>
                                             </Pressable>
@@ -347,34 +679,72 @@ export default function QuizRevisionHomeScreen() {
 
                         {/* 4. Question Format Selector */}
                         <View style={s.section}>
-                            <Text style={s.sectionTitle}>4. Question Format</Text>
+                            <Text style={s.sectionTitle}>
+                                4. Question Format
+                            </Text>
                             <View style={s.buttonGroup}>
                                 {[
-                                    { key: "ALL", label: "All Formats", icon: "sparkles-outline" },
-                                    { key: "MCQ", label: "Multiple Choice", icon: "list-outline" },
-                                    { key: "FILLUPS", label: "Fill in Blanks", icon: "create-outline" },
-                                    { key: "TRUE_FALSE", label: "True / False", icon: "checkmark-done-outline" },
+                                    {
+                                        key: "ALL",
+                                        label: "All Formats",
+                                        icon: "sparkles-outline",
+                                    },
+                                    {
+                                        key: "MCQ",
+                                        label: "Multiple Choice",
+                                        icon: "list-outline",
+                                    },
+                                    {
+                                        key: "FILLUPS",
+                                        label: "Fill in Blanks",
+                                        icon: "create-outline",
+                                    },
+                                    {
+                                        key: "TRUE_FALSE",
+                                        label: "True / False",
+                                        icon: "checkmark-done-outline",
+                                    },
                                 ].map((item) => {
                                     const isSel = selectedType === item.key;
                                     return (
                                         <Pressable
                                             key={item.key}
-                                            onPress={() => setSelectedType(item.key as any)}
-                                            style={[s.typeCard, isSel && s.typeCardActive]}
+                                            onPress={() =>
+                                                setSelectedType(item.key as any)
+                                            }
+                                            style={[
+                                                s.typeCard,
+                                                isSel && s.typeCardActive,
+                                            ]}
                                         >
                                             <Ionicons
                                                 name={item.icon as any}
                                                 size={17}
-                                                color={isSel ? theme.accent : theme.textSecondary}
+                                                color={
+                                                    isSel
+                                                        ? theme.accent
+                                                        : theme.textSecondary
+                                                }
                                             />
-                                            <Text style={[s.typeCardText, isSel && s.typeCardTextActive]}>
+                                            <Text
+                                                style={[
+                                                    s.typeCardText,
+                                                    isSel &&
+                                                        s.typeCardTextActive,
+                                                ]}
+                                                numberOfLines={1}
+                                            >
                                                 {item.label}
                                             </Text>
-                                            {countsData?.typeBreakdown && item.key !== "ALL" && (
-                                                <Text style={s.typeCount}>
-                                                    {countsData.typeBreakdown[item.key as keyof typeof countsData.typeBreakdown] || 0}
-                                                </Text>
-                                            )}
+                                            {countsData?.typeBreakdown &&
+                                                item.key !== "ALL" && (
+                                                    <Text style={s.typeCount}>
+                                                        {countsData
+                                                            .typeBreakdown[
+                                                            item.key as keyof typeof countsData.typeBreakdown
+                                                        ] || 0}
+                                                    </Text>
+                                                )}
                                         </Pressable>
                                     );
                                 })}
@@ -383,8 +753,12 @@ export default function QuizRevisionHomeScreen() {
 
                         {/* 5. Difficulty & Question Count */}
                         <View style={[s.section, isWide && s.rowWrap]}>
-                            <View style={{ flex: 1, minWidth: 240, gap: 8 }}>
-                                <Text style={s.sectionTitle}>5. Difficulty</Text>
+                            <View
+                                style={{ flex: 1, minWidth: 240, gap: 8 }}
+                            >
+                                <Text style={s.sectionTitle}>
+                                    5. Difficulty
+                                </Text>
                                 <View style={s.segRow}>
                                     {[
                                         { key: "ALL", label: "Any" },
@@ -394,10 +768,25 @@ export default function QuizRevisionHomeScreen() {
                                     ].map((d) => (
                                         <Pressable
                                             key={d.key}
-                                            onPress={() => setSelectedDifficulty(d.key as any)}
-                                            style={[s.segBtn, selectedDifficulty === d.key && s.segBtnActive]}
+                                            onPress={() =>
+                                                setSelectedDifficulty(
+                                                    d.key as any,
+                                                )
+                                            }
+                                            style={[
+                                                s.segBtn,
+                                                selectedDifficulty === d.key &&
+                                                    s.segBtnActive,
+                                            ]}
                                         >
-                                            <Text style={[s.segText, selectedDifficulty === d.key && s.segTextActive]}>
+                                            <Text
+                                                style={[
+                                                    s.segText,
+                                                    selectedDifficulty ===
+                                                        d.key &&
+                                                        s.segTextActive,
+                                                ]}
+                                            >
                                                 {d.label}
                                             </Text>
                                         </Pressable>
@@ -405,16 +794,32 @@ export default function QuizRevisionHomeScreen() {
                                 </View>
                             </View>
 
-                            <View style={{ flex: 1, minWidth: 240, gap: 8 }}>
-                                <Text style={s.sectionTitle}>6. Question Count</Text>
+                            <View
+                                style={{ flex: 1, minWidth: 240, gap: 8 }}
+                            >
+                                <Text style={s.sectionTitle}>
+                                    6. Question Count
+                                </Text>
                                 <View style={s.segRow}>
                                     {[5, 10, 15, 20].map((num) => (
                                         <Pressable
                                             key={num}
-                                            onPress={() => setQuestionLimit(num)}
-                                            style={[s.segBtn, questionLimit === num && s.segBtnActive]}
+                                            onPress={() =>
+                                                setQuestionLimit(num)
+                                            }
+                                            style={[
+                                                s.segBtn,
+                                                questionLimit === num &&
+                                                    s.segBtnActive,
+                                            ]}
                                         >
-                                            <Text style={[s.segText, questionLimit === num && s.segTextActive]}>
+                                            <Text
+                                                style={[
+                                                    s.segText,
+                                                    questionLimit === num &&
+                                                        s.segTextActive,
+                                                ]}
+                                            >
                                                 {num} Qs
                                             </Text>
                                         </Pressable>
@@ -426,17 +831,24 @@ export default function QuizRevisionHomeScreen() {
                         {/* Live Summary & Start CTA */}
                         <View style={s.startCard}>
                             <View style={s.startLeft}>
-                                <Text style={s.availLabel}>Matched In Question Bank</Text>
+                                <Text style={s.availLabel}>
+                                    Matched In Question Bank
+                                </Text>
                                 <View style={s.availCountRow}>
                                     {loadingCounts ? (
-                                        <ActivityIndicator size="small" color={theme.accent} />
+                                        <ActivityIndicator
+                                            size="small"
+                                            color={theme.accent}
+                                        />
                                     ) : (
                                         <>
                                             <Text style={s.availNumber}>
                                                 {availableCount}
                                             </Text>
                                             <Text style={s.availUnit}>
-                                                {availableCount === 1 ? "question ready" : "questions ready"}
+                                                {availableCount === 1
+                                                    ? "question ready"
+                                                    : "questions ready"}
                                             </Text>
                                         </>
                                     )}
@@ -448,16 +860,26 @@ export default function QuizRevisionHomeScreen() {
                                 disabled={starting || availableCount === 0}
                                 style={({ pressed }) => [
                                     s.startBtn,
-                                    (starting || availableCount === 0) && s.startBtnDisabled,
+                                    (starting || availableCount === 0) &&
+                                        s.startBtnDisabled,
                                     pressed && { opacity: 0.85 },
                                 ]}
                             >
                                 {starting ? (
-                                    <ActivityIndicator size="small" color="#FFF" />
+                                    <ActivityIndicator
+                                        size="small"
+                                        color="#FFF"
+                                    />
                                 ) : (
                                     <>
-                                        <Ionicons name="play" size={16} color="#FFF" />
-                                        <Text style={s.startBtnText}>Start Quiz</Text>
+                                        <Ionicons
+                                            name="play"
+                                            size={16}
+                                            color="#FFF"
+                                        />
+                                        <Text style={s.startBtnText}>
+                                            Start Quiz
+                                        </Text>
                                     </>
                                 )}
                             </Pressable>
@@ -481,7 +903,7 @@ function makeStyles(t: AppTheme) {
         headerCard: {
             backgroundColor: t.surface,
             borderRadius: 16,
-            padding: 22,
+            padding: 20,
             borderWidth: 1,
             borderColor: t.border,
         },
@@ -492,6 +914,13 @@ function makeStyles(t: AppTheme) {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: 8,
+        },
+        headerRightActions: {
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 8,
         },
         quizBadge: {
             flexDirection: "row",
@@ -509,6 +938,20 @@ function makeStyles(t: AppTheme) {
             fontSize: 11,
             fontWeight: "700",
             letterSpacing: 0.5,
+        },
+        resetConfigBtn: {
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 5,
+            backgroundColor: t.accentSoft,
+            paddingHorizontal: 10,
+            paddingVertical: 6,
+            borderRadius: 8,
+        },
+        resetConfigText: {
+            color: t.accent,
+            fontSize: 12,
+            fontWeight: "700",
         },
         historyBtn: {
             flexDirection: "row",
@@ -586,6 +1029,7 @@ function makeStyles(t: AppTheme) {
         pillScroll: {
             gap: 8,
             paddingVertical: 2,
+            paddingRight: 8,
         },
         pill: {
             flexDirection: "row",
@@ -598,6 +1042,17 @@ function makeStyles(t: AppTheme) {
             borderWidth: 1,
             borderColor: t.border,
         },
+        pillCompact: {
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 6,
+            paddingHorizontal: 12,
+            paddingVertical: 7,
+            borderRadius: 9,
+            backgroundColor: t.surface,
+            borderWidth: 1,
+            borderColor: t.border,
+        },
         pillActive: {
             backgroundColor: t.accent,
             borderColor: t.accent,
@@ -606,6 +1061,7 @@ function makeStyles(t: AppTheme) {
             color: t.textSecondary,
             fontSize: 13,
             fontWeight: "600",
+            maxWidth: 240,
         },
         pillTextActive: {
             color: "#FFF",
@@ -626,6 +1082,7 @@ function makeStyles(t: AppTheme) {
             backgroundColor: t.surface,
             borderWidth: 1,
             borderColor: t.border,
+            maxWidth: "100%",
         },
         chipActive: {
             backgroundColor: t.accentSoft,
@@ -635,6 +1092,7 @@ function makeStyles(t: AppTheme) {
             color: t.textSecondary,
             fontSize: 12,
             fontWeight: "500",
+            flexShrink: 1,
         },
         chipTextActive: {
             color: t.accent,
@@ -647,7 +1105,7 @@ function makeStyles(t: AppTheme) {
         },
         typeCard: {
             flex: 1,
-            minWidth: 140,
+            minWidth: 145,
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
@@ -721,11 +1179,13 @@ function makeStyles(t: AppTheme) {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
+            flexWrap: "wrap",
             gap: 16,
             marginTop: 6,
         },
         startLeft: {
             flex: 1,
+            minWidth: 170,
             gap: 2,
         },
         availLabel: {
@@ -753,6 +1213,7 @@ function makeStyles(t: AppTheme) {
         startBtn: {
             flexDirection: "row",
             alignItems: "center",
+            justifyContent: "center",
             gap: 8,
             backgroundColor: t.accent,
             paddingHorizontal: 22,

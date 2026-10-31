@@ -1,11 +1,17 @@
 import { useMemo, useState, type ReactNode } from "react";
 import {
     ActivityIndicator,
+    KeyboardAvoidingView,
+    Modal,
     Platform,
     Pressable,
     ScrollView,
+    StyleSheet,
     Text,
+    TextInput,
     View,
+    type StyleProp,
+    type ViewStyle,
 } from "react-native";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
@@ -71,11 +77,18 @@ export function Badge({
                 borderWidth: 1,
                 borderColor: color ? color + "33" : theme.border,
                 backgroundColor: color ? color + "14" : theme.surfaceAlt,
+                maxWidth: "100%",
+                flexShrink: 1,
             }}
         >
             {icon ? <Ionicons name={icon} size={12} color={fg} /> : null}
             <Text
-                style={{ color: fg, fontSize: 11, fontWeight: "600" }}
+                style={{
+                    color: fg,
+                    fontSize: 11,
+                    fontWeight: "600",
+                    flexShrink: 1,
+                }}
                 numberOfLines={1}
             >
                 {label}
@@ -88,7 +101,10 @@ export function Badge({
             <Pressable
                 onPress={onPress}
                 accessibilityRole="button"
-                style={({ pressed }) => ({ opacity: pressed ? 0.75 : 1 })}
+                style={({ pressed }) => ({
+                    opacity: pressed ? 0.75 : 1,
+                    flexShrink: 1,
+                })}
             >
                 {content}
             </Pressable>
@@ -104,6 +120,7 @@ export function Pill({
     color,
     icon,
     count,
+    compact = false,
 }: {
     label: string;
     active?: boolean;
@@ -111,6 +128,7 @@ export function Pill({
     color?: string;
     icon?: IconName;
     count?: number;
+    compact?: boolean;
 }) {
     const { theme } = useAppTheme();
     const activeBg = color ?? theme.accent;
@@ -122,9 +140,9 @@ export function Pill({
             style={({ pressed }) => ({
                 flexDirection: "row",
                 alignItems: "center",
-                gap: 7,
-                paddingHorizontal: 14,
-                height: 38,
+                gap: 6,
+                paddingHorizontal: compact ? 11 : 14,
+                height: compact ? 34 : 38,
                 borderRadius: 10,
                 borderWidth: 1,
                 borderColor: active ? activeBg : theme.border,
@@ -140,7 +158,7 @@ export function Pill({
             {icon ? (
                 <Ionicons
                     name={icon}
-                    size={14}
+                    size={compact ? 13 : 14}
                     color={active ? "#FFFFFF" : color ?? theme.textSecondary}
                 />
             ) : null}
@@ -148,8 +166,9 @@ export function Pill({
                 numberOfLines={1}
                 style={{
                     color: active ? "#FFFFFF" : theme.textSecondary,
-                    fontSize: 13,
+                    fontSize: compact ? 12 : 13,
                     fontWeight: active ? "700" : "600",
+                    maxWidth: 220,
                 }}
             >
                 {label}
@@ -180,6 +199,86 @@ export function Pill({
     );
 }
 
+/** Alias for Pill to support standard FilterChip usage across screens. */
+export const FilterChip = Pill;
+
+export function ScreenContainer({
+    children,
+    style,
+}: {
+    children: ReactNode;
+    style?: StyleProp<ViewStyle>;
+}) {
+    return (
+        <View style={[{ width: "100%", gap: 18 }, style]}>{children}</View>
+    );
+}
+
+export function ScreenHeader({
+    eyebrow,
+    title,
+    subtitle,
+    rightAction,
+}: {
+    eyebrow?: string;
+    title: string;
+    subtitle?: string;
+    rightAction?: ReactNode;
+}) {
+    const { theme } = useAppTheme();
+    return (
+        <View
+            style={{
+                flexDirection: "row",
+                alignItems: "flex-start",
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: 12,
+            }}
+        >
+            <View style={{ flex: 1, minWidth: 220 }}>
+                {eyebrow ? (
+                    <Text
+                        style={{
+                            color: theme.accent,
+                            fontSize: 11,
+                            fontWeight: "800",
+                            letterSpacing: 1,
+                            textTransform: "uppercase",
+                            marginBottom: 4,
+                        }}
+                    >
+                        {eyebrow}
+                    </Text>
+                ) : null}
+                <Text
+                    style={{
+                        color: theme.text,
+                        fontSize: 24,
+                        fontWeight: "800",
+                        letterSpacing: -0.4,
+                    }}
+                >
+                    {title}
+                </Text>
+                {subtitle ? (
+                    <Text
+                        style={{
+                            color: theme.textSecondary,
+                            fontSize: 13,
+                            lineHeight: 20,
+                            marginTop: 4,
+                        }}
+                    >
+                        {subtitle}
+                    </Text>
+                ) : null}
+            </View>
+            {rightAction ? <View>{rightAction}</View> : null}
+        </View>
+    );
+}
+
 export function SectionHeader({
     title,
     subtitle,
@@ -200,9 +299,10 @@ export function SectionHeader({
                 justifyContent: "space-between",
                 marginBottom: 14,
                 gap: 12,
+                flexWrap: "wrap",
             }}
         >
-            <View style={{ flex: 1 }}>
+            <View style={{ flex: 1, minWidth: 180 }}>
                 <Text
                     style={{
                         color: theme.text,
@@ -258,6 +358,461 @@ export function SectionHeader({
     );
 }
 
+export function PrimaryButton({
+    label,
+    onPress,
+    icon,
+    disabled,
+    loading,
+    style,
+}: {
+    label: string;
+    onPress: () => void;
+    icon?: IconName;
+    disabled?: boolean;
+    loading?: boolean;
+    style?: StyleProp<ViewStyle>;
+}) {
+    const { theme } = useAppTheme();
+    return (
+        <Pressable
+            onPress={onPress}
+            disabled={disabled || loading}
+            accessibilityRole="button"
+            style={({ pressed }) => [
+                {
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                    paddingHorizontal: 18,
+                    minHeight: 44,
+                    borderRadius: 11,
+                    backgroundColor: disabled ? theme.border : theme.accent,
+                    opacity: pressed && !disabled ? 0.88 : 1,
+                    shadowColor: disabled ? "transparent" : theme.accent,
+                    shadowOffset: { width: 0, height: 3 },
+                    shadowOpacity: disabled ? 0 : 0.25,
+                    shadowRadius: 5,
+                    elevation: disabled ? 0 : 2,
+                },
+                style,
+            ]}
+        >
+            {loading ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : icon ? (
+                <Ionicons name={icon} size={17} color="#FFFFFF" />
+            ) : null}
+            <Text
+                style={{
+                    color: disabled ? theme.muted : "#FFFFFF",
+                    fontSize: 14,
+                    fontWeight: "700",
+                }}
+                numberOfLines={1}
+            >
+                {label}
+            </Text>
+        </Pressable>
+    );
+}
+
+export function SecondaryButton({
+    label,
+    onPress,
+    icon,
+    disabled,
+    style,
+}: {
+    label: string;
+    onPress: () => void;
+    icon?: IconName;
+    disabled?: boolean;
+    style?: StyleProp<ViewStyle>;
+}) {
+    const { theme } = useAppTheme();
+    return (
+        <Pressable
+            onPress={onPress}
+            disabled={disabled}
+            accessibilityRole="button"
+            style={({ pressed }) => [
+                {
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 7,
+                    paddingHorizontal: 16,
+                    minHeight: 42,
+                    borderRadius: 11,
+                    backgroundColor: theme.surfaceAlt,
+                    borderWidth: 1,
+                    borderColor: theme.border,
+                    opacity: disabled ? 0.5 : pressed ? 0.85 : 1,
+                },
+                style,
+            ]}
+        >
+            {icon ? (
+                <Ionicons name={icon} size={16} color={theme.textSecondary} />
+            ) : null}
+            <Text
+                style={{
+                    color: theme.text,
+                    fontSize: 13,
+                    fontWeight: "700",
+                }}
+                numberOfLines={1}
+            >
+                {label}
+            </Text>
+        </Pressable>
+    );
+}
+
+export function SearchBar({
+    value,
+    onChangeText,
+    placeholder = "Search...",
+    onClear,
+    rightElement,
+}: {
+    value: string;
+    onChangeText: (text: string) => void;
+    placeholder?: string;
+    onClear?: () => void;
+    rightElement?: ReactNode;
+}) {
+    const { theme } = useAppTheme();
+    return (
+        <View
+            style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 10,
+                paddingHorizontal: 14,
+                minHeight: 46,
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: theme.border,
+                backgroundColor: theme.surface,
+            }}
+        >
+            <Ionicons name="search-outline" size={18} color={theme.muted} />
+            <TextInput
+                value={value}
+                onChangeText={onChangeText}
+                placeholder={placeholder}
+                placeholderTextColor={theme.muted}
+                style={{
+                    flex: 1,
+                    minWidth: 0,
+                    fontSize: 14,
+                    color: theme.text,
+                    paddingVertical: 10,
+                }}
+            />
+            {value.length > 0 ? (
+                <Pressable
+                    onPress={() => {
+                        onChangeText("");
+                        onClear?.();
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Clear search"
+                    hitSlop={8}
+                >
+                    <Ionicons
+                        name="close-circle"
+                        size={18}
+                        color={theme.muted}
+                    />
+                </Pressable>
+            ) : null}
+            {rightElement}
+        </View>
+    );
+}
+
+export function FilterBar({
+    label,
+    children,
+    actionLabel,
+    onAction,
+}: {
+    label?: string;
+    children: ReactNode;
+    actionLabel?: string;
+    onAction?: () => void;
+}) {
+    const { theme } = useAppTheme();
+    return (
+        <View style={{ gap: 7 }}>
+            {label || (actionLabel && onAction) ? (
+                <View
+                    style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 8,
+                    }}
+                >
+                    {label ? (
+                        <Text
+                            style={{
+                                fontSize: 11,
+                                fontWeight: "700",
+                                color: theme.muted,
+                                letterSpacing: 0.7,
+                                textTransform: "uppercase",
+                            }}
+                        >
+                            {label}
+                        </Text>
+                    ) : (
+                        <View />
+                    )}
+                    {actionLabel && onAction ? (
+                        <Pressable
+                            onPress={onAction}
+                            accessibilityRole="button"
+                            hitSlop={6}
+                        >
+                            <Text
+                                style={{
+                                    fontSize: 12,
+                                    fontWeight: "700",
+                                    color: theme.accent,
+                                }}
+                            >
+                                {actionLabel}
+                            </Text>
+                        </Pressable>
+                    ) : null}
+                </View>
+            ) : null}
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{
+                    gap: 8,
+                    paddingRight: 8,
+                    alignItems: "center",
+                }}
+            >
+                {children}
+            </ScrollView>
+        </View>
+    );
+}
+
+export function FilterBottomSheet({
+    visible,
+    title = "Filter & Refine",
+    subtitle,
+    activeCount = 0,
+    onClose,
+    onReset,
+    children,
+}: {
+    visible: boolean;
+    title?: string;
+    subtitle?: string;
+    activeCount?: number;
+    onClose: () => void;
+    onReset?: () => void;
+    children: ReactNode;
+}) {
+    const { theme } = useAppTheme();
+    return (
+        <Modal
+            visible={visible}
+            transparent
+            animationType="slide"
+            onRequestClose={onClose}
+        >
+            <KeyboardAvoidingView
+                behavior={Platform.OS === "ios" ? "padding" : undefined}
+                style={{
+                    flex: 1,
+                    backgroundColor: "rgba(10, 14, 26, 0.72)",
+                    justifyContent: "flex-end",
+                }}
+            >
+                <Pressable
+                    style={StyleSheet.absoluteFill}
+                    onPress={onClose}
+                    accessibilityRole="button"
+                    accessibilityLabel="Close filter sheet"
+                />
+                <View
+                    style={{
+                        backgroundColor: theme.surface,
+                        borderTopLeftRadius: 22,
+                        borderTopRightRadius: 22,
+                        borderWidth: 1,
+                        borderColor: theme.border,
+                        maxHeight: "86%",
+                        width: "100%",
+                        maxWidth: 680,
+                        alignSelf: "center",
+                        overflow: "hidden",
+                    }}
+                >
+                    {/* Handle bar */}
+                    <View
+                        style={{
+                            alignItems: "center",
+                            paddingTop: 10,
+                            paddingBottom: 4,
+                        }}
+                    >
+                        <View
+                            style={{
+                                width: 40,
+                                height: 4,
+                                borderRadius: 2,
+                                backgroundColor: theme.border,
+                            }}
+                        />
+                    </View>
+
+                    {/* Header */}
+                    <View
+                        style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            paddingHorizontal: 20,
+                            paddingVertical: 14,
+                            borderBottomWidth: 1,
+                            borderBottomColor: theme.border,
+                            gap: 12,
+                        }}
+                    >
+                        <View style={{ flex: 1 }}>
+                            <View
+                                style={{
+                                    flexDirection: "row",
+                                    alignItems: "center",
+                                    gap: 8,
+                                }}
+                            >
+                                <Text
+                                    style={{
+                                        color: theme.text,
+                                        fontSize: 17,
+                                        fontWeight: "800",
+                                    }}
+                                >
+                                    {title}
+                                </Text>
+                                {activeCount > 0 ? (
+                                    <View
+                                        style={{
+                                            paddingHorizontal: 8,
+                                            paddingVertical: 2,
+                                            borderRadius: 999,
+                                            backgroundColor: theme.accentSoft,
+                                        }}
+                                    >
+                                        <Text
+                                            style={{
+                                                color: theme.accent,
+                                                fontSize: 11,
+                                                fontWeight: "800",
+                                            }}
+                                        >
+                                            {activeCount} active
+                                        </Text>
+                                    </View>
+                                ) : null}
+                            </View>
+                            {subtitle ? (
+                                <Text
+                                    style={{
+                                        color: theme.textSecondary,
+                                        fontSize: 12,
+                                        marginTop: 2,
+                                    }}
+                                >
+                                    {subtitle}
+                                </Text>
+                            ) : null}
+                        </View>
+                        <Pressable
+                            onPress={onClose}
+                            accessibilityRole="button"
+                            accessibilityLabel="Close"
+                            style={{
+                                width: 34,
+                                height: 34,
+                                borderRadius: 10,
+                                alignItems: "center",
+                                justifyContent: "center",
+                                backgroundColor: theme.surfaceAlt,
+                                borderWidth: 1,
+                                borderColor: theme.border,
+                            }}
+                        >
+                            <Ionicons
+                                name="close"
+                                size={18}
+                                color={theme.textSecondary}
+                            />
+                        </Pressable>
+                    </View>
+
+                    {/* Scrollable filter sections */}
+                    <ScrollView
+                        style={{ maxHeight: 460 }}
+                        contentContainerStyle={{
+                            padding: 20,
+                            gap: 18,
+                        }}
+                        showsVerticalScrollIndicator={false}
+                        keyboardShouldPersistTaps="handled"
+                    >
+                        {children}
+                    </ScrollView>
+
+                    {/* Footer actions */}
+                    <View
+                        style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            gap: 12,
+                            paddingHorizontal: 20,
+                            paddingVertical: 14,
+                            borderTopWidth: 1,
+                            borderTopColor: theme.border,
+                            backgroundColor: theme.surfaceAlt,
+                        }}
+                    >
+                        {onReset ? (
+                            <SecondaryButton
+                                label="Reset All"
+                                icon="refresh-outline"
+                                onPress={onReset}
+                                disabled={activeCount === 0}
+                                style={{ flex: 1 }}
+                            />
+                        ) : null}
+                        <PrimaryButton
+                            label="Apply Filters"
+                            icon="checkmark-circle-outline"
+                            onPress={onClose}
+                            style={{ flex: 1.4 }}
+                        />
+                    </View>
+                </View>
+            </KeyboardAvoidingView>
+        </Modal>
+    );
+}
+
 export function LoadingBlock({ label }: { label: string }) {
     const { theme } = useAppTheme();
     return (
@@ -268,6 +823,7 @@ export function LoadingBlock({ label }: { label: string }) {
                 justifyContent: "center",
                 gap: 12,
                 paddingVertical: 36,
+                paddingHorizontal: 18,
                 backgroundColor: theme.surface,
                 borderRadius: 14,
                 borderWidth: 1,
@@ -275,12 +831,21 @@ export function LoadingBlock({ label }: { label: string }) {
             }}
         >
             <ActivityIndicator size="small" color={theme.accent} />
-            <Text style={{ color: theme.textSecondary, fontSize: 13, fontWeight: "500" }}>
+            <Text
+                style={{
+                    color: theme.textSecondary,
+                    fontSize: 13,
+                    fontWeight: "500",
+                    flexShrink: 1,
+                }}
+            >
                 {label}
             </Text>
         </View>
     );
 }
+
+export const LoadingState = LoadingBlock;
 
 export function ErrorBlock({
     title,
@@ -297,6 +862,7 @@ export function ErrorBlock({
             style={{
                 flexDirection: "row",
                 alignItems: "center",
+                flexWrap: "wrap",
                 gap: 14,
                 padding: 18,
                 borderRadius: 14,
@@ -317,7 +883,7 @@ export function ErrorBlock({
             >
                 <Ionicons name="alert-circle" size={22} color={theme.danger} />
             </View>
-            <View style={{ flex: 1 }}>
+            <View style={{ flex: 1, minWidth: 180 }}>
                 <Text
                     style={{
                         color: theme.text,
@@ -366,6 +932,8 @@ export function ErrorBlock({
     );
 }
 
+export const ErrorState = ErrorBlock;
+
 export function EmptyBlock({
     icon,
     title,
@@ -384,7 +952,7 @@ export function EmptyBlock({
         <View
             style={{
                 alignItems: "center",
-                padding: 36,
+                padding: 32,
                 borderRadius: 16,
                 borderWidth: 1,
                 borderColor: theme.border,
@@ -423,7 +991,7 @@ export function EmptyBlock({
                     lineHeight: 20,
                     textAlign: "center",
                     marginTop: 6,
-                    maxWidth: 400,
+                    maxWidth: 420,
                 }}
             >
                 {text}
@@ -460,6 +1028,8 @@ export function EmptyBlock({
         </View>
     );
 }
+
+export const EmptyState = EmptyBlock;
 
 const MONO = Platform.select({
     ios: "Menlo",
@@ -718,6 +1288,8 @@ export function QuestionCard({
         router.push(`/question-bank/${question.quesId}` as never);
     };
 
+    const effectiveSourceLabel = sourceLabel ?? question.sourceLabel;
+
     return (
         <View
             style={{
@@ -727,13 +1299,14 @@ export function QuestionCard({
                 borderRadius: 14,
                 padding: 16,
                 gap: 12,
+                width: "100%",
             }}
         >
             {/* Top metadata row */}
             <View
                 style={{
                     flexDirection: "row",
-                    alignItems: "center",
+                    alignItems: "flex-start",
                     justifyContent: "space-between",
                     gap: 8,
                 }}
@@ -745,6 +1318,7 @@ export function QuestionCard({
                         gap: 7,
                         flexWrap: "wrap",
                         flex: 1,
+                        minWidth: 0,
                     }}
                 >
                     <Badge
@@ -752,9 +1326,20 @@ export function QuestionCard({
                         color={meta.color}
                         icon={meta.icon}
                     />
-                    {sourceLabel ? (
+                    {question.subjectId || question.subjectName ? (
                         <Badge
-                            label={sourceLabel}
+                            label={
+                                question.subjectId ||
+                                question.subjectName ||
+                                "Subject"
+                            }
+                            color={theme.accent}
+                            icon="book-outline"
+                        />
+                    ) : null}
+                    {effectiveSourceLabel ? (
+                        <Badge
+                            label={effectiveSourceLabel}
                             icon="bookmark-outline"
                         />
                     ) : null}
@@ -773,6 +1358,7 @@ export function QuestionCard({
                         borderRadius: 6,
                         backgroundColor: theme.surfaceAlt,
                         opacity: pressed ? 0.75 : 1,
+                        flexShrink: 0,
                     })}
                 >
                     <Text
@@ -797,9 +1383,7 @@ export function QuestionCard({
                 onPress={openDetail}
                 accessibilityRole="button"
                 accessibilityLabel={`Question #${question.quesId}: ${question.quesText.slice(0, 50)}`}
-                style={({ pressed }) => [
-                    pressed && { opacity: 0.85 },
-                ]}
+                style={({ pressed }) => [pressed && { opacity: 0.85 }]}
             >
                 <View
                     style={
@@ -846,8 +1430,9 @@ export function QuestionCard({
                     flexDirection: "row",
                     alignItems: "center",
                     justifyContent: "space-between",
+                    flexWrap: "wrap",
                     gap: 8,
-                    paddingTop: 8,
+                    paddingTop: 10,
                     borderTopWidth: 1,
                     borderTopColor: theme.border,
                 }}
@@ -858,6 +1443,7 @@ export function QuestionCard({
                         flexWrap: "wrap",
                         gap: 6,
                         flex: 1,
+                        minWidth: 160,
                     }}
                 >
                     {topics.length === 0 ? (
@@ -886,6 +1472,7 @@ export function QuestionCard({
                         borderWidth: 1,
                         borderColor: theme.accent + "25",
                         opacity: pressed ? 0.8 : 1,
+                        flexShrink: 0,
                     })}
                 >
                     <Text
@@ -908,22 +1495,34 @@ export function QuestionCard({
     );
 }
 
-export function Card({ children }: { children: ReactNode }) {
+export function Card({
+    children,
+    style,
+}: {
+    children: ReactNode;
+    style?: StyleProp<ViewStyle>;
+}) {
     const { theme } = useAppTheme();
     return (
         <View
-            style={{
-                backgroundColor: theme.surface,
-                borderWidth: 1,
-                borderColor: theme.border,
-                borderRadius: 16,
-                padding: 18,
-            }}
+            style={[
+                {
+                    backgroundColor: theme.surface,
+                    borderWidth: 1,
+                    borderColor: theme.border,
+                    borderRadius: 16,
+                    padding: 18,
+                    width: "100%",
+                },
+                style,
+            ]}
         >
             {children}
         </View>
     );
 }
+
+export const ResponsiveCard = Card;
 
 export function ProgressBar({
     progress,
@@ -943,13 +1542,13 @@ export function ProgressBar({
                 height,
                 backgroundColor: theme.surfaceAlt,
                 borderRadius: height / 2,
-                overflow: 'hidden',
-                width: '100%',
+                overflow: "hidden",
+                width: "100%",
             }}
         >
             <View
                 style={{
-                    height: '100%',
+                    height: "100%",
                     width: `${clamped}%`,
                     backgroundColor: color ?? theme.accent,
                     borderRadius: height / 2,
@@ -957,4 +1556,107 @@ export function ProgressBar({
             />
         </View>
     );
+}
+
+export function ProgressCard({
+    title,
+    subtitle,
+    progress,
+    color,
+    rightBadge,
+    onPress,
+}: {
+    title: string;
+    subtitle?: string;
+    progress: number;
+    color?: string;
+    rightBadge?: string;
+    onPress?: () => void;
+}) {
+    const { theme } = useAppTheme();
+    const pct = progress <= 1 && progress > 0 ? progress * 100 : progress;
+    const clamped = Math.max(0, Math.min(100, Math.round(pct)));
+    const accentColor = color ?? theme.accent;
+
+    const inner = (
+        <View
+            style={{
+                backgroundColor: theme.surface,
+                borderWidth: 1,
+                borderColor: theme.border,
+                borderRadius: 14,
+                padding: 16,
+                gap: 10,
+                width: "100%",
+            }}
+        >
+            <View
+                style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 10,
+                }}
+            >
+                <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text
+                        style={{
+                            color: theme.text,
+                            fontSize: 14,
+                            fontWeight: "700",
+                        }}
+                        numberOfLines={1}
+                    >
+                        {title}
+                    </Text>
+                    {subtitle ? (
+                        <Text
+                            style={{
+                                color: theme.textSecondary,
+                                fontSize: 12,
+                                marginTop: 2,
+                            }}
+                            numberOfLines={1}
+                        >
+                            {subtitle}
+                        </Text>
+                    ) : null}
+                </View>
+                <View
+                    style={{
+                        paddingHorizontal: 9,
+                        paddingVertical: 4,
+                        borderRadius: 8,
+                        backgroundColor: accentColor + "18",
+                        borderWidth: 1,
+                        borderColor: accentColor + "33",
+                    }}
+                >
+                    <Text
+                        style={{
+                            color: accentColor,
+                            fontSize: 12,
+                            fontWeight: "800",
+                        }}
+                    >
+                        {rightBadge ?? `${clamped}%`}
+                    </Text>
+                </View>
+            </View>
+            <ProgressBar progress={clamped} color={accentColor} height={7} />
+        </View>
+    );
+
+    if (onPress) {
+        return (
+            <Pressable
+                onPress={onPress}
+                accessibilityRole="button"
+                style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
+            >
+                {inner}
+            </Pressable>
+        );
+    }
+    return inner;
 }

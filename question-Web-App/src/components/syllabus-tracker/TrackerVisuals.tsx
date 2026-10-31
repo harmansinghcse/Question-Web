@@ -1,126 +1,151 @@
 import React, { useEffect, useState } from "react";
 import { Animated, Easing, StyleSheet, Text, View } from "react-native";
-import type {
-    TrackerChapterStatus,
-    WeeklyActivityBucket,
-} from "../../services/syllabus-tracker-api";
+import { Ionicons } from "@expo/vector-icons";
+import { useAppTheme } from "../../providers/ThemeProvider";
 
-// Unified design palette tailored for Question Web's navy & purple academic workspace
 export const TRACKER_PALETTE = {
-    bg: "#101426",
-    surface: "#191F35",
-    surfaceElevated: "#252D46",
-    surfaceMuted: "#212946",
-    border: "#303951",
-    borderStrong: "#424E6D",
-    purple: "#9275F5",
-    purpleDeep: "#7457D9",
-    purpleGlow: "rgba(146, 117, 245, 0.16)",
-    purpleBorder: "rgba(146, 117, 245, 0.40)",
-    // Aliases to maintain 100% backward compatibility
-    crimson: "#9275F5",
-    crimsonDeep: "#7457D9",
-    crimsonGlow: "rgba(146, 117, 245, 0.16)",
-    crimsonBorder: "rgba(146, 117, 245, 0.40)",
+    bg: "#0B0C10",
+    surface: "#121318",
+    surfaceElevated: "#181A22",
+    surfaceMuted: "#1E202B",
+    border: "#222530",
+    borderStrong: "#2E3242",
+    text: "#F3F4F6",
+    textSecondary: "#9CA3AF",
+    muted: "#6B7280",
+    purple: "#8B5CF6",
+    purpleLight: "#A78BFA",
+    purpleGlow: "rgba(139, 92, 246, 0.16)",
+    purpleBorder: "rgba(139, 92, 246, 0.42)",
     emerald: "#10B981",
-    emeraldSoft: "rgba(16, 185, 129, 0.14)",
-    emeraldBorder: "rgba(16, 185, 129, 0.38)",
+    emeraldGlow: "rgba(16, 185, 129, 0.14)",
+    emeraldBorder: "rgba(16, 185, 129, 0.35)",
     amber: "#F59E0B",
-    amberSoft: "rgba(245, 158, 11, 0.14)",
-    amberBorder: "rgba(245, 158, 11, 0.38)",
-    text: "#F5F5FA",
-    textSecondary: "#A3AAC0",
-    muted: "#76809E",
+    amberGlow: "rgba(245, 158, 11, 0.14)",
+    amberBorder: "rgba(245, 158, 11, 0.35)",
+    cyan: "#38BDF8",
+    cyanGlow: "rgba(56, 189, 248, 0.14)",
+    danger: "#EF4444",
+    dangerGlow: "rgba(239, 68, 68, 0.14)",
 };
 
+export const LIGHT_TRACKER_PALETTE: typeof TRACKER_PALETTE = {
+    bg: "#F8FAFC",
+    surface: "#FFFFFF",
+    surfaceElevated: "#F1F5F9",
+    surfaceMuted: "#E2E8F0",
+    border: "#E2E8F0",
+    borderStrong: "#CBD5E1",
+    text: "#0F172A",
+    textSecondary: "#334155",
+    muted: "#64748B",
+    purple: "#7C3AED",
+    purpleLight: "#6D28D9",
+    purpleGlow: "rgba(124, 58, 237, 0.10)",
+    purpleBorder: "rgba(124, 58, 237, 0.32)",
+    emerald: "#059669",
+    emeraldGlow: "rgba(5, 150, 105, 0.10)",
+    emeraldBorder: "rgba(5, 150, 105, 0.30)",
+    amber: "#D97706",
+    amberGlow: "rgba(217, 119, 6, 0.10)",
+    amberBorder: "rgba(217, 119, 6, 0.30)",
+    cyan: "#0284C7",
+    cyanGlow: "rgba(2, 132, 199, 0.10)",
+    danger: "#DC2626",
+    dangerGlow: "rgba(220, 38, 38, 0.10)",
+};
+
+export type TrackerPalette = typeof TRACKER_PALETTE;
+
+export function useTrackerPalette(): TrackerPalette {
+    const { mode } = useAppTheme();
+    return mode === "dark" ? TRACKER_PALETTE : LIGHT_TRACKER_PALETTE;
+}
+
 /**
- * Subtle interconnected knowledge-web constellation rendered in the background
- * of the Tracker hero card.
+ * Connected-node web background motif for the Syllabus Tracker header.
  */
 export function KnowledgeWebMotif() {
+    const palette = useTrackerPalette();
     return (
-        <View style={styles.motifWrap} pointerEvents="none">
-            <View style={[styles.motifEdge, { width: 88, top: 26, right: 36, transform: [{ rotate: "-22deg" }] }]} />
-            <View style={[styles.motifEdge, { width: 72, top: 58, right: 18, transform: [{ rotate: "32deg" }] }]} />
-            <View style={[styles.motifEdge, { width: 64, top: 68, right: 78, transform: [{ rotate: "-8deg" }] }]} />
-            <View style={[styles.motifNode, styles.motifNodePrimary, { top: 14, right: 30 }]} />
-            <View style={[styles.motifNode, { top: 44, right: 108 }]} />
-            <View style={[styles.motifNode, styles.motifNodeCovered, { top: 76, right: 20 }]} />
-            <View style={[styles.motifNode, { top: 82, right: 136 }]} />
+        <View style={styles.motifContainer} pointerEvents="none">
+            <View style={[styles.motifLine, styles.lineA, { backgroundColor: palette.purpleBorder }]} />
+            <View style={[styles.motifLine, styles.lineB, { backgroundColor: palette.purpleBorder }]} />
+            <View style={[styles.motifLine, styles.lineC, { backgroundColor: palette.purpleBorder }]} />
+            <View style={[styles.motifNode, styles.nodeA, { backgroundColor: palette.purple, borderColor: palette.bg }]} />
+            <View style={[styles.motifNode, styles.nodeB, styles.nodeGlow, { backgroundColor: palette.purpleLight, borderColor: palette.bg }]} />
+            <View style={[styles.motifNode, styles.nodeC, { backgroundColor: palette.purple, borderColor: palette.bg }]} />
+            <View style={[styles.motifNode, styles.nodeD, styles.nodeEmerald, { backgroundColor: palette.emerald, borderColor: palette.bg }]} />
         </View>
     );
 }
 
 /**
- * Animated radial dial built with 24 orbital segments so it renders identically
- * on iOS, Android, and Web without extra native SVG modules.
+ * Circular orbit progress dial showing percentage covered.
  */
 export function CoverageOrbitDial({
-    percent,
-    covered,
-    total,
-    size = 116,
+    percentage,
+    coveredCount,
+    totalCount,
+    isHistorical,
 }: {
-    percent: number;
-    covered: number;
-    total: number;
-    size?: number;
+    percentage: number;
+    coveredCount: number;
+    totalCount: number;
+    isHistorical?: boolean;
 }) {
-    const clamped = Math.max(0, Math.min(100, percent));
+    const palette = useTrackerPalette();
+    const clamped = Math.max(0, Math.min(100, Math.round(percentage)));
+    const accentColor = isHistorical
+        ? palette.amber
+        : clamped === 100 && totalCount > 0
+          ? palette.emerald
+          : palette.purple;
 
-    const segments = 24;
-    const filledSegments = Math.round((clamped / 100) * segments);
-    const radius = size / 2 - 10;
-    const center = size / 2;
+    const totalDots = 12;
+    const filledDots = Math.round((clamped / 100) * totalDots);
 
     return (
-        <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
-            {/* Outer subtle halo */}
+        <View style={styles.dialContainer}>
             <View
-                style={{
-                    position: "absolute",
-                    width: size - 6,
-                    height: size - 6,
-                    borderRadius: (size - 6) / 2,
-                    borderWidth: 1,
-                    borderColor: TRACKER_PALETTE.purpleBorder,
-                    backgroundColor: TRACKER_PALETTE.purpleGlow,
-                }}
-            />
-
-            {/* Orbital tick nodes */}
-            {Array.from({ length: segments }).map((_, idx) => {
-                const angleRad = ((idx / segments) * 360 - 90) * (Math.PI / 180);
-                const x = center + radius * Math.cos(angleRad) - 3.5;
-                const y = center + radius * Math.sin(angleRad) - 3.5;
-                const active = idx < filledSegments;
-                const complete = clamped >= 100;
-                return (
-                    <View
-                        key={idx}
-                        style={{
-                            position: "absolute",
-                            left: x,
-                            top: y,
-                            width: 7,
-                            height: 7,
-                            borderRadius: 3.5,
-                            backgroundColor: active
-                                ? complete
-                                    ? TRACKER_PALETTE.emerald
-                                    : TRACKER_PALETTE.purple
-                                : TRACKER_PALETTE.borderStrong,
-                            opacity: active ? 1 : 0.45,
-                        }}
-                    />
-                );
-            })}
-
-            {/* Center readout */}
-            <View style={{ alignItems: "center", justifyContent: "center" }}>
-                <Text style={styles.dialPct}>{`${Math.round(clamped)}%`}</Text>
-                <Text style={styles.dialSub}>{`${covered}/${total}`}</Text>
-                <Text style={styles.dialCaption}>TOPICS</Text>
+                style={[
+                    styles.dialOuterRing,
+                    {
+                        borderColor: isHistorical
+                            ? palette.amberBorder
+                            : palette.purpleBorder,
+                        backgroundColor: isHistorical
+                            ? palette.amberGlow
+                            : palette.purpleGlow,
+                    },
+                ]}
+            >
+                <View style={[styles.dialInnerCircle, { backgroundColor: palette.surface, borderColor: palette.border }]}>
+                    <Text style={[styles.dialPercentText, { color: accentColor }]}>
+                        {clamped}%
+                    </Text>
+                    <Text style={[styles.dialRatioText, { color: palette.textSecondary }]}>
+                        {coveredCount}/{totalCount}
+                    </Text>
+                    <Text style={[styles.dialSubLabel, { color: palette.muted }]}>TOPICS</Text>
+                </View>
+            </View>
+            <View style={styles.dotStrip}>
+                {Array.from({ length: totalDots }).map((_, idx) => {
+                    const active = idx < filledDots;
+                    return (
+                        <View
+                            key={idx}
+                            style={[
+                                styles.segmentDot,
+                                { backgroundColor: palette.borderStrong },
+                                active && {
+                                    backgroundColor: accentColor,
+                                },
+                            ]}
+                        />
+                    );
+                })}
             </View>
         </View>
     );
@@ -133,403 +158,354 @@ export function ChapterStatusNode({
     status,
     isLast,
 }: {
-    status: TrackerChapterStatus;
-    isLast: boolean;
+    status: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
+    isLast?: boolean;
 }) {
-    const color =
-        status === "COVERED"
-            ? TRACKER_PALETTE.emerald
-            : status === "PARTIAL"
-              ? TRACKER_PALETTE.amber
-              : TRACKER_PALETTE.borderStrong;
+    const palette = useTrackerPalette();
+    const isCompleted = status === "COMPLETED";
+    const isInProgress = status === "IN_PROGRESS";
 
     return (
         <View style={styles.nodeColumn}>
             <View
                 style={[
                     styles.chapterNodeOuter,
-                    {
-                        borderColor: color,
-                        backgroundColor:
-                            status === "COVERED"
-                                ? TRACKER_PALETTE.emeraldSoft
-                                : status === "PARTIAL"
-                                  ? TRACKER_PALETTE.amberSoft
-                                  : TRACKER_PALETTE.surface,
+                    { borderColor: palette.borderStrong, backgroundColor: palette.surfaceElevated },
+                    isCompleted && {
+                        borderColor: palette.emerald,
+                        backgroundColor: palette.emeraldGlow,
+                    },
+                    isInProgress && {
+                        borderColor: palette.amber,
+                        backgroundColor: palette.amberGlow,
                     },
                 ]}
             >
-                {status !== "UNCOVERED" && status !== "EMPTY" && (
-                    <View
-                        style={[
-                            styles.chapterNodeInner,
-                            { backgroundColor: color },
-                        ]}
+                {isCompleted ? (
+                    <Ionicons
+                        name="checkmark"
+                        size={11}
+                        color={palette.emerald}
                     />
+                ) : isInProgress ? (
+                    <View style={[styles.inProgressDot, { backgroundColor: palette.amber }]} />
+                ) : (
+                    <View style={[styles.notStartedDot, { backgroundColor: palette.muted }]} />
                 )}
             </View>
-            {!isLast && <View style={styles.nodeSpine} />}
+            {!isLast && (
+                <View
+                    style={[
+                        styles.connectorLine,
+                        { backgroundColor: palette.border },
+                        isCompleted && {
+                            backgroundColor: palette.emeraldBorder,
+                        },
+                        isInProgress && {
+                            backgroundColor: palette.amberBorder,
+                        },
+                    ]}
+                />
+            )}
         </View>
     );
 }
 
 /**
- * Animated horizontal bar for chapter-level or overall completion.
+ * Smooth animated horizontal progress bar.
  */
 export function AnimatedCoverageBar({
-    percent,
-    status,
-    height = 6,
+    percentage,
+    color = TRACKER_PALETTE.purple,
+    height = 7,
 }: {
-    percent: number;
-    status?: TrackerChapterStatus;
+    percentage: number;
+    color?: string;
     height?: number;
 }) {
-    const clamped = Math.max(0, Math.min(100, percent));
+    const palette = useTrackerPalette();
+    const clamped = Math.max(0, Math.min(100, percentage));
     const [widthAnim] = useState(() => new Animated.Value(clamped));
 
     useEffect(() => {
         Animated.timing(widthAnim, {
             toValue: clamped,
             duration: 380,
-            easing: Easing.out(Easing.quad),
+            easing: Easing.out(Easing.cubic),
             useNativeDriver: false,
         }).start();
     }, [clamped, widthAnim]);
 
-    const barColor =
-        status === "COVERED" || clamped >= 100
-            ? TRACKER_PALETTE.emerald
-            : status === "PARTIAL"
-              ? TRACKER_PALETTE.purple
-              : TRACKER_PALETTE.muted;
+    const widthInterpolated = widthAnim.interpolate({
+        inputRange: [0, 100],
+        outputRange: ["0%", "100%"],
+    });
 
     return (
-        <View style={[styles.barTrack, { height, borderRadius: height / 2 }]}>
+        <View style={[styles.barTrack, { height, backgroundColor: palette.surfaceMuted }]}>
             <Animated.View
-                style={{
-                    height: "100%",
-                    borderRadius: height / 2,
-                    backgroundColor: barColor,
-                    width: widthAnim.interpolate({
-                        inputRange: [0, 100],
-                        outputRange: ["0%", "100%"],
-                    }),
-                }}
+                style={[
+                    styles.barFill,
+                    {
+                        height,
+                        backgroundColor: color,
+                        width: widthInterpolated,
+                    },
+                ]}
             />
         </View>
     );
 }
 
 /**
- * Trailing 6-week activity visualization derived strictly from dated events.
+ * Weekly activity bar chart showing topics covered across recent days/weeks.
  */
 export function WeeklyActivityCard({
-    buckets,
-    asOf,
+    timelineDates,
 }: {
-    buckets: WeeklyActivityBucket[];
-    asOf: string | null;
+    timelineDates: { date: string; topicsCount: number; lecturesCount: number }[];
 }) {
-    const maxTopics = Math.max(
-        1,
-        ...buckets.map((b) => Math.max(b.uniqueTopicsTouched, b.newlyCoveredTopics)),
-    );
-    const totalSessions = buckets.reduce((acc, b) => acc + b.eventCount, 0);
-    const totalNewlyCovered = buckets.reduce(
-        (acc, b) => acc + b.newlyCoveredTopics,
-        0,
-    );
+    const palette = useTrackerPalette();
+    const recent = [...timelineDates].slice(0, 7).reverse();
+    const maxCount = Math.max(1, ...recent.map((d) => d.topicsCount));
+
+    if (recent.length === 0) {
+        return null;
+    }
 
     return (
-        <View style={styles.weeklyCard}>
-            <View style={styles.weeklyHeader}>
-                <View style={{ flex: 1 }}>
-                    <Text style={styles.weeklyEyebrow}>
-                        6-WEEK COVERAGE PACE {asOf ? `(UP TO ${asOf})` : ""}
-                    </Text>
-                    <Text style={styles.weeklyTitle}>Weekly Syllabus Activity</Text>
+        <View style={[styles.activityCard, { backgroundColor: palette.surface, borderColor: palette.border }]}>
+            <View style={styles.activityHeader}>
+                <View style={styles.activityTitleRow}>
+                    <Ionicons
+                        name="pulse-outline"
+                        size={15}
+                        color={palette.purpleLight}
+                    />
+                    <Text style={[styles.activityTitle, { color: palette.text }]}>Recent Lecture Velocity</Text>
                 </View>
-                <View style={styles.weeklyCounters}>
-                    <View style={styles.weeklyCounterPill}>
-                        <Text style={styles.weeklyCounterVal}>{totalSessions}</Text>
-                        <Text style={styles.weeklyCounterLbl}>sessions</Text>
-                    </View>
-                    <View style={[styles.weeklyCounterPill, { borderColor: TRACKER_PALETTE.purpleBorder }]}>
-                        <Text style={[styles.weeklyCounterVal, { color: TRACKER_PALETTE.purple }]}>
-                            {totalNewlyCovered}
-                        </Text>
-                        <Text style={styles.weeklyCounterLbl}>new topics</Text>
-                    </View>
-                </View>
+                <Text style={[styles.activitySub, { color: palette.muted }]}>
+                    Last {recent.length} active session{recent.length === 1 ? "" : "s"}
+                </Text>
             </View>
-
-            <View style={styles.chartArea}>
-                {buckets.map((b) => {
-                    const touchedHeight = Math.round(
-                        (b.uniqueTopicsTouched / maxTopics) * 68,
-                    );
-                    const newHeight = Math.round(
-                        (b.newlyCoveredTopics / maxTopics) * 68,
-                    );
+            <View style={styles.chartRow}>
+                {recent.map((item) => {
+                    const ratio = Math.max(0.15, item.topicsCount / maxCount);
+                    const barHeight = Math.round(ratio * 48);
+                    const shortLabel = item.date.slice(5); // MM-DD
                     return (
-                        <View key={b.weekStart} style={styles.weekCol}>
-                            <Text style={styles.weekCountTop}>
-                                {b.uniqueTopicsTouched > 0
-                                    ? `${b.newlyCoveredTopics}${
-                                          b.uniqueTopicsTouched > b.newlyCoveredTopics
-                                              ? `+${b.uniqueTopicsTouched - b.newlyCoveredTopics}r`
-                                              : ""
-                                      }`
-                                    : "0"}
-                            </Text>
-                            <View style={styles.weekBarTrack}>
-                                {/* Total unique topics touched (includes revisits) */}
-                                {b.uniqueTopicsTouched > 0 && (
-                                    <View
-                                        style={[
-                                            styles.weekBarTouched,
-                                            { height: Math.max(6, touchedHeight) },
-                                        ]}
-                                    />
-                                )}
-                                {/* Newly covered unique topics */}
-                                {b.newlyCoveredTopics > 0 && (
-                                    <View
-                                        style={[
-                                            styles.weekBarNew,
-                                            { height: Math.max(6, newHeight) },
-                                        ]}
-                                    />
-                                )}
+                        <View key={item.date} style={styles.chartCol}>
+                            <Text style={[styles.chartCount, { color: palette.purpleLight }]}>{item.topicsCount}</Text>
+                            <View style={[styles.chartTrack, { backgroundColor: palette.surfaceMuted }]}>
+                                <View
+                                    style={[
+                                        styles.chartBar,
+                                        { height: barHeight, backgroundColor: palette.purple },
+                                    ]}
+                                />
                             </View>
-                            <Text style={styles.weekLabel}>{b.label}</Text>
-                            <Text style={styles.weekSessions}>
-                                {b.eventCount === 1
-                                    ? "1 cls"
-                                    : `${b.eventCount} cls`}
-                            </Text>
+                            <Text style={[styles.chartLabel, { color: palette.textSecondary }]}>{shortLabel}</Text>
                         </View>
                     );
                 })}
-            </View>
-
-            <View style={styles.legendRow}>
-                <View style={styles.legendItem}>
-                    <View style={[styles.legendDot, { backgroundColor: TRACKER_PALETTE.purple }]} />
-                    <Text style={styles.legendText}>First-time covered topics</Text>
-                </View>
-                <View style={styles.legendItem}>
-                    <View style={[styles.legendDot, { backgroundColor: TRACKER_PALETTE.amber }]} />
-                    <Text style={styles.legendText}>+r = Revisited topics</Text>
-                </View>
             </View>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    motifWrap: {
+    motifContainer: {
         position: "absolute",
-        top: 0,
-        right: 0,
-        width: 180,
-        height: 110,
-        overflow: "hidden",
+        right: 12,
+        top: 10,
+        width: 120,
+        height: 76,
+        opacity: 0.45,
     },
-    motifEdge: {
+    motifLine: {
         position: "absolute",
-        height: 1,
-        backgroundColor: TRACKER_PALETTE.purpleGlow,
+        height: 1.5,
+    },
+    lineA: {
+        width: 48,
+        top: 22,
+        left: 16,
+        transform: [{ rotate: "18deg" }],
+    },
+    lineB: {
+        width: 42,
+        top: 34,
+        left: 56,
+        transform: [{ rotate: "-24deg" }],
+    },
+    lineC: {
+        width: 38,
+        top: 48,
+        left: 34,
+        transform: [{ rotate: "32deg" }],
     },
     motifNode: {
         position: "absolute",
         width: 8,
         height: 8,
         borderRadius: 4,
-        backgroundColor: TRACKER_PALETTE.border,
         borderWidth: 1.5,
-        borderColor: TRACKER_PALETTE.borderStrong,
     },
-    motifNodePrimary: {
+    nodeA: { top: 14, left: 12 },
+    nodeB: { top: 26, left: 56 },
+    nodeC: { top: 12, left: 94 },
+    nodeD: { top: 52, left: 66 },
+    nodeGlow: {
         width: 10,
         height: 10,
         borderRadius: 5,
-        backgroundColor: TRACKER_PALETTE.purpleGlow,
-        borderColor: TRACKER_PALETTE.purple,
     },
-    motifNodeCovered: {
-        backgroundColor: TRACKER_PALETTE.emeraldSoft,
-        borderColor: TRACKER_PALETTE.emerald,
-    },
-    dialPct: {
-        color: TRACKER_PALETTE.text,
-        fontSize: 22,
-        fontWeight: "800",
-        letterSpacing: -0.5,
-    },
-    dialSub: {
-        color: TRACKER_PALETTE.textSecondary,
-        fontSize: 11,
-        fontWeight: "600",
-        marginTop: 1,
-    },
-    dialCaption: {
-        color: TRACKER_PALETTE.muted,
-        fontSize: 8,
-        fontWeight: "700",
-        letterSpacing: 1,
-        marginTop: 1,
-    },
-    nodeColumn: {
-        width: 22,
+    nodeEmerald: {},
+
+    dialContainer: {
         alignItems: "center",
+        justifyContent: "center",
+        gap: 8,
     },
-    chapterNodeOuter: {
-        width: 16,
-        height: 16,
-        borderRadius: 8,
+    dialOuterRing: {
+        width: 94,
+        height: 94,
+        borderRadius: 47,
         borderWidth: 2,
         alignItems: "center",
         justifyContent: "center",
-        marginTop: 2,
+        padding: 6,
     },
-    chapterNodeInner: {
-        width: 6,
-        height: 6,
-        borderRadius: 3,
+    dialInnerCircle: {
+        width: 78,
+        height: 78,
+        borderRadius: 39,
+        borderWidth: 1,
+        alignItems: "center",
+        justifyContent: "center",
     },
-    nodeSpine: {
+    dialPercentText: {
+        fontSize: 20,
+        fontWeight: "900",
+        letterSpacing: -0.5,
+    },
+    dialRatioText: {
+        fontSize: 11,
+        fontWeight: "700",
+        marginTop: 1,
+    },
+    dialSubLabel: {
+        fontSize: 8,
+        fontWeight: "800",
+        letterSpacing: 1,
+        marginTop: 1,
+    },
+    dotStrip: {
+        flexDirection: "row",
+        gap: 3,
+        alignItems: "center",
+    },
+    segmentDot: {
+        width: 5,
+        height: 5,
+        borderRadius: 2.5,
+    },
+
+    nodeColumn: {
+        width: 24,
+        alignItems: "center",
+    },
+    chapterNodeOuter: {
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        borderWidth: 1.5,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    inProgressDot: {
+        width: 7,
+        height: 7,
+        borderRadius: 3.5,
+    },
+    notStartedDot: {
+        width: 5,
+        height: 5,
+        borderRadius: 2.5,
+    },
+    connectorLine: {
+        width: 2,
         flex: 1,
-        width: 1.5,
-        backgroundColor: TRACKER_PALETTE.border,
-        marginTop: 4,
         minHeight: 16,
+        marginVertical: 2,
+        borderRadius: 1,
     },
+
     barTrack: {
         width: "100%",
-        backgroundColor: TRACKER_PALETTE.surfaceMuted,
+        borderRadius: 999,
         overflow: "hidden",
     },
-    weeklyCard: {
-        backgroundColor: TRACKER_PALETTE.surface,
-        borderRadius: 16,
-        borderWidth: 1,
-        borderColor: TRACKER_PALETTE.border,
-        padding: 18,
-        gap: 14,
+    barFill: {
+        borderRadius: 999,
     },
-    weeklyHeader: {
+
+    activityCard: {
+        borderRadius: 14,
+        borderWidth: 1,
+        padding: 14,
+        gap: 12,
+    },
+    activityHeader: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        gap: 10,
         flexWrap: "wrap",
+        gap: 6,
     },
-    weeklyEyebrow: {
-        color: TRACKER_PALETTE.muted,
-        fontSize: 10,
-        fontWeight: "700",
-        letterSpacing: 0.8,
-    },
-    weeklyTitle: {
-        color: TRACKER_PALETTE.text,
-        fontSize: 15,
-        fontWeight: "700",
-        marginTop: 2,
-    },
-    weeklyCounters: {
+    activityTitleRow: {
         flexDirection: "row",
-        gap: 8,
-    },
-    weeklyCounterPill: {
-        paddingHorizontal: 10,
-        paddingVertical: 5,
-        borderRadius: 10,
-        borderWidth: 1,
-        borderColor: TRACKER_PALETTE.border,
-        backgroundColor: TRACKER_PALETTE.surfaceElevated,
         alignItems: "center",
+        gap: 6,
     },
-    weeklyCounterVal: {
-        color: TRACKER_PALETTE.text,
+    activityTitle: {
         fontSize: 13,
         fontWeight: "800",
     },
-    weeklyCounterLbl: {
-        color: TRACKER_PALETTE.muted,
-        fontSize: 9,
+    activitySub: {
+        fontSize: 11,
         fontWeight: "600",
     },
-    chartArea: {
+    chartRow: {
         flexDirection: "row",
         alignItems: "flex-end",
-        justifyContent: "space-between",
-        paddingTop: 8,
-        gap: 6,
+        justifyContent: "space-around",
+        paddingTop: 6,
+        gap: 8,
     },
-    weekCol: {
-        flex: 1,
+    chartCol: {
         alignItems: "center",
+        flex: 1,
         gap: 4,
     },
-    weekCountTop: {
-        color: TRACKER_PALETTE.textSecondary,
+    chartCount: {
         fontSize: 10,
-        fontWeight: "700",
+        fontWeight: "800",
     },
-    weekBarTrack: {
+    chartTrack: {
+        height: 50,
         width: "100%",
         maxWidth: 28,
-        height: 70,
         borderRadius: 6,
-        backgroundColor: TRACKER_PALETTE.surfaceMuted,
         justifyContent: "flex-end",
         overflow: "hidden",
     },
-    weekBarTouched: {
-        position: "absolute",
-        bottom: 0,
-        left: 0,
-        right: 0,
-        backgroundColor: TRACKER_PALETTE.amber,
-        opacity: 0.55,
-        borderRadius: 6,
-    },
-    weekBarNew: {
+    chartBar: {
         width: "100%",
-        backgroundColor: TRACKER_PALETTE.purple,
         borderRadius: 6,
     },
-    weekLabel: {
-        color: TRACKER_PALETTE.textSecondary,
-        fontSize: 10,
-        fontWeight: "600",
-    },
-    weekSessions: {
-        color: TRACKER_PALETTE.muted,
+    chartLabel: {
         fontSize: 9,
-    },
-    legendRow: {
-        flexDirection: "row",
-        flexWrap: "wrap",
-        gap: 14,
-        borderTopWidth: 1,
-        borderTopColor: TRACKER_PALETTE.border,
-        paddingTop: 10,
-    },
-    legendItem: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 6,
-    },
-    legendDot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-    },
-    legendText: {
-        color: TRACKER_PALETTE.textSecondary,
-        fontSize: 11,
+        fontWeight: "700",
     },
 });
