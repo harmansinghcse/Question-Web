@@ -120,6 +120,14 @@ export default function AppShell({
 
     const go = (path: string) => router.push(path as never);
 
+    const isItemActive = (key: NavKey) => {
+        if (key === active) return true;
+        if (key === "quiz" && active === "revision") return true;
+        if (key === "learn" && (active === "questions" || active === "resources")) return true;
+        if (key === "tools" && (active === "syllabus" || active === "tracker")) return true;
+        return false;
+    };
+
     return (
         <View
             style={[
@@ -132,11 +140,12 @@ export default function AppShell({
         >
             <StatusBar
                 barStyle={mode === "light" ? "dark-content" : "light-content"}
+                backgroundColor={theme.surface}
             />
 
             {/* Mobile Top Header */}
             {!isWide && (
-                <View style={[s.mobileHeader, { paddingTop: Math.max(insets.top, 10) + 6 }]}>
+                <View style={[s.mobileHeader, { paddingTop: Math.max(insets.top, 12) + 4 }]}>
                     <Pressable
                         onPress={() => go("/")}
                         style={s.brand}
@@ -148,7 +157,7 @@ export default function AppShell({
                         </View>
                         <View>
                             <Text style={s.brandName}>Question Web</Text>
-                            <Text style={s.brandSub}>Academic Repository</Text>
+                            <Text style={s.brandSub}>Academic Productivity • v2.0</Text>
                         </View>
                     </Pressable>
                     <View style={s.mobileActions}>
@@ -156,11 +165,14 @@ export default function AppShell({
                             onPress={toggleTheme}
                             accessibilityRole="button"
                             accessibilityLabel={themeLabel}
-                            style={s.iconButton}
+                            style={({ pressed }) => [
+                                s.iconButton,
+                                pressed && { opacity: 0.75 },
+                            ]}
                         >
                             <Ionicons
                                 name={themeIcon}
-                                size={17}
+                                size={18}
                                 color={theme.textSecondary}
                             />
                         </Pressable>
@@ -172,12 +184,13 @@ export default function AppShell({
                             accessibilityLabel={
                                 isAuthenticated ? "Account profile" : "Sign in"
                             }
-                            style={[
+                            style={({ pressed }) => [
                                 s.iconButton,
                                 active === "account" && {
                                     borderColor: theme.accent,
                                     backgroundColor: theme.accentSoft,
                                 },
+                                pressed && { opacity: 0.75 },
                             ]}
                         >
                             <Ionicons
@@ -186,7 +199,7 @@ export default function AppShell({
                                         ? "person"
                                         : "person-outline"
                                 }
-                                size={17}
+                                size={18}
                                 color={
                                     isAuthenticated || active === "account"
                                         ? theme.accent
@@ -212,23 +225,14 @@ export default function AppShell({
                             </View>
                             <View>
                                 <Text style={s.brandName}>Question Web</Text>
-                                <Text style={s.brandSub}>Academic Portal</Text>
+                                <Text style={s.brandSub}>Academic Portal • v2.0</Text>
                             </View>
                         </Pressable>
 
                         <Text style={s.sidebarSectionLabel}>NAVIGATION</Text>
                         <View style={s.sidebarNav}>
                             {NAV_ITEMS.map((item) => {
-                                const isActive =
-                                    item.key === active ||
-                                    (item.key === "quiz" &&
-                                        active === "revision") ||
-                                    (item.key === "learn" &&
-                                        (active === "questions" ||
-                                            active === "resources")) ||
-                                    (item.key === "tools" &&
-                                        (active === "syllabus" ||
-                                            active === "tracker"));
+                                const isActive = isItemActive(item.key);
                                 return (
                                     <Pressable
                                         key={item.key}
@@ -250,11 +254,11 @@ export default function AppShell({
                                                     ? item.iconActive
                                                     : item.icon
                                             }
-                                            size={18}
+                                            size={19}
                                             color={
                                                 isActive
                                                     ? theme.accent
-                                                    : theme.muted
+                                                    : theme.textSecondary
                                             }
                                         />
                                         <Text
@@ -284,7 +288,7 @@ export default function AppShell({
                                 <Ionicons
                                     name={themeIcon}
                                     size={17}
-                                    color={theme.muted}
+                                    color={theme.textSecondary}
                                 />
                                 <Text style={s.sidebarLabel}>
                                     {mode === "dark"
@@ -307,6 +311,7 @@ export default function AppShell({
                                     s.sidebarAccountCard,
                                     active === "account" && {
                                         borderColor: theme.accent,
+                                        backgroundColor: theme.accentSoft,
                                     },
                                     pressed && { opacity: 0.85 },
                                 ]}
@@ -318,7 +323,7 @@ export default function AppShell({
                                                 ? "person"
                                                 : "log-in-outline"
                                         }
-                                        size={14}
+                                        size={15}
                                         color={theme.accent}
                                     />
                                 </View>
@@ -342,7 +347,7 @@ export default function AppShell({
                                 </View>
                                 <Ionicons
                                     name="chevron-forward"
-                                    size={13}
+                                    size={14}
                                     color={theme.muted}
                                 />
                             </Pressable>
@@ -365,7 +370,7 @@ export default function AppShell({
                             >
                                 <Ionicons
                                     name="search-outline"
-                                    size={16}
+                                    size={17}
                                     color={theme.muted}
                                 />
                                 <Text style={s.topSearchText}>
@@ -410,7 +415,7 @@ export default function AppShell({
                                                 ? "person-circle"
                                                 : "person-outline"
                                         }
-                                        size={17}
+                                        size={18}
                                         color={
                                             isAuthenticated
                                                 ? theme.accent
@@ -433,15 +438,15 @@ export default function AppShell({
                             contentContainerStyle={[
                                 s.mainContent,
                                 {
-                                    paddingHorizontal: isWide ? 32 : 16,
-                                    paddingTop: isWide ? 24 : 14,
+                                    paddingHorizontal: isWide ? 32 : 18,
+                                    paddingTop: isWide ? 26 : 18,
                                     paddingBottom: floatingFooter
                                         ? isWide
                                             ? 110
                                             : 140
                                         : isWide
-                                          ? 40
-                                          : 80,
+                                          ? 48
+                                          : 96,
                                 },
                             ]}
                             keyboardShouldPersistTaps="handled"
@@ -472,18 +477,11 @@ export default function AppShell({
                 <View
                     style={[
                         s.bottomBar,
-                        { paddingBottom: Math.max(insets.bottom, 8) + 4 },
+                        { paddingBottom: Math.max(insets.bottom, 8) + 6 },
                     ]}
                 >
                     {NAV_ITEMS.map((item) => {
-                        const isActive =
-                            item.key === active ||
-                            (item.key === "quiz" && active === "revision") ||
-                            (item.key === "learn" &&
-                                (active === "questions" ||
-                                    active === "resources")) ||
-                            (item.key === "tools" &&
-                                (active === "syllabus" || active === "tracker"));
+                        const isActive = isItemActive(item.key);
                         return (
                             <Pressable
                                 key={item.key}
@@ -493,27 +491,34 @@ export default function AppShell({
                                 accessibilityState={{ selected: isActive }}
                                 style={s.navItem}
                             >
-                                <Ionicons
-                                    name={
-                                        isActive
-                                            ? item.iconActive
-                                            : item.icon
-                                    }
-                                    size={20}
-                                    color={
-                                        isActive
-                                            ? theme.accent
-                                            : theme.muted
-                                    }
-                                />
+                                <View
+                                    style={[
+                                        s.navIconWrapper,
+                                        isActive && s.navIconWrapperActive,
+                                    ]}
+                                >
+                                    <Ionicons
+                                        name={
+                                            isActive
+                                                ? item.iconActive
+                                                : item.icon
+                                        }
+                                        size={20}
+                                        color={
+                                            isActive
+                                                ? theme.accent
+                                                : theme.textSecondary
+                                        }
+                                    />
+                                </View>
                                 <Text
                                     style={[
                                         s.navLabel,
-                                        isActive && {
-                                            color: theme.accent,
-                                            fontWeight: "700",
-                                        },
+                                        isActive
+                                            ? s.navLabelActive
+                                            : { color: theme.textSecondary },
                                     ]}
+                                    numberOfLines={1}
                                 >
                                     {item.short}
                                 </Text>
@@ -539,24 +544,29 @@ function makeStyles(t: AppTheme) {
         },
         rightPanel: { width: 320 },
         logo: {
-            width: 32,
-            height: 32,
-            borderRadius: 8,
+            width: 34,
+            height: 34,
+            borderRadius: 9,
             backgroundColor: t.accent,
             alignItems: "center",
             justifyContent: "center",
+            shadowColor: t.accent,
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.25,
+            shadowRadius: 4,
+            elevation: 3,
         },
-        logoText: { color: "#FFFFFF", fontWeight: "800", fontSize: 16 },
-        brand: { flexDirection: "row", alignItems: "center", gap: 10 },
+        logoText: { color: "#FFFFFF", fontWeight: "900", fontSize: 17 },
+        brand: { flexDirection: "row", alignItems: "center", gap: 11 },
         brandName: {
             color: t.text,
-            fontWeight: "700",
-            fontSize: 15,
-            letterSpacing: -0.2,
+            fontWeight: "800",
+            fontSize: 16,
+            letterSpacing: -0.3,
         },
         brandSub: {
-            color: t.muted,
-            fontSize: 10,
+            color: t.textSecondary,
+            fontSize: 11,
             fontWeight: "500",
             marginTop: 1,
         },
@@ -564,8 +574,8 @@ function makeStyles(t: AppTheme) {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
-            paddingHorizontal: 16,
-            paddingBottom: 10,
+            paddingHorizontal: 18,
+            paddingBottom: 12,
             backgroundColor: t.surface,
             borderBottomWidth: 1,
             borderBottomColor: t.border,
@@ -573,12 +583,12 @@ function makeStyles(t: AppTheme) {
         mobileActions: {
             flexDirection: "row",
             alignItems: "center",
-            gap: 8,
+            gap: 10,
         },
         iconButton: {
-            width: 36,
-            height: 36,
-            borderRadius: 9,
+            width: 38,
+            height: 38,
+            borderRadius: 10,
             alignItems: "center",
             justifyContent: "center",
             backgroundColor: t.surfaceAlt,
@@ -586,10 +596,10 @@ function makeStyles(t: AppTheme) {
             borderColor: t.border,
         },
         sidebar: {
-            width: 236,
-            paddingTop: 20,
-            paddingBottom: 16,
-            paddingHorizontal: 12,
+            width: 244,
+            paddingTop: 22,
+            paddingBottom: 18,
+            paddingHorizontal: 14,
             backgroundColor: t.surface,
             borderRightWidth: 1,
             borderRightColor: t.border,
@@ -597,40 +607,40 @@ function makeStyles(t: AppTheme) {
         sidebarBrand: {
             flexDirection: "row",
             alignItems: "center",
-            gap: 10,
+            gap: 11,
             paddingHorizontal: 8,
             paddingBottom: 20,
             borderBottomWidth: 1,
             borderBottomColor: t.border,
-            marginBottom: 16,
+            marginBottom: 18,
         },
         sidebarSectionLabel: {
             color: t.muted,
-            fontSize: 10,
+            fontSize: 11,
             fontWeight: "700",
-            letterSpacing: 0.8,
+            letterSpacing: 0.9,
             paddingHorizontal: 8,
-            marginBottom: 8,
+            marginBottom: 10,
         },
-        sidebarNav: { flex: 1, gap: 4 },
+        sidebarNav: { flex: 1, gap: 5 },
         sidebarItem: {
             flexDirection: "row",
             alignItems: "center",
-            gap: 11,
-            paddingHorizontal: 12,
-            paddingVertical: 10,
-            borderRadius: 9,
+            gap: 12,
+            paddingHorizontal: 13,
+            paddingVertical: 11,
+            borderRadius: 10,
         },
         sidebarItemActive: {
-            backgroundColor: t.surfaceAlt,
+            backgroundColor: t.accentSoft,
         },
-        sidebarLabel: { color: t.muted, fontSize: 13, fontWeight: "600" },
-        sidebarLabelActive: { color: t.text, fontWeight: "700" },
+        sidebarLabel: { color: t.textSecondary, fontSize: 13, fontWeight: "600" },
+        sidebarLabelActive: { color: t.accent, fontWeight: "700" },
         sidebarFooter: {
             borderTopWidth: 1,
             borderTopColor: t.border,
-            paddingTop: 12,
-            gap: 8,
+            paddingTop: 14,
+            gap: 10,
         },
         sidebarFooterItem: {
             flexDirection: "row",
@@ -644,27 +654,27 @@ function makeStyles(t: AppTheme) {
             flexDirection: "row",
             alignItems: "center",
             gap: 10,
-            padding: 9,
-            borderRadius: 10,
+            padding: 10,
+            borderRadius: 11,
             backgroundColor: t.surfaceAlt,
             borderWidth: 1,
             borderColor: t.border,
         },
         sidebarAvatar: {
-            width: 30,
-            height: 30,
-            borderRadius: 7,
+            width: 32,
+            height: 32,
+            borderRadius: 8,
             backgroundColor: t.accentSoft,
             alignItems: "center",
             justifyContent: "center",
         },
         sidebarAccountName: {
             color: t.text,
-            fontSize: 12,
+            fontSize: 13,
             fontWeight: "700",
         },
         sidebarAccountSub: {
-            color: t.muted,
+            color: t.textSecondary,
             fontSize: 11,
             marginTop: 1,
         },
@@ -673,20 +683,20 @@ function makeStyles(t: AppTheme) {
             alignItems: "center",
             justifyContent: "space-between",
             paddingHorizontal: 32,
-            paddingVertical: 12,
+            paddingVertical: 13,
             backgroundColor: t.surface,
             borderBottomWidth: 1,
             borderBottomColor: t.border,
         },
         topSearch: {
             flex: 1,
-            maxWidth: 380,
+            maxWidth: 400,
             flexDirection: "row",
             alignItems: "center",
             gap: 10,
-            paddingHorizontal: 12,
-            paddingVertical: 8,
-            borderRadius: 9,
+            paddingHorizontal: 14,
+            paddingVertical: 9,
+            borderRadius: 10,
             backgroundColor: t.surfaceAlt,
             borderWidth: 1,
             borderColor: t.border,
@@ -695,22 +705,22 @@ function makeStyles(t: AppTheme) {
         topBarRight: {
             flexDirection: "row",
             alignItems: "center",
-            gap: 10,
+            gap: 12,
         },
         studioQuickBtn: {
             flexDirection: "row",
             alignItems: "center",
-            gap: 6,
-            paddingHorizontal: 12,
-            height: 34,
-            borderRadius: 8,
+            gap: 7,
+            paddingHorizontal: 14,
+            height: 36,
+            borderRadius: 9,
             backgroundColor: t.accentSoft,
             borderWidth: 1,
             borderColor: t.accent + "33",
         },
         studioQuickText: {
             color: t.accent,
-            fontSize: 12,
+            fontSize: 13,
             fontWeight: "700",
         },
         topAccountBtn: {
@@ -719,13 +729,13 @@ function makeStyles(t: AppTheme) {
             backgroundColor: t.surfaceAlt,
             borderWidth: 1,
             borderColor: t.border,
-            borderRadius: 8,
-            paddingHorizontal: 12,
-            height: 34,
+            borderRadius: 9,
+            paddingHorizontal: 13,
+            height: 36,
             gap: 7,
         },
         topAccountText: {
-            fontSize: 12,
+            fontSize: 13,
             color: t.text,
             fontWeight: "600",
         },
@@ -735,8 +745,22 @@ function makeStyles(t: AppTheme) {
             borderTopWidth: 1,
             borderTopColor: t.border,
             paddingTop: 8,
+            elevation: 8,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: -2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 6,
         },
         navItem: { flex: 1, alignItems: "center", gap: 3 },
-        navLabel: { color: t.muted, fontSize: 10, fontWeight: "600" },
+        navIconWrapper: {
+            paddingHorizontal: 14,
+            paddingVertical: 4,
+            borderRadius: 14,
+        },
+        navIconWrapperActive: {
+            backgroundColor: t.accentSoft,
+        },
+        navLabel: { fontSize: 11, fontWeight: "600" },
+        navLabelActive: { color: t.accent, fontWeight: "700" },
     });
 }

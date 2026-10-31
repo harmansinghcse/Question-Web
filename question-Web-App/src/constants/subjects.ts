@@ -11,13 +11,13 @@ export { parseStudentEmail, type StudentProfile };
  */
 
 const SUBJECT_COLOURS = [
-  '#6387F5',
-  '#B17AE8',
-  '#24A681',
-  '#E89B36',
-  '#7654E8',
-  '#E8547A',
-  '#36A6C6',
+  '#9275F5',
+  '#A78BFA',
+  '#7457D9',
+  '#818CF8',
+  '#6366F1',
+  '#38BDF8',
+  '#34D399',
 ] as const;
 
 /** Exact subject code → icon. */

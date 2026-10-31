@@ -5,12 +5,14 @@ import {
     ScrollView,
     StyleSheet,
     Text,
+    TextInput,
     View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import AppShell from "../components/AppShell";
 import QuestionBankView from "../components/QuestionBankView";
+import { EmptyBlock } from "../components/ui";
 import { useAppTheme } from "../providers/ThemeProvider";
 import type { AppTheme } from "../constants/theme";
 
@@ -23,10 +25,11 @@ interface AcademicResource {
     type: "Book" | "Lecture Notes" | "Curriculum";
     subject: string;
     subjectKey: string;
+    semester?: number;
     description: string;
 }
 
-const FEATURED_RESOURCES: AcademicResource[] = [
+export const FEATURED_RESOURCES: AcademicResource[] = [
     {
         id: "res-1",
         title: "Database System Concepts (7th Edition)",
@@ -34,6 +37,7 @@ const FEATURED_RESOURCES: AcademicResource[] = [
         type: "Book",
         subject: "Database Management Systems",
         subjectKey: "CS201",
+        semester: 3,
         description: "Primary reference book covering relational algebra, SQL, indexing, and transaction management.",
     },
     {
@@ -43,6 +47,7 @@ const FEATURED_RESOURCES: AcademicResource[] = [
         type: "Book",
         subject: "Computer Organization",
         subjectKey: "CS203",
+        semester: 3,
         description: "Standard text for processor datapath, pipelining, cache memory hierarchies, and virtual memory.",
     },
     {
@@ -52,6 +57,7 @@ const FEATURED_RESOURCES: AcademicResource[] = [
         type: "Book",
         subject: "Discrete Mathematics",
         subjectKey: "CS205",
+        semester: 3,
         description: "Comprehensive guide to set theory, logic, combinatorics, graph theory, and proof techniques.",
     },
     {
@@ -61,6 +67,7 @@ const FEATURED_RESOURCES: AcademicResource[] = [
         type: "Book",
         subject: "Object-Oriented Programming",
         subjectKey: "CS207",
+        semester: 3,
         description: "Foundational guide covering classes, inheritance, polymorphism, templates, and exception handling.",
     },
     {
@@ -70,7 +77,28 @@ const FEATURED_RESOURCES: AcademicResource[] = [
         type: "Curriculum",
         subject: "Academic Regulations",
         subjectKey: "SVNIT",
+        semester: 4,
         description: "Official course scheme, credit structure, and semester-wise examination evaluation policy.",
+    },
+    {
+        id: "res-6",
+        title: "Design and Analysis of Computer Algorithms",
+        author: "Aho, Hopcroft, Ullman",
+        type: "Book",
+        subject: "Data Structures & Algorithms",
+        subjectKey: "CS202",
+        semester: 4,
+        description: "Classic text on asymptotic complexity, divide-and-conquer, dynamic programming, and graph algorithms.",
+    },
+    {
+        id: "res-7",
+        title: "Operating System Concepts (10th Edition)",
+        author: "Silberschatz, Galvin, Gagne",
+        type: "Book",
+        subject: "Operating Systems",
+        subjectKey: "CS204",
+        semester: 4,
+        description: "Comprehensive coverage of processes, threads, synchronization, memory management, and file systems.",
     },
 ];
 
@@ -79,7 +107,7 @@ const RESOURCE_CATEGORIES: {
     label: string;
     icon: React.ComponentProps<typeof Ionicons>["name"];
 }[] = [
-    { key: "All", label: "All", icon: "layers-outline" },
+    { key: "All", label: "All Resources", icon: "layers-outline" },
     { key: "Book", label: "Books", icon: "book-outline" },
     { key: "Lecture Notes", label: "Notes", icon: "document-text-outline" },
     { key: "Curriculum", label: "Curriculum", icon: "school-outline" },
@@ -118,11 +146,26 @@ export default function LearnScreen() {
     }
 
     const [resourceFilter, setResourceFilter] = useState<string>("All");
+    const [resourceSearch, setResourceSearch] = useState<string>("");
 
     const filteredResources = useMemo(() => {
-        if (resourceFilter === "All") return FEATURED_RESOURCES;
-        return FEATURED_RESOURCES.filter((r) => r.type === resourceFilter);
-    }, [resourceFilter]);
+        let list = FEATURED_RESOURCES;
+        if (resourceFilter !== "All") {
+            list = list.filter((r) => r.type === resourceFilter);
+        }
+        if (resourceSearch.trim().length > 0) {
+            const q = resourceSearch.toLowerCase().trim();
+            list = list.filter(
+                (r) =>
+                    r.title.toLowerCase().includes(q) ||
+                    r.author.toLowerCase().includes(q) ||
+                    r.subject.toLowerCase().includes(q) ||
+                    r.subjectKey.toLowerCase().includes(q) ||
+                    r.description.toLowerCase().includes(q),
+            );
+        }
+        return list;
+    }, [resourceFilter, resourceSearch]);
 
     return (
         <AppShell active="learn" hideTopSearch>
@@ -131,14 +174,14 @@ export default function LearnScreen() {
                 <View style={s.header}>
                     <View style={s.headerTitleRow}>
                         <View style={s.headerAccent} />
-                        <Text style={s.title}>Learn</Text>
+                        <Text style={s.title}>Academic Repository</Text>
                     </View>
                     <Text style={s.subtitle}>
-                        Explore questions and study resources.
+                        Browse examination questions, curriculum reference materials, and academic texts.
                     </Text>
                 </View>
 
-                {/* Segmented Control (Elevated, polished tabs) */}
+                {/* Segmented Control */}
                 <View style={s.segmentedContainer}>
                     <Pressable
                         onPress={() => setActiveTab("questions")}
@@ -155,11 +198,11 @@ export default function LearnScreen() {
                                     ? "library"
                                     : "library-outline"
                             }
-                            size={16}
+                            size={17}
                             color={
                                 activeTab === "questions"
                                     ? theme.accent
-                                    : theme.muted
+                                    : theme.textSecondary
                             }
                         />
                         <Text
@@ -169,7 +212,7 @@ export default function LearnScreen() {
                                     s.tabButtonTextActive,
                             ]}
                         >
-                            Questions
+                            Question Bank
                         </Text>
                     </Pressable>
 
@@ -188,11 +231,11 @@ export default function LearnScreen() {
                                     ? "book"
                                     : "book-outline"
                             }
-                            size={16}
+                            size={17}
                             color={
                                 activeTab === "resources"
                                     ? theme.accent
-                                    : theme.muted
+                                    : theme.textSecondary
                             }
                         />
                         <Text
@@ -202,7 +245,7 @@ export default function LearnScreen() {
                                     s.tabButtonTextActive,
                             ]}
                         >
-                            Resources
+                            Study Resources
                         </Text>
                     </Pressable>
                 </View>
@@ -212,6 +255,34 @@ export default function LearnScreen() {
                     <QuestionBankView showHeader={false} />
                 ) : (
                     <View style={s.resourcesContainer}>
+                        {/* Resource Search */}
+                        <View style={s.searchBox}>
+                            <Ionicons
+                                name="search-outline"
+                                size={18}
+                                color={theme.textSecondary}
+                            />
+                            <TextInput
+                                value={resourceSearch}
+                                onChangeText={setResourceSearch}
+                                placeholder="Search books, author, subject, or notes..."
+                                placeholderTextColor={theme.muted}
+                                style={s.searchInput}
+                            />
+                            {resourceSearch.length > 0 && (
+                                <Pressable
+                                    onPress={() => setResourceSearch("")}
+                                    hitSlop={8}
+                                >
+                                    <Ionicons
+                                        name="close-circle"
+                                        size={18}
+                                        color={theme.muted}
+                                    />
+                                </Pressable>
+                            )}
+                        </View>
+
                         {/* Resource Category Filter */}
                         <ScrollView
                             horizontal
@@ -233,8 +304,8 @@ export default function LearnScreen() {
                                     >
                                         <Ionicons
                                             name={cat.icon}
-                                            size={13}
-                                            color={isSel ? theme.accent : theme.muted}
+                                            size={14}
+                                            color={isSel ? theme.accent : theme.textSecondary}
                                         />
                                         <Text
                                             style={[
@@ -251,79 +322,101 @@ export default function LearnScreen() {
                         </ScrollView>
 
                         {/* Resource Cards */}
-                        <View style={s.resourceList}>
-                            {filteredResources.map((res) => (
-                                <View key={res.id} style={s.resourceCard}>
-                                    <View style={s.resHeaderRow}>
-                                        <View style={s.subjectPill}>
-                                            <Text style={s.subjectPillText}>
-                                                {res.subjectKey}
-                                            </Text>
+                        {filteredResources.length === 0 ? (
+                            <EmptyBlock
+                                icon="book-outline"
+                                title="No resources found"
+                                text="Try clearing your search query or choosing another category."
+                                actionLabel="Show all resources"
+                                onAction={() => {
+                                    setResourceFilter("All");
+                                    setResourceSearch("");
+                                }}
+                            />
+                        ) : (
+                            <View style={s.resourceList}>
+                                {filteredResources.map((res) => (
+                                    <View key={res.id} style={s.resourceCard}>
+                                        <View style={s.resHeaderRow}>
+                                            <View style={s.resTagsRow}>
+                                                <View style={s.subjectPill}>
+                                                    <Text style={s.subjectPillText}>
+                                                        {res.subjectKey}
+                                                    </Text>
+                                                </View>
+                                                {res.semester && (
+                                                    <View style={s.semPill}>
+                                                        <Text style={s.semPillText}>
+                                                            Sem {res.semester}
+                                                        </Text>
+                                                    </View>
+                                                )}
+                                            </View>
+                                            <View style={s.resTypeBadge}>
+                                                <Ionicons
+                                                    name={getResourceTypeIcon(res.type)}
+                                                    size={13}
+                                                    color={theme.accent}
+                                                />
+                                                <Text style={s.resTypeText}>
+                                                    {res.type}
+                                                </Text>
+                                            </View>
                                         </View>
-                                        <View style={s.resTypeBadge}>
+
+                                        <Text style={s.resTitle}>{res.title}</Text>
+
+                                        <View style={s.authorRow}>
                                             <Ionicons
-                                                name={getResourceTypeIcon(res.type)}
-                                                size={12}
-                                                color={theme.accent}
-                                            />
-                                            <Text style={s.resTypeText}>
-                                                {res.type}
-                                            </Text>
-                                        </View>
-                                    </View>
-
-                                    <Text style={s.resTitle}>{res.title}</Text>
-
-                                    <View style={s.authorRow}>
-                                        <Ionicons
-                                            name="person-outline"
-                                            size={12}
-                                            color={theme.muted}
-                                        />
-                                        <Text style={s.resAuthor}>
-                                            by {res.author}
-                                        </Text>
-                                    </View>
-
-                                    <Text style={s.resDesc} numberOfLines={2}>
-                                        {res.description}
-                                    </Text>
-
-                                    <View style={s.resFooter}>
-                                        <View style={s.resSubjectRow}>
-                                            <Ionicons
-                                                name="school-outline"
+                                                name="person-outline"
                                                 size={13}
-                                                color={theme.muted}
+                                                color={theme.textSecondary}
                                             />
-                                            <Text style={s.resSubjectName}>
-                                                {res.subject}
+                                            <Text style={s.resAuthor}>
+                                                {res.author}
                                             </Text>
                                         </View>
-                                        <Pressable
-                                            onPress={() =>
-                                                router.push("/syllabus")
-                                            }
-                                            accessibilityRole="button"
-                                            accessibilityLabel={`View ${res.title} in syllabus`}
-                                            style={({ pressed }) => [
-                                                s.resActionBtn,
-                                                pressed && { opacity: 0.8 },
-                                            ]}
-                                        >
-                                            <Text style={s.resActionBtnText}>
-                                                View in Syllabus
-                                            </Text>
-                                            <Ionicons
-                                                name="arrow-forward"
-                                                size={12}
-                                                color={theme.accent}
-                                            />
-                                        </Pressable>
+
+                                        <Text style={s.resDesc} numberOfLines={2}>
+                                            {res.description}
+                                        </Text>
+
+                                        <View style={s.resFooter}>
+                                            <View style={s.resSubjectRow}>
+                                                <Ionicons
+                                                    name="school-outline"
+                                                    size={13}
+                                                    color={theme.textSecondary}
+                                                />
+                                                <Text style={s.resSubjectName} numberOfLines={1}>
+                                                    {res.subject}
+                                                </Text>
+                                            </View>
+                                            <Pressable
+                                                onPress={() =>
+                                                    router.push("/syllabus")
+                                                }
+                                                accessibilityRole="button"
+                                                accessibilityLabel={`View ${res.title} in syllabus`}
+                                                style={({ pressed }) => [
+                                                    s.resActionBtn,
+                                                    pressed && { opacity: 0.8 },
+                                                ]}
+                                            >
+                                                <Text style={s.resActionBtnText}>
+                                                    View in Syllabus
+                                                </Text>
+                                                <Ionicons
+                                                    name="arrow-forward"
+                                                    size={13}
+                                                    color={theme.accent}
+                                                />
+                                            </Pressable>
+                                        </View>
                                     </View>
-                                </View>
-                            ))}
-                        </View>
+                                ))}
+                            </View>
+                        )}
                     </View>
                 )}
             </View>
@@ -337,7 +430,7 @@ function makeStyles(t: AppTheme) {
             width: "100%",
             maxWidth: 880,
             alignSelf: "center",
-            gap: 16,
+            gap: 18,
             paddingBottom: 28,
         },
         header: {
@@ -347,7 +440,7 @@ function makeStyles(t: AppTheme) {
         headerTitleRow: {
             flexDirection: "row",
             alignItems: "center",
-            gap: 8,
+            gap: 9,
         },
         headerAccent: {
             width: 3.5,
@@ -363,7 +456,7 @@ function makeStyles(t: AppTheme) {
         },
         subtitle: {
             fontSize: 13,
-            color: t.muted,
+            color: t.textSecondary,
             lineHeight: 18,
         },
         segmentedContainer: {
@@ -381,14 +474,14 @@ function makeStyles(t: AppTheme) {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "center",
-            gap: 7,
+            gap: 8,
             paddingVertical: 10,
-            borderRadius: 8,
+            borderRadius: 9,
         },
         tabButtonActive: {
             backgroundColor: t.surface,
             borderWidth: 1,
-            borderColor: t.accent + "40",
+            borderColor: t.accent + "33",
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 1 },
             shadowOpacity: 0.08,
@@ -398,7 +491,7 @@ function makeStyles(t: AppTheme) {
         tabButtonText: {
             fontSize: 13,
             fontWeight: "600",
-            color: t.muted,
+            color: t.textSecondary,
         },
         tabButtonTextActive: {
             color: t.accent,
@@ -407,6 +500,23 @@ function makeStyles(t: AppTheme) {
         resourcesContainer: {
             gap: 14,
         },
+        searchBox: {
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 10,
+            paddingHorizontal: 14,
+            height: 44,
+            borderRadius: 12,
+            backgroundColor: t.surface,
+            borderWidth: 1,
+            borderColor: t.border,
+        },
+        searchInput: {
+            flex: 1,
+            color: t.text,
+            fontSize: 13,
+            padding: 0,
+        },
         filterRow: {
             gap: 8,
             paddingVertical: 2,
@@ -414,8 +524,8 @@ function makeStyles(t: AppTheme) {
         filterPill: {
             flexDirection: "row",
             alignItems: "center",
-            gap: 6,
-            height: 36,
+            gap: 7,
+            height: 38,
             paddingHorizontal: 14,
             borderRadius: 10,
             backgroundColor: t.surface,
@@ -429,27 +539,32 @@ function makeStyles(t: AppTheme) {
         filterPillText: {
             fontSize: 12,
             fontWeight: "600",
-            color: t.muted,
+            color: t.textSecondary,
         },
         filterPillTextActive: {
             color: t.accent,
             fontWeight: "700",
         },
         resourceList: {
-            gap: 12,
+            gap: 14,
         },
         resourceCard: {
             backgroundColor: t.surface,
-            borderRadius: 14,
+            borderRadius: 16,
             borderWidth: 1,
             borderColor: t.border,
-            padding: 16,
-            gap: 8,
+            padding: 18,
+            gap: 9,
         },
         resHeaderRow: {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
+        },
+        resTagsRow: {
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 8,
         },
         subjectPill: {
             paddingHorizontal: 8,
@@ -464,12 +579,23 @@ function makeStyles(t: AppTheme) {
             fontWeight: "700",
             color: t.textSecondary,
         },
+        semPill: {
+            paddingHorizontal: 7,
+            paddingVertical: 3,
+            borderRadius: 6,
+            backgroundColor: t.accentSoft,
+        },
+        semPillText: {
+            fontSize: 11,
+            fontWeight: "700",
+            color: t.accent,
+        },
         resTypeBadge: {
             flexDirection: "row",
             alignItems: "center",
             gap: 5,
-            paddingHorizontal: 8,
-            paddingVertical: 3,
+            paddingHorizontal: 9,
+            paddingVertical: 3.5,
             borderRadius: 6,
             backgroundColor: t.accentSoft,
         },
@@ -487,11 +613,11 @@ function makeStyles(t: AppTheme) {
         authorRow: {
             flexDirection: "row",
             alignItems: "center",
-            gap: 5,
+            gap: 6,
         },
         resAuthor: {
             fontSize: 12,
-            color: t.muted,
+            color: t.textSecondary,
             fontWeight: "500",
         },
         resDesc: {
@@ -504,7 +630,7 @@ function makeStyles(t: AppTheme) {
             alignItems: "center",
             justifyContent: "space-between",
             marginTop: 4,
-            paddingTop: 10,
+            paddingTop: 12,
             borderTopWidth: 1,
             borderTopColor: t.border,
         },
@@ -518,22 +644,22 @@ function makeStyles(t: AppTheme) {
         resSubjectName: {
             fontSize: 12,
             fontWeight: "500",
-            color: t.muted,
+            color: t.textSecondary,
         },
         resActionBtn: {
             flexDirection: "row",
             alignItems: "center",
-            gap: 4,
-            paddingHorizontal: 10,
-            paddingVertical: 5,
-            borderRadius: 6,
-            backgroundColor: t.surfaceAlt,
+            gap: 5,
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            borderRadius: 8,
+            backgroundColor: t.accentSoft,
             borderWidth: 1,
-            borderColor: t.border,
+            borderColor: t.accent + "25",
         },
         resActionBtnText: {
-            fontSize: 11,
-            fontWeight: "600",
+            fontSize: 12,
+            fontWeight: "700",
             color: t.accent,
         },
     });

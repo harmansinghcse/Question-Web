@@ -49,7 +49,6 @@ export default function HomeScreen() {
         sessionsCompleted: 0,
         lastStudyDate: new Date().toISOString(),
     });
-    // Real Syllabus Tracker context for authenticated students
 
     // ── Active Modal ────────────────────────────────────────────────────────
     const [activeModal, setActiveModal] = useState<ActiveToolModal>(null);
@@ -180,8 +179,6 @@ export default function HomeScreen() {
         };
     }, [upcomingExams]);
 
-    // ── Today's Schedule (at most 3 entries on Home) ────────────────────────
-
     // ── Syllabus Progress Preview (at most 3 subject rows from real backend records) ───
     const syllabusPreview = useMemo(() => {
         if (!canFetchTracker || trackerState.status !== "success" || !trackerState.data) {
@@ -209,28 +206,28 @@ export default function HomeScreen() {
             {
                 id: "planner",
                 title: "Daily Planner",
-                subtitle: `${goals.filter((g) => g.completed).length} of ${goals.length} goals completed`,
+                subtitle: `${goals.filter((g) => g.completed).length} of ${goals.length} tasks`,
                 icon: "checkbox-outline" as const,
                 onPress: () => setActiveModal("daily-planner"),
             },
             {
                 id: "report",
                 title: "Study Report",
-                subtitle: `${studyStats.totalMinutes} mins recorded`,
+                subtitle: `${studyStats.totalMinutes}m logged`,
                 icon: "bar-chart-outline" as const,
                 onPress: () => setActiveModal("study-report"),
             },
             {
                 id: "timer",
                 title: "Focus Timer",
-                subtitle: "25m Interval",
+                subtitle: "25m Pomodoro",
                 icon: "timer-outline" as const,
                 onPress: () => setActiveModal("focus-timer"),
             },
             {
                 id: "reminders",
                 title: "Study Reminders",
-                subtitle: "Daily study alerts",
+                subtitle: "Daily alerts",
                 icon: "notifications-outline" as const,
                 onPress: () => setActiveModal("study-reminders"),
             },
@@ -245,27 +242,29 @@ export default function HomeScreen() {
                 <View style={s.bannerCard}>
                     <View style={s.bannerContent}>
                         <View style={s.bannerTextCol}>
-                            <Text style={s.bannerGreeting}>
-                                {greeting} 👋, {displayName}
-                            </Text>
+                            <View style={s.greetingBadge}>
+                                <Ionicons name="sparkles" size={12} color={theme.accent} />
+                                <Text style={s.bannerGreeting}>
+                                    {greeting}, {displayName}
+                                </Text>
+                            </View>
                             <Text style={s.bannerHeadline}>
-                                Make today count.
+                                Make Today Count.
                             </Text>
                             <Text style={s.bannerSubtitle}>
-                                Stay consistent, keep learning, and achieve your
-                                goals.
+                                Stay consistent, master your coursework, and keep tracking your progress.
                             </Text>
                             <Pressable
                                 onPress={() => setActiveModal("daily-planner")}
                                 accessibilityRole="button"
-                                accessibilityLabel="Go to My Plan"
+                                accessibilityLabel="Go to Daily Plan"
                                 style={({ pressed }) => [
                                     s.bannerButton,
                                     pressed && { opacity: 0.85 },
                                 ]}
                             >
                                 <Text style={s.bannerButtonText}>
-                                    Go to My Plan
+                                    Open Daily Plan
                                 </Text>
                                 <Ionicons
                                     name="arrow-forward"
@@ -276,14 +275,11 @@ export default function HomeScreen() {
                         </View>
                         {isWide && (
                             <View style={s.bannerIllustrationWrapper}>
-                                <AcademicBannerIllustration size={76} />
+                                <AcademicBannerIllustration size={84} />
                             </View>
                         )}
                     </View>
                 </View>
-
-                {/* Section Divider */}
-                <View style={s.sectionDivider} />
 
                 {/* 2. UPCOMING EXAM */}
                 <View style={s.section}>
@@ -291,7 +287,7 @@ export default function HomeScreen() {
                         <View style={s.sectionHeaderLeft}>
                             <View style={s.sectionAccentBar} />
                             <Text style={s.sectionTitle}>
-                                Upcoming Exam
+                                Upcoming Exams
                             </Text>
                         </View>
                         <Pressable
@@ -303,7 +299,7 @@ export default function HomeScreen() {
                             <Text style={s.actionLinkText}>View All</Text>
                             <Ionicons
                                 name="chevron-forward"
-                                size={13}
+                                size={14}
                                 color={theme.accent}
                             />
                         </Pressable>
@@ -312,9 +308,9 @@ export default function HomeScreen() {
                     {schedule.exams.status === "unauthenticated" ? (
                         <EmptyBlock
                             icon="log-in-outline"
-                            title="Log in to see upcoming exams"
-                            text="Exams are shown for your department once you are signed in."
-                            actionLabel="Log in"
+                            title="Sign in to view exams"
+                            text="Upcoming examinations and schedules will show here once you sign in."
+                            actionLabel="Sign in"
                             onAction={() => router.push("/login" as never)}
                         />
                     ) : schedule.exams.status === "loading" ? (
@@ -326,9 +322,15 @@ export default function HomeScreen() {
                             onRetry={schedule.exams.refresh}
                         />
                     ) : nearestExamInfo ? (
-                        <View style={s.card}>
+                        <Pressable
+                            onPress={() => setActiveModal("upcoming-exams")}
+                            style={({ pressed }) => [
+                                s.examCard,
+                                pressed && { opacity: 0.9 },
+                            ]}
+                        >
                             <View style={s.examRow}>
-                                <View style={{ flex: 1, gap: 4 }}>
+                                <View style={{ flex: 1, gap: 6 }}>
                                     <View style={s.examTagRow}>
                                         <View style={s.subjectPill}>
                                             <Text style={s.subjectPillText}>
@@ -346,55 +348,48 @@ export default function HomeScreen() {
                                 <View
                                     style={[
                                         s.countdownPill,
-                                        nearestExamInfo.countdownTone ===
-                                            "urgent" && s.countdownUrgent,
-                                        nearestExamInfo.countdownTone ===
-                                            "soon" && s.countdownSoon,
+                                        nearestExamInfo.countdownTone === "urgent" && s.countdownUrgent,
+                                        nearestExamInfo.countdownTone === "soon" && s.countdownSoon,
                                     ]}
                                 >
                                     <Text
                                         style={[
                                             s.countdownText,
-                                            nearestExamInfo.countdownTone ===
-                                                "urgent" &&
-                                                s.countdownTextUrgent,
-                                            nearestExamInfo.countdownTone ===
-                                                "soon" && s.countdownTextSoon,
+                                            nearestExamInfo.countdownTone === "urgent" && s.countdownTextUrgent,
+                                            nearestExamInfo.countdownTone === "soon" && s.countdownTextSoon,
                                         ]}
                                     >
                                         {nearestExamInfo.countdownLabel}
                                     </Text>
                                 </View>
                             </View>
-                        </View>
+                        </Pressable>
                     ) : (
                         <View style={s.emptyCard}>
-                            <Ionicons
-                                name="calendar-outline"
-                                size={22}
-                                color={theme.muted}
-                            />
+                            <View style={s.emptyIconCircle}>
+                                <Ionicons
+                                    name="calendar-outline"
+                                    size={18}
+                                    color={theme.accent}
+                                />
+                            </View>
                             <View style={s.emptyCardBody}>
                                 <Text style={s.emptyCardTitle}>
                                     No upcoming exams scheduled
                                 </Text>
                                 <Text style={s.emptyCardSub}>
-                                    Exams scheduled for your department will
-                                    appear here.
+                                    Exams scheduled for your department will appear here.
                                 </Text>
                             </View>
                         </View>
                     )}
                 </View>
 
-                {/* Section Divider */}
-                <View style={s.sectionDivider} />
-
                 {/* 3. TODAY'S TIMETABLE */}
                 <View style={s.section}>
                     <View style={s.sectionHeader}>
                         <View style={s.sectionHeaderLeft}>
-                            <View style={[s.sectionAccentBar, { backgroundColor: "#3B82F6" }]} />
+                            <View style={s.sectionAccentBar} />
                             <Text style={s.sectionTitle}>
                                 {"Today's Timetable"}
                             </Text>
@@ -408,7 +403,7 @@ export default function HomeScreen() {
                             <Text style={s.actionLinkText}>View All</Text>
                             <Ionicons
                                 name="chevron-forward"
-                                size={13}
+                                size={14}
                                 color={theme.accent}
                             />
                         </Pressable>
@@ -417,9 +412,9 @@ export default function HomeScreen() {
                     {schedule.timetable.status === "unauthenticated" ? (
                         <EmptyBlock
                             icon="log-in-outline"
-                            title="Log in to see your timetable"
-                            text="Your timetable is based on your department and semester."
-                            actionLabel="Log in"
+                            title="Sign in to view timetable"
+                            text="Your class schedule is based on your department and semester."
+                            actionLabel="Sign in"
                             onAction={() => router.push("/login" as never)}
                         />
                     ) : schedule.timetable.status === "loading" ? (
@@ -437,30 +432,31 @@ export default function HomeScreen() {
                                     key={item.entryId}
                                     style={[
                                         s.scheduleRow,
-                                        idx < todaySchedule.length - 1 &&
-                                            s.scheduleDivider,
+                                        idx < todaySchedule.length - 1 && s.scheduleDivider,
                                     ]}
                                 >
-                                    <Text style={s.scheduleTime}>
-                                        {item.startTime}
-                                    </Text>
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={s.scheduleTitle}>
+                                    <View style={s.timeBlock}>
+                                        <Text style={s.scheduleTime}>
+                                            {item.startTime}
+                                        </Text>
+                                        <Text style={s.scheduleEndTime}>
+                                            {item.endTime}
+                                        </Text>
+                                    </View>
+                                    <View style={{ flex: 1, gap: 2 }}>
+                                        <Text style={s.scheduleTitle} numberOfLines={1}>
                                             {item.subject?.subjectName ||
                                                 item.subject?.subjectId ||
                                                 `Subject #${item.subjectKey}`}
                                         </Text>
-                                        <Text style={s.scheduleLocation}>
+                                        <Text style={s.scheduleLocation} numberOfLines={1}>
                                             {[
-                                                `${item.startTime}-${item.endTime}`,
-                                                item.classroom
-                                                    ? `Room: ${item.classroom}`
-                                                    : null,
+                                                item.classroom ? `Room: ${item.classroom}` : null,
                                                 item.teacher,
                                                 item.classType,
                                             ]
                                                 .filter(Boolean)
-                                                .join(" \u2022 ")}
+                                                .join("  •  ")}
                                         </Text>
                                     </View>
                                 </View>
@@ -468,16 +464,18 @@ export default function HomeScreen() {
                         </View>
                     ) : (
                         <View style={s.emptyCard}>
-                            <Ionicons
-                                name="time-outline"
-                                size={22}
-                                color={theme.muted}
-                            />
+                            <View style={s.emptyIconCircle}>
+                                <Ionicons
+                                    name="time-outline"
+                                    size={18}
+                                    color={theme.accent}
+                                />
+                            </View>
                             <View style={s.emptyCardBody}>
                                 <Text style={s.emptyCardTitle}>
                                     {timetableNeedsDivision
                                         ? "Select your division"
-                                        : "No classes to show today"}
+                                        : "No classes scheduled today"}
                                 </Text>
                                 <Text style={s.emptyCardSub}>
                                     {timetableEmptyText}
@@ -489,7 +487,7 @@ export default function HomeScreen() {
                                     style={s.emptyAction}
                                 >
                                     <Text style={s.emptyActionText}>
-                                        Choose Division
+                                        Choose Div
                                     </Text>
                                 </Pressable>
                             )}
@@ -497,15 +495,12 @@ export default function HomeScreen() {
                     )}
                 </View>
 
-                {/* Section Divider */}
-                <View style={s.sectionDivider} />
-
                 {/* 4. SYLLABUS TRACKER */}
                 <View style={s.section}>
                     <View style={s.sectionHeader}>
                         <View style={s.sectionHeaderLeft}>
-                            <View style={[s.sectionAccentBar, { backgroundColor: "#10B981" }]} />
-                            <Text style={s.sectionTitle}>Syllabus Tracker</Text>
+                            <View style={s.sectionAccentBar} />
+                            <Text style={s.sectionTitle}>Syllabus Progress</Text>
                         </View>
                         <Pressable
                             onPress={() =>
@@ -518,7 +513,7 @@ export default function HomeScreen() {
                             <Text style={s.actionLinkText}>Open Tracker</Text>
                             <Ionicons
                                 name="chevron-forward"
-                                size={13}
+                                size={14}
                                 color={theme.accent}
                             />
                         </Pressable>
@@ -527,9 +522,9 @@ export default function HomeScreen() {
                     {!isAuthenticated && !isRestoring ? (
                         <EmptyBlock
                             icon="git-network-outline"
-                            title="Log in to track syllabus coverage"
-                            text="Record lecture-by-lecture topics and inspect coverage as of any quiz or exam date."
-                            actionLabel="Log in"
+                            title="Sign in to track syllabus coverage"
+                            text="Record lecture-by-lecture topic coverage and view real-time completion analytics."
+                            actionLabel="Sign in"
                             onAction={() => router.push("/login" as never)}
                         />
                     ) : isRestoring || trackerState.status === "loading" ? (
@@ -553,8 +548,6 @@ export default function HomeScreen() {
                                     style={({ pressed }) => [
                                         s.syllabusRow,
                                         idx < syllabusPreview.length - 1 && s.syllabusDivider,
-                                        idx < syllabusPreview.length - 1 &&
-                                            s.scheduleDivider,
                                         pressed && { opacity: 0.8 },
                                     ]}
                                 >
@@ -590,18 +583,18 @@ export default function HomeScreen() {
                                     <View style={s.syllabusFooterRow}>
                                         <View style={s.syllabusTopicsCountCol}>
                                             <Ionicons
-                                                name="checkmark-circle-outline"
+                                                name="checkmark-circle"
                                                 size={13}
-                                                color={theme.muted}
+                                                color={theme.success}
                                             />
                                             <Text style={s.syllabusTopicsCount}>
-                                                {item.completedCount} of {item.totalCount} unique topics covered
+                                                {item.completedCount} of {item.totalCount} topics covered
                                             </Text>
                                         </View>
                                         <Ionicons
                                             name="chevron-forward"
-                                            size={12}
-                                            color={theme.muted}
+                                            size={13}
+                                            color={theme.textSecondary}
                                         />
                                     </View>
                                 </Pressable>
@@ -609,74 +602,113 @@ export default function HomeScreen() {
                         </View>
                     ) : (
                         <View style={s.emptyCard}>
-                            <Ionicons
-                                name="book-outline"
-                                size={22}
-                                color={theme.muted}
-                            />
+                            <View style={s.emptyIconCircle}>
+                                <Ionicons
+                                    name="book-outline"
+                                    size={18}
+                                    color={theme.accent}
+                                />
+                            </View>
                             <View style={s.emptyCardBody}>
                                 <Text style={s.emptyCardTitle}>
                                     No subjects available
                                 </Text>
                                 <Text style={s.emptyCardSub}>
-                                    Subjects will appear here when connected to
-                                    the curriculum.
+                                    Subjects will appear here when connected to the curriculum.
                                 </Text>
                             </View>
                         </View>
                     )}
                 </View>
 
-                {/* Section Divider */}
-                <View style={s.sectionDivider} />
-
                 {/* 5. FOUR STUDY TOOLS CARDS (Balanced 2x2 grid) */}
                 <View style={s.section}>
                     <View style={s.sectionHeader}>
                         <View style={s.sectionHeaderLeft}>
-                            <View style={[s.sectionAccentBar, { backgroundColor: theme.accent }]} />
+                            <View style={s.sectionAccentBar} />
                             <Text style={s.sectionTitle}>Study Tools</Text>
                         </View>
                     </View>
 
                     <View style={s.toolsGrid}>
-                        {homeStudyTools.map((tool) => (
-                            <Pressable
-                                key={tool.id}
-                                onPress={tool.onPress}
-                                accessibilityRole="button"
-                                accessibilityLabel={tool.title}
-                                style={({ pressed }) => [
-                                    s.toolCard,
-                                    pressed && { opacity: 0.85 },
-                                ]}
-                            >
-                                <View style={s.toolCardTop}>
-                                    <View style={s.toolIconWrapper}>
-                                        <Ionicons
-                                            name={tool.icon}
-                                            size={18}
-                                            color={theme.accent}
-                                        />
+                        <View style={s.toolsRow}>
+                            {homeStudyTools.slice(0, 2).map((tool) => (
+                                <Pressable
+                                    key={tool.id}
+                                    onPress={tool.onPress}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={tool.title}
+                                    style={({ pressed }) => [
+                                        s.toolCard,
+                                        pressed && { opacity: 0.85 },
+                                    ]}
+                                >
+                                    <View style={s.toolCardTop}>
+                                        <View style={s.toolIconWrapper}>
+                                            <Ionicons
+                                                name={tool.icon}
+                                                size={18}
+                                                color={theme.accent}
+                                            />
+                                        </View>
+                                        <View style={s.toolChevronWrapper}>
+                                            <Ionicons
+                                                name="chevron-forward"
+                                                size={13}
+                                                color={theme.textSecondary}
+                                            />
+                                        </View>
                                     </View>
-                                    <View style={s.toolChevronWrapper}>
-                                        <Ionicons
-                                            name="chevron-forward"
-                                            size={12}
-                                            color={theme.muted}
-                                        />
+                                    <View style={s.toolCardBottom}>
+                                        <Text style={s.toolTitle} numberOfLines={1}>
+                                            {tool.title}
+                                        </Text>
+                                        <Text style={s.toolSub} numberOfLines={1}>
+                                            {tool.subtitle}
+                                        </Text>
                                     </View>
-                                </View>
-                                <View style={s.toolCardBottom}>
-                                    <Text style={s.toolTitle} numberOfLines={1}>
-                                        {tool.title}
-                                    </Text>
-                                    <Text style={s.toolSub} numberOfLines={1}>
-                                        {tool.subtitle}
-                                    </Text>
-                                </View>
-                            </Pressable>
-                        ))}
+                                </Pressable>
+                            ))}
+                        </View>
+                        <View style={s.toolsRow}>
+                            {homeStudyTools.slice(2, 4).map((tool) => (
+                                <Pressable
+                                    key={tool.id}
+                                    onPress={tool.onPress}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={tool.title}
+                                    style={({ pressed }) => [
+                                        s.toolCard,
+                                        pressed && { opacity: 0.85 },
+                                    ]}
+                                >
+                                    <View style={s.toolCardTop}>
+                                        <View style={s.toolIconWrapper}>
+                                            <Ionicons
+                                                name={tool.icon}
+                                                size={18}
+                                                color={theme.accent}
+                                            />
+                                        </View>
+                                        <View style={s.toolChevronWrapper}>
+                                            <Ionicons
+                                                name="chevron-forward"
+                                                size={13}
+                                                color={theme.textSecondary}
+                                            />
+                                        </View>
+                                    </View>
+                                    <View style={s.toolCardBottom}>
+                                        <Text style={s.toolTitle} numberOfLines={1}>
+                                            {tool.title}
+                                        </Text>
+                                        <Text style={s.toolSub} numberOfLines={1}>
+                                            {tool.subtitle}
+                                        </Text>
+                                    </View>
+                                </Pressable>
+                            ))}
+                        </View>
                     </View>
                 </View>
             </View>
@@ -701,21 +733,24 @@ function makeStyles(t: AppTheme) {
     return StyleSheet.create({
         container: {
             width: "100%",
-            maxWidth: 900,
+            maxWidth: 880,
             alignSelf: "center",
             gap: 24,
-            paddingBottom: 32,
+            paddingBottom: 24,
         },
 
         // ── 1. Welcome Banner ────────────────────────────────────────────────
         bannerCard: {
             backgroundColor: t.surface,
-            borderRadius: 14,
+            borderRadius: 16,
             borderWidth: 1,
             borderColor: t.border,
-            borderLeftWidth: 3,
-            borderLeftColor: t.accent,
-            padding: 20,
+            padding: 18,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.05,
+            shadowRadius: 6,
+            elevation: 2,
         },
         bannerContent: {
             flexDirection: "row",
@@ -724,37 +759,52 @@ function makeStyles(t: AppTheme) {
         },
         bannerTextCol: {
             flex: 1,
-            gap: 4,
+            gap: 6,
             paddingRight: 12,
         },
+        greetingBadge: {
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 6,
+            alignSelf: "flex-start",
+            paddingHorizontal: 8,
+            paddingVertical: 3,
+            borderRadius: 6,
+            backgroundColor: t.accentSoft,
+        },
         bannerGreeting: {
-            color: t.muted,
+            color: t.accent,
             fontSize: 12,
-            fontWeight: "600",
+            fontWeight: "700",
         },
         bannerHeadline: {
             color: t.text,
-            fontSize: 22,
-            fontWeight: "700",
-            letterSpacing: -0.3,
+            fontSize: 24,
+            fontWeight: "800",
+            letterSpacing: -0.4,
+            marginTop: 2,
         },
         bannerSubtitle: {
-            color: t.muted,
+            color: t.textSecondary,
             fontSize: 13,
-            lineHeight: 18,
-            marginTop: 2,
+            lineHeight: 19,
             marginBottom: 6,
         },
         bannerButton: {
             alignSelf: "flex-start",
             flexDirection: "row",
             alignItems: "center",
-            gap: 6,
+            gap: 7,
             backgroundColor: t.accent,
-            borderRadius: 8,
-            paddingHorizontal: 14,
-            paddingVertical: 8,
+            borderRadius: 9,
+            paddingHorizontal: 16,
+            paddingVertical: 9,
             marginTop: 4,
+            shadowColor: t.accent,
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.2,
+            shadowRadius: 4,
+            elevation: 2,
         },
         bannerButtonText: {
             color: "#FFFFFF",
@@ -764,8 +814,8 @@ function makeStyles(t: AppTheme) {
         bannerIllustrationWrapper: {
             alignItems: "center",
             justifyContent: "center",
-            width: 86,
-            height: 86,
+            width: 90,
+            height: 90,
         },
 
         // ── Shared Section Styles ───────────────────────────────────────────
@@ -780,19 +830,13 @@ function makeStyles(t: AppTheme) {
         sectionHeaderLeft: {
             flexDirection: "row",
             alignItems: "center",
-            gap: 8,
+            gap: 9,
         },
         sectionAccentBar: {
             width: 3.5,
             height: 16,
             borderRadius: 2,
             backgroundColor: t.accent,
-        },
-        sectionDivider: {
-            height: 1,
-            backgroundColor: t.border,
-            opacity: 0.5,
-            marginVertical: 4,
         },
         sectionTitle: {
             color: t.text,
@@ -803,7 +847,7 @@ function makeStyles(t: AppTheme) {
         actionLink: {
             flexDirection: "row",
             alignItems: "center",
-            gap: 4,
+            gap: 3,
             paddingVertical: 2,
         },
         actionLinkText: {
@@ -818,15 +862,22 @@ function makeStyles(t: AppTheme) {
             borderRadius: 16,
             borderWidth: 1,
             borderColor: t.border,
-            padding: 16,
+            padding: 18,
         },
 
         // ── 2. Upcoming Exam ────────────────────────────────────────────────
+        examCard: {
+            backgroundColor: t.surface,
+            borderRadius: 16,
+            borderWidth: 1,
+            borderColor: t.border,
+            padding: 16,
+        },
         examRow: {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
-            gap: 12,
+            gap: 14,
         },
         examTagRow: {
             flexDirection: "row",
@@ -835,8 +886,8 @@ function makeStyles(t: AppTheme) {
         },
         subjectPill: {
             backgroundColor: t.surfaceAlt,
-            paddingHorizontal: 7,
-            paddingVertical: 2,
+            paddingHorizontal: 8,
+            paddingVertical: 3,
             borderRadius: 6,
             borderWidth: 1,
             borderColor: t.border,
@@ -847,7 +898,7 @@ function makeStyles(t: AppTheme) {
             fontWeight: "700",
         },
         examDateText: {
-            color: t.muted,
+            color: t.textSecondary,
             fontSize: 12,
             fontWeight: "500",
         },
@@ -858,8 +909,8 @@ function makeStyles(t: AppTheme) {
         },
         countdownPill: {
             backgroundColor: t.surfaceAlt,
-            paddingHorizontal: 10,
-            paddingVertical: 5,
+            paddingHorizontal: 12,
+            paddingVertical: 6,
             borderRadius: 8,
             borderWidth: 1,
             borderColor: t.border,
@@ -873,8 +924,8 @@ function makeStyles(t: AppTheme) {
             borderColor: t.warning,
         },
         countdownText: {
-            color: t.muted,
-            fontSize: 11,
+            color: t.textSecondary,
+            fontSize: 12,
             fontWeight: "700",
         },
         countdownTextUrgent: {
@@ -888,39 +939,46 @@ function makeStyles(t: AppTheme) {
         scheduleRow: {
             flexDirection: "row",
             alignItems: "center",
-            paddingVertical: 10,
-            gap: 14,
+            paddingVertical: 11,
+            gap: 16,
         },
         scheduleDivider: {
             borderBottomWidth: 1,
             borderBottomColor: t.border,
         },
+        timeBlock: {
+            width: 76,
+        },
         scheduleTime: {
             color: t.accent,
-            fontSize: 12,
+            fontSize: 13,
             fontWeight: "700",
-            width: 72,
+        },
+        scheduleEndTime: {
+            color: t.muted,
+            fontSize: 11,
+            fontWeight: "500",
         },
         scheduleTitle: {
             color: t.text,
-            fontSize: 13,
+            fontSize: 14,
             fontWeight: "600",
         },
         scheduleLocation: {
-            color: t.muted,
-            fontSize: 11,
+            color: t.textSecondary,
+            fontSize: 12,
             marginTop: 2,
         },
 
         // ── 4. Syllabus Tracker ─────────────────────────────────────────────
         syllabusRow: {
-            paddingVertical: 14,
-            gap: 10,
+            paddingVertical: 12,
+            gap: 9,
         },
         syllabusDivider: {
             borderBottomWidth: 1,
             borderBottomColor: t.border,
-            paddingBottom: 16,
+            paddingBottom: 14,
             marginBottom: 2,
         },
         syllabusHeaderRow: {
@@ -932,7 +990,7 @@ function makeStyles(t: AppTheme) {
         syllabusCodeRow: {
             flexDirection: "row",
             alignItems: "center",
-            gap: 8,
+            gap: 9,
             flex: 1,
         },
         syllabusName: {
@@ -944,17 +1002,17 @@ function makeStyles(t: AppTheme) {
         syllabusPctBadge: {
             backgroundColor: t.accentSoft,
             paddingHorizontal: 8,
-            paddingVertical: 2,
+            paddingVertical: 3,
             borderRadius: 6,
         },
         syllabusPctText: {
             color: t.accent,
-            fontSize: 11,
+            fontSize: 12,
             fontWeight: "700",
         },
         progressBarWrapper: {
             width: "100%",
-            marginVertical: 2,
+            marginVertical: 1,
         },
         syllabusFooterRow: {
             flexDirection: "row",
@@ -967,20 +1025,21 @@ function makeStyles(t: AppTheme) {
             gap: 6,
         },
         syllabusTopicsCount: {
-            color: t.muted,
+            color: t.textSecondary,
             fontSize: 12,
             fontWeight: "500",
         },
 
         // ── 5. Four Study Tools Cards ───────────────────────────────────────
         toolsGrid: {
-            flexDirection: "row",
-            flexWrap: "wrap",
             gap: 12,
-            justifyContent: "space-between",
+        },
+        toolsRow: {
+            flexDirection: "row",
+            gap: 12,
         },
         toolCard: {
-            width: "48%",
+            flex: 1,
             backgroundColor: t.surface,
             borderRadius: 14,
             borderWidth: 1,
@@ -1006,15 +1065,15 @@ function makeStyles(t: AppTheme) {
             borderColor: t.accent + "25",
         },
         toolChevronWrapper: {
-            width: 22,
-            height: 22,
-            borderRadius: 11,
+            width: 24,
+            height: 24,
+            borderRadius: 12,
             backgroundColor: t.surfaceAlt,
             alignItems: "center",
             justifyContent: "center",
         },
         toolCardBottom: {
-            gap: 3,
+            gap: 2,
             marginTop: 8,
         },
         toolTitle: {
@@ -1024,7 +1083,7 @@ function makeStyles(t: AppTheme) {
             letterSpacing: -0.1,
         },
         toolSub: {
-            color: t.muted,
+            color: t.textSecondary,
             fontSize: 11,
             fontWeight: "500",
         },
@@ -1034,11 +1093,19 @@ function makeStyles(t: AppTheme) {
             flexDirection: "row",
             alignItems: "center",
             backgroundColor: t.surface,
-            borderRadius: 14,
+            borderRadius: 16,
             borderWidth: 1,
             borderColor: t.border,
             padding: 16,
             gap: 12,
+        },
+        emptyIconCircle: {
+            width: 36,
+            height: 36,
+            borderRadius: 10,
+            backgroundColor: t.accentSoft,
+            alignItems: "center",
+            justifyContent: "center",
         },
         emptyCardBody: {
             flex: 1,
@@ -1050,21 +1117,21 @@ function makeStyles(t: AppTheme) {
             fontWeight: "600",
         },
         emptyCardSub: {
-            color: t.muted,
-            fontSize: 11,
-            lineHeight: 16,
+            color: t.textSecondary,
+            fontSize: 12,
+            lineHeight: 17,
         },
         emptyAction: {
-            paddingVertical: 5,
-            paddingHorizontal: 10,
+            paddingVertical: 6,
+            paddingHorizontal: 12,
             backgroundColor: t.surfaceAlt,
-            borderRadius: 6,
+            borderRadius: 8,
             borderWidth: 1,
             borderColor: t.border,
         },
         emptyActionText: {
             color: t.accent,
-            fontSize: 11,
+            fontSize: 12,
             fontWeight: "700",
         },
     });

@@ -35,7 +35,6 @@ export default function QuizRevisionHistoryScreen() {
             const res = await api.getQuizHistory(pageNum, 15);
             setAttempts(res.items || []);
             setTotal(res.total || 0);
-
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to load attempt history.");
         } finally {
@@ -97,7 +96,7 @@ export default function QuizRevisionHistoryScreen() {
                     </View>
                 ) : error ? (
                     <View style={s.errorBox}>
-                        <Ionicons name="alert-circle-outline" size={28} color="#EF4444" />
+                        <Ionicons name="alert-circle-outline" size={28} color={theme.danger} />
                         <Text style={s.errorText}>{error}</Text>
                         <Pressable onPress={() => loadHistory(1)} style={s.retryBtn}>
                             <Text style={s.retryBtnText}>Retry</Text>
@@ -106,7 +105,7 @@ export default function QuizRevisionHistoryScreen() {
                 ) : attempts.length === 0 ? (
                     <View style={s.emptyCard}>
                         <View style={s.emptyIconWrap}>
-                            <Ionicons name="flash-outline" size={32} color={theme.muted} />
+                            <Ionicons name="flash-outline" size={32} color={theme.accent} />
                         </View>
                         <Text style={s.emptyTitle}>No Revision Attempts Yet</Text>
                         <Text style={s.emptySub}>
@@ -165,7 +164,7 @@ export default function QuizRevisionHistoryScreen() {
                                             <Text
                                                 style={[
                                                     s.accuracyText,
-                                                    isPassing ? { color: "#10B981" } : { color: "#F59E0B" },
+                                                    isPassing ? { color: theme.success } : { color: theme.warning },
                                                 ]}
                                             >
                                                 {item.accuracyPercentage}%
@@ -179,18 +178,18 @@ export default function QuizRevisionHistoryScreen() {
                                     <View style={s.attemptFooter}>
                                         <View style={s.badgePills}>
                                             <View style={[s.miniPill, s.pillGreen]}>
-                                                <Text style={[s.miniPillText, { color: "#10B981" }]}>
+                                                <Text style={[s.miniPillText, { color: theme.success }]}>
                                                     ✓ {item.correctCount}
                                                 </Text>
                                             </View>
                                             <View style={[s.miniPill, s.pillRed]}>
-                                                <Text style={[s.miniPillText, { color: "#EF4444" }]}>
+                                                <Text style={[s.miniPillText, { color: theme.danger }]}>
                                                     ✕ {item.incorrectCount}
                                                 </Text>
                                             </View>
                                             {item.unansweredCount > 0 && (
                                                 <View style={[s.miniPill, s.pillGray]}>
-                                                    <Text style={[s.miniPillText, { color: theme.muted }]}>
+                                                    <Text style={[s.miniPillText, { color: theme.textSecondary }]}>
                                                         – {item.unansweredCount}
                                                     </Text>
                                                 </View>
@@ -217,6 +216,9 @@ function makeStyles(t: AppTheme) {
         container: {
             gap: 16,
             paddingBottom: 40,
+            width: "100%",
+            maxWidth: 880,
+            alignSelf: "center",
         },
         headerRow: {
             flexDirection: "row",
@@ -225,9 +227,9 @@ function makeStyles(t: AppTheme) {
             paddingBottom: 4,
         },
         backBtn: {
-            width: 36,
-            height: 36,
-            borderRadius: 18,
+            width: 38,
+            height: 38,
+            borderRadius: 10,
             backgroundColor: t.surface,
             borderWidth: 1,
             borderColor: t.border,
@@ -235,13 +237,15 @@ function makeStyles(t: AppTheme) {
             justifyContent: "center",
         },
         headerTitle: {
-            fontSize: 20,
+            fontSize: 22,
             fontWeight: "800",
             color: t.text,
+            letterSpacing: -0.3,
         },
         headerSub: {
             fontSize: 12,
-            color: t.muted,
+            color: t.textSecondary,
+            marginTop: 2,
         },
         centerBox: {
             padding: 40,
@@ -250,70 +254,71 @@ function makeStyles(t: AppTheme) {
             gap: 12,
         },
         loadingText: {
+            color: t.textSecondary,
             fontSize: 13,
-            color: t.muted,
         },
         errorBox: {
             padding: 20,
-            backgroundColor: "#EF444415",
-            borderRadius: 12,
+            backgroundColor: t.danger + "15",
+            borderRadius: 14,
             borderWidth: 1,
-            borderColor: "#EF444435",
+            borderColor: t.danger + "30",
             alignItems: "center",
             gap: 8,
         },
         errorText: {
-            color: "#EF4444",
+            color: t.danger,
             fontSize: 13,
             textAlign: "center",
         },
         retryBtn: {
-            marginTop: 4,
-            paddingHorizontal: 14,
-            paddingVertical: 6,
-            borderRadius: 6,
-            backgroundColor: t.surface,
+            marginTop: 8,
+            backgroundColor: t.accent,
+            paddingHorizontal: 16,
+            paddingVertical: 8,
+            borderRadius: 8,
         },
         retryBtnText: {
-            color: t.text,
+            color: "#FFF",
             fontSize: 12,
-            fontWeight: "600",
+            fontWeight: "700",
         },
         emptyCard: {
             backgroundColor: t.surface,
             borderRadius: 16,
-            padding: 32,
-            alignItems: "center",
-            gap: 12,
             borderWidth: 1,
             borderColor: t.border,
-            marginTop: 20,
+            padding: 32,
+            alignItems: "center",
+            gap: 10,
+            marginTop: 10,
         },
         emptyIconWrap: {
-            width: 56,
-            height: 56,
-            borderRadius: 28,
-            backgroundColor: t.surfaceAlt,
+            width: 52,
+            height: 52,
+            borderRadius: 14,
+            backgroundColor: t.accentSoft,
             alignItems: "center",
             justifyContent: "center",
+            marginBottom: 4,
         },
         emptyTitle: {
             fontSize: 16,
-            fontWeight: "800",
+            fontWeight: "700",
             color: t.text,
         },
         emptySub: {
             fontSize: 13,
-            color: t.muted,
+            color: t.textSecondary,
             textAlign: "center",
-            lineHeight: 18,
-            maxWidth: 280,
+            lineHeight: 19,
+            maxWidth: 380,
         },
         startBtn: {
             marginTop: 8,
-            backgroundColor: "#EF4444",
+            backgroundColor: t.accent,
             paddingHorizontal: 20,
-            paddingVertical: 12,
+            paddingVertical: 10,
             borderRadius: 10,
         },
         startBtnText: {
@@ -326,7 +331,7 @@ function makeStyles(t: AppTheme) {
         },
         attemptCard: {
             backgroundColor: t.surface,
-            borderRadius: 14,
+            borderRadius: 16,
             padding: 16,
             borderWidth: 1,
             borderColor: t.border,
@@ -345,7 +350,6 @@ function makeStyles(t: AppTheme) {
         },
         chapterName: {
             fontSize: 12,
-            fontWeight: "500",
             color: t.textSecondary,
             marginTop: 2,
         },
@@ -371,36 +375,40 @@ function makeStyles(t: AppTheme) {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
-            paddingTop: 8,
+            paddingTop: 10,
             borderTopWidth: 1,
-            borderColor: t.border,
+            borderTopColor: t.border,
         },
         badgePills: {
             flexDirection: "row",
             gap: 6,
         },
         miniPill: {
-            paddingHorizontal: 8,
-            paddingVertical: 3,
+            paddingHorizontal: 7,
+            paddingVertical: 2,
             borderRadius: 5,
-        },
-        miniPillText: {
-            fontSize: 11,
-            fontWeight: "700",
+            borderWidth: 1,
         },
         pillGreen: {
-            backgroundColor: "#10B98115",
+            borderColor: t.success + "30",
+            backgroundColor: t.success + "12",
         },
         pillRed: {
-            backgroundColor: "#EF444415",
+            borderColor: t.danger + "30",
+            backgroundColor: t.danger + "12",
         },
         pillGray: {
+            borderColor: t.border,
             backgroundColor: t.surfaceAlt,
+        },
+        miniPillText: {
+            fontSize: 10,
+            fontWeight: "700",
         },
         reviewArrow: {
             flexDirection: "row",
             alignItems: "center",
-            gap: 2,
+            gap: 4,
         },
         reviewLink: {
             fontSize: 12,

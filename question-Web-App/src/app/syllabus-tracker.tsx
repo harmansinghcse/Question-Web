@@ -618,7 +618,7 @@ export default function SyllabusTrackerScreen() {
                                     <Ionicons
                                         name="school-outline"
                                         size={12}
-                                        color={TRACKER_PALETTE.crimson}
+                                        color={TRACKER_PALETTE.purple}
                                     />
                                     <Text style={styles.contextBadgeText}>
                                         {contextData.academicContext.deptName}
@@ -735,7 +735,7 @@ export default function SyllabusTrackerScreen() {
                                                     style={[
                                                         styles.subjectCode,
                                                         selected && {
-                                                            color: TRACKER_PALETTE.crimson,
+                                                            color: TRACKER_PALETTE.purple,
                                                         },
                                                     ]}
                                                 >
@@ -1010,7 +1010,7 @@ export default function SyllabusTrackerScreen() {
                                             size={15}
                                             color={
                                                 uncoveredOnly
-                                                    ? TRACKER_PALETTE.crimson
+                                                    ? TRACKER_PALETTE.purple
                                                     : TRACKER_PALETTE.textSecondary
                                             }
                                         />
@@ -1018,7 +1018,7 @@ export default function SyllabusTrackerScreen() {
                                             style={[
                                                 styles.quickBtnText,
                                                 uncoveredOnly && {
-                                                    color: TRACKER_PALETTE.crimson,
+                                                    color: TRACKER_PALETTE.purple,
                                                 },
                                             ]}
                                         >
@@ -1424,7 +1424,7 @@ export default function SyllabusTrackerScreen() {
                                                                                         11
                                                                                     }
                                                                                     color={
-                                                                                        TRACKER_PALETTE.crimson
+                                                                                        TRACKER_PALETTE.purple
                                                                                     }
                                                                                 />
                                                                                 <Text
@@ -1915,7 +1915,7 @@ const styles = StyleSheet.create({
         width: 7,
         height: 7,
         borderRadius: 3.5,
-        backgroundColor: TRACKER_PALETTE.crimson,
+        backgroundColor: TRACKER_PALETTE.purple,
     },
     eyebrowText: {
         color: TRACKER_PALETTE.muted,
@@ -1990,8 +1990,8 @@ const styles = StyleSheet.create({
         borderColor: TRACKER_PALETTE.border,
     },
     semChipActive: {
-        backgroundColor: TRACKER_PALETTE.crimsonGlow,
-        borderColor: TRACKER_PALETTE.crimsonBorder,
+        backgroundColor: TRACKER_PALETTE.purpleGlow,
+        borderColor: TRACKER_PALETTE.purpleBorder,
     },
     semChipText: {
         color: TRACKER_PALETTE.textSecondary,
@@ -1999,7 +1999,7 @@ const styles = StyleSheet.create({
         fontWeight: "600",
     },
     semChipTextActive: {
-        color: TRACKER_PALETTE.crimson,
+        color: TRACKER_PALETTE.purple,
         fontWeight: "800",
     },
     subjectStrip: {
@@ -2016,8 +2016,8 @@ const styles = StyleSheet.create({
         gap: 7,
     },
     subjectCardActive: {
-        borderColor: TRACKER_PALETTE.crimson,
-        backgroundColor: "rgba(239, 68, 68, 0.08)",
+        borderColor: TRACKER_PALETTE.purple,
+        backgroundColor: TRACKER_PALETTE.purpleGlow,
     },
     subjectCardTop: {
         flexDirection: "row",
@@ -2126,7 +2126,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingVertical: 7,
         borderRadius: 8,
-        backgroundColor: TRACKER_PALETTE.crimson,
+        backgroundColor: TRACKER_PALETTE.purple,
     },
     cutoffResetText: {
         color: "#FFFFFF",
@@ -2252,7 +2252,7 @@ const styles = StyleSheet.create({
         paddingVertical: 11,
         paddingHorizontal: 14,
         borderRadius: 10,
-        backgroundColor: TRACKER_PALETTE.crimson,
+        backgroundColor: TRACKER_PALETTE.purple,
     },
     quickBtnPrimaryText: {
         color: "#FFFFFF",
@@ -2274,8 +2274,8 @@ const styles = StyleSheet.create({
         borderColor: TRACKER_PALETTE.border,
     },
     quickBtnActive: {
-        backgroundColor: TRACKER_PALETTE.crimsonGlow,
-        borderColor: TRACKER_PALETTE.crimsonBorder,
+        backgroundColor: TRACKER_PALETTE.purpleGlow,
+        borderColor: TRACKER_PALETTE.purpleBorder,
     },
     quickBtnText: {
         color: TRACKER_PALETTE.text,
@@ -2301,7 +2301,7 @@ const styles = StyleSheet.create({
         borderRadius: 9,
     },
     tabPillActive: {
-        backgroundColor: TRACKER_PALETTE.crimson,
+        backgroundColor: TRACKER_PALETTE.purple,
     },
     tabPillText: {
         color: TRACKER_PALETTE.textSecondary,
@@ -2386,7 +2386,7 @@ const styles = StyleSheet.create({
         gap: 6,
     },
     chapterNumBadge: {
-        color: TRACKER_PALETTE.crimson,
+        color: TRACKER_PALETTE.purple,
         fontSize: 10,
         fontWeight: "800",
         letterSpacing: 0.6,
@@ -2416,12 +2416,12 @@ const styles = StyleSheet.create({
         paddingHorizontal: 7,
         paddingVertical: 2,
         borderRadius: 6,
-        backgroundColor: TRACKER_PALETTE.crimsonGlow,
+        backgroundColor: TRACKER_PALETTE.purpleGlow,
         borderWidth: 1,
-        borderColor: TRACKER_PALETTE.crimsonBorder,
+        borderColor: TRACKER_PALETTE.purpleBorder,
     },
     selectedCountPillText: {
-        color: TRACKER_PALETTE.crimson,
+        color: TRACKER_PALETTE.purple,
         fontSize: 9,
         fontWeight: "800",
     },
@@ -2479,7 +2479,7 @@ const styles = StyleSheet.create({
         borderBottomColor: "rgba(39, 39, 50, 0.55)",
     },
     topicRowSelected: {
-        backgroundColor: "rgba(239, 68, 68, 0.1)",
+        backgroundColor: TRACKER_PALETTE.purpleGlow,
     },
     topicNameText: {
         color: TRACKER_PALETTE.text,
@@ -2530,8 +2530,8 @@ const styles = StyleSheet.create({
         justifyContent: "center",
     },
     selectCheckboxActive: {
-        backgroundColor: TRACKER_PALETTE.crimson,
-        borderColor: TRACKER_PALETTE.crimson,
+        backgroundColor: TRACKER_PALETTE.purple,
+        borderColor: TRACKER_PALETTE.purple,
     },
     timelineSection: {
         gap: 14,
@@ -2548,7 +2548,7 @@ const styles = StyleSheet.create({
         width: 9,
         height: 9,
         borderRadius: 4.5,
-        backgroundColor: TRACKER_PALETTE.crimson,
+        backgroundColor: TRACKER_PALETTE.purple,
     },
     timelineDateTitle: {
         color: TRACKER_PALETTE.text,
@@ -2663,7 +2663,7 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         backgroundColor: "#16161D",
         borderWidth: 1,
-        borderColor: TRACKER_PALETTE.crimsonBorder,
+        borderColor: TRACKER_PALETTE.purpleBorder,
         shadowColor: "#000",
         shadowOpacity: 0.45,
         shadowRadius: 14,
@@ -2700,7 +2700,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 14,
         paddingVertical: 9,
         borderRadius: 10,
-        backgroundColor: TRACKER_PALETTE.crimson,
+        backgroundColor: TRACKER_PALETTE.purple,
     },
     floatingRecordText: {
         color: "#FFFFFF",

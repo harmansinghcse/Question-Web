@@ -23,7 +23,7 @@ export const TYPE_META: Record<
     SUBJECTIVE: {
         label: "Subjective",
         short: "Subjective",
-        color: "#EF4444",
+        color: "#F43F5E",
         icon: "document-text-outline",
     },
     MCQ: {
@@ -64,16 +64,16 @@ export function Badge({
             style={{
                 flexDirection: "row",
                 alignItems: "center",
-                gap: 4,
-                paddingHorizontal: 8,
+                gap: 5,
+                paddingHorizontal: 9,
                 paddingVertical: 4,
-                borderRadius: 6,
+                borderRadius: 7,
                 borderWidth: 1,
-                borderColor: color ? color + "38" : theme.border,
+                borderColor: color ? color + "33" : theme.border,
                 backgroundColor: color ? color + "14" : theme.surfaceAlt,
             }}
         >
-            {icon ? <Ionicons name={icon} size={11} color={fg} /> : null}
+            {icon ? <Ionicons name={icon} size={12} color={fg} /> : null}
             <Text
                 style={{ color: fg, fontSize: 11, fontWeight: "600" }}
                 numberOfLines={1}
@@ -88,7 +88,7 @@ export function Badge({
             <Pressable
                 onPress={onPress}
                 accessibilityRole="button"
-                style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}
+                style={({ pressed }) => ({ opacity: pressed ? 0.75 : 1 })}
             >
                 {content}
             </Pressable>
@@ -122,28 +122,33 @@ export function Pill({
             style={({ pressed }) => ({
                 flexDirection: "row",
                 alignItems: "center",
-                gap: 6,
+                gap: 7,
                 paddingHorizontal: 14,
-                height: 36,
-                borderRadius: 8,
+                height: 38,
+                borderRadius: 10,
                 borderWidth: 1,
                 borderColor: active ? activeBg : theme.border,
                 backgroundColor: active ? activeBg : theme.surface,
                 opacity: pressed ? 0.85 : 1,
+                shadowColor: active ? activeBg : "transparent",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: active ? 0.2 : 0,
+                shadowRadius: 3,
+                elevation: active ? 2 : 0,
             })}
         >
             {icon ? (
                 <Ionicons
                     name={icon}
-                    size={13}
-                    color={active ? "#FFFFFF" : color ?? theme.muted}
+                    size={14}
+                    color={active ? "#FFFFFF" : color ?? theme.textSecondary}
                 />
             ) : null}
             <Text
                 numberOfLines={1}
                 style={{
                     color: active ? "#FFFFFF" : theme.textSecondary,
-                    fontSize: 12,
+                    fontSize: 13,
                     fontWeight: active ? "700" : "600",
                 }}
             >
@@ -152,18 +157,18 @@ export function Pill({
             {count !== undefined ? (
                 <View
                     style={{
-                        paddingHorizontal: 5,
-                        paddingVertical: 1,
-                        borderRadius: 4,
+                        paddingHorizontal: 6,
+                        paddingVertical: 1.5,
+                        borderRadius: 5,
                         backgroundColor: active
-                            ? "rgba(255,255,255,0.2)"
+                            ? "rgba(255,255,255,0.25)"
                             : theme.surfaceAlt,
                     }}
                 >
                     <Text
                         style={{
                             color: active ? "#FFFFFF" : theme.muted,
-                            fontSize: 10,
+                            fontSize: 11,
                             fontWeight: "700",
                         }}
                     >
@@ -193,7 +198,7 @@ export function SectionHeader({
                 flexDirection: "row",
                 alignItems: "center",
                 justifyContent: "space-between",
-                marginBottom: 12,
+                marginBottom: 14,
                 gap: 12,
             }}
         >
@@ -201,9 +206,9 @@ export function SectionHeader({
                 <Text
                     style={{
                         color: theme.text,
-                        fontSize: 16,
+                        fontSize: 17,
                         fontWeight: "800",
-                        letterSpacing: 0.1,
+                        letterSpacing: -0.2,
                     }}
                 >
                     {title}
@@ -211,9 +216,10 @@ export function SectionHeader({
                 {subtitle ? (
                     <Text
                         style={{
-                            color: theme.muted,
+                            color: theme.textSecondary,
                             fontSize: 12,
                             marginTop: 2,
+                            lineHeight: 17,
                         }}
                     >
                         {subtitle}
@@ -228,14 +234,14 @@ export function SectionHeader({
                     style={({ pressed }) => ({
                         flexDirection: "row",
                         alignItems: "center",
-                        gap: 4,
+                        gap: 5,
                         opacity: pressed ? 0.75 : 1,
                     })}
                 >
                     <Text
                         style={{
                             color: theme.accent,
-                            fontSize: 12,
+                            fontSize: 13,
                             fontWeight: "700",
                         }}
                     >
@@ -243,7 +249,7 @@ export function SectionHeader({
                     </Text>
                     <Ionicons
                         name="arrow-forward"
-                        size={13}
+                        size={14}
                         color={theme.accent}
                     />
                 </Pressable>
@@ -260,16 +266,16 @@ export function LoadingBlock({ label }: { label: string }) {
                 flexDirection: "row",
                 alignItems: "center",
                 justifyContent: "center",
-                gap: 10,
-                paddingVertical: 32,
+                gap: 12,
+                paddingVertical: 36,
                 backgroundColor: theme.surface,
-                borderRadius: 12,
+                borderRadius: 14,
                 borderWidth: 1,
                 borderColor: theme.border,
             }}
         >
             <ActivityIndicator size="small" color={theme.accent} />
-            <Text style={{ color: theme.muted, fontSize: 13, fontWeight: "500" }}>
+            <Text style={{ color: theme.textSecondary, fontSize: 13, fontWeight: "500" }}>
                 {label}
             </Text>
         </View>
@@ -291,20 +297,31 @@ export function ErrorBlock({
             style={{
                 flexDirection: "row",
                 alignItems: "center",
-                gap: 12,
-                padding: 16,
-                borderRadius: 12,
+                gap: 14,
+                padding: 18,
+                borderRadius: 14,
                 borderWidth: 1,
-                borderColor: theme.danger + "66",
+                borderColor: theme.danger + "44",
                 backgroundColor: theme.surface,
             }}
         >
-            <Ionicons name="alert-circle" size={22} color={theme.danger} />
+            <View
+                style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 10,
+                    backgroundColor: theme.danger + "18",
+                    alignItems: "center",
+                    justifyContent: "center",
+                }}
+            >
+                <Ionicons name="alert-circle" size={22} color={theme.danger} />
+            </View>
             <View style={{ flex: 1 }}>
                 <Text
                     style={{
                         color: theme.text,
-                        fontSize: 13,
+                        fontSize: 14,
                         fontWeight: "700",
                     }}
                 >
@@ -314,10 +331,10 @@ export function ErrorBlock({
                     <Text
                         numberOfLines={3}
                         style={{
-                            color: theme.muted,
+                            color: theme.textSecondary,
                             fontSize: 12,
-                            marginTop: 2,
-                            lineHeight: 17,
+                            marginTop: 3,
+                            lineHeight: 18,
                         }}
                     >
                         {message}
@@ -328,9 +345,9 @@ export function ErrorBlock({
                 onPress={onRetry}
                 accessibilityRole="button"
                 style={({ pressed }) => ({
-                    paddingHorizontal: 14,
-                    paddingVertical: 8,
-                    borderRadius: 8,
+                    paddingHorizontal: 15,
+                    paddingVertical: 9,
+                    borderRadius: 9,
                     backgroundColor: theme.accent,
                     opacity: pressed ? 0.85 : 1,
                 })}
@@ -367,33 +384,32 @@ export function EmptyBlock({
         <View
             style={{
                 alignItems: "center",
-                padding: 32,
-                borderRadius: 14,
+                padding: 36,
+                borderRadius: 16,
                 borderWidth: 1,
-                borderStyle: "dashed",
-                borderColor: theme.borderStrong,
+                borderColor: theme.border,
                 backgroundColor: theme.surface,
             }}
         >
             <View
                 style={{
-                    width: 46,
-                    height: 46,
-                    borderRadius: 12,
+                    width: 52,
+                    height: 52,
+                    borderRadius: 14,
                     alignItems: "center",
                     justifyContent: "center",
                     backgroundColor: theme.accentSoft,
                     borderWidth: 1,
                     borderColor: theme.accent + "33",
-                    marginBottom: 12,
+                    marginBottom: 14,
                 }}
             >
-                <Ionicons name={icon} size={22} color={theme.accent} />
+                <Ionicons name={icon} size={24} color={theme.accent} />
             </View>
             <Text
                 style={{
                     color: theme.text,
-                    fontSize: 15,
+                    fontSize: 16,
                     fontWeight: "700",
                     textAlign: "center",
                 }}
@@ -402,12 +418,12 @@ export function EmptyBlock({
             </Text>
             <Text
                 style={{
-                    color: theme.muted,
+                    color: theme.textSecondary,
                     fontSize: 13,
-                    lineHeight: 19,
+                    lineHeight: 20,
                     textAlign: "center",
-                    marginTop: 4,
-                    maxWidth: 380,
+                    marginTop: 6,
+                    maxWidth: 400,
                 }}
             >
                 {text}
@@ -417,18 +433,23 @@ export function EmptyBlock({
                     onPress={onAction}
                     accessibilityRole="button"
                     style={({ pressed }) => ({
-                        marginTop: 16,
-                        paddingHorizontal: 16,
-                        paddingVertical: 9,
-                        borderRadius: 8,
+                        marginTop: 18,
+                        paddingHorizontal: 18,
+                        paddingVertical: 10,
+                        borderRadius: 9,
                         backgroundColor: theme.accent,
                         opacity: pressed ? 0.85 : 1,
+                        shadowColor: theme.accent,
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.25,
+                        shadowRadius: 4,
+                        elevation: 2,
                     })}
                 >
                     <Text
                         style={{
                             color: "#FFFFFF",
-                            fontSize: 12,
+                            fontSize: 13,
                             fontWeight: "700",
                         }}
                     >
@@ -457,7 +478,7 @@ export function MarkdownText({ children }: { children: string }) {
                 color: theme.text,
                 fontSize: 18,
                 fontWeight: "800" as const,
-                marginTop: 4,
+                marginTop: 6,
                 marginBottom: 8,
             },
             heading2: {
@@ -488,9 +509,9 @@ export function MarkdownText({ children }: { children: string }) {
                 fontSize: 12,
                 color: theme.accent,
                 backgroundColor: theme.surfaceAlt,
-                borderRadius: 4,
-                paddingHorizontal: 5,
-                paddingVertical: 1,
+                borderRadius: 5,
+                paddingHorizontal: 6,
+                paddingVertical: 2,
                 borderWidth: 0,
             },
             code_block: {
@@ -501,7 +522,7 @@ export function MarkdownText({ children }: { children: string }) {
                 backgroundColor: theme.surfaceAlt,
                 borderColor: theme.border,
                 borderWidth: 1,
-                borderRadius: 8,
+                borderRadius: 9,
                 padding: 12,
                 marginBottom: 8,
             },
@@ -513,7 +534,7 @@ export function MarkdownText({ children }: { children: string }) {
                 backgroundColor: theme.surfaceAlt,
                 borderColor: theme.border,
                 borderWidth: 1,
-                borderRadius: 8,
+                borderRadius: 9,
                 padding: 12,
                 marginBottom: 8,
             },
@@ -522,22 +543,23 @@ export function MarkdownText({ children }: { children: string }) {
                 borderLeftColor: theme.accent,
                 borderLeftWidth: 3,
                 paddingHorizontal: 12,
-                paddingVertical: 4,
+                paddingVertical: 5,
                 marginBottom: 8,
+                borderRadius: 4,
             },
             hr: {
                 backgroundColor: theme.border,
                 height: 1,
-                marginVertical: 10,
+                marginVertical: 12,
             },
             table: {
                 borderColor: theme.border,
                 borderWidth: 1,
-                borderRadius: 8,
+                borderRadius: 9,
                 marginBottom: 8,
             },
-            th: { padding: 6, fontWeight: "700" as const },
-            td: { padding: 6 },
+            th: { padding: 8, fontWeight: "700" as const, color: theme.text },
+            td: { padding: 8, color: theme.textSecondary },
             tr: {
                 borderBottomColor: theme.border,
                 borderBottomWidth: 1,
@@ -554,8 +576,6 @@ export function MarkdownText({ children }: { children: string }) {
 
 /**
  * Inline image gallery for QuestionCard.
- * Displays attached images with clean aspect ratio, horizontal scrolling,
- * and graceful fallback if an image fails to load.
  */
 function QuestionCardImages({
     images,
@@ -574,10 +594,10 @@ function QuestionCardImages({
     if (validImages.length === 0) return null;
 
     return (
-        <View style={{ gap: 6 }}>
+        <View style={{ gap: 7, marginTop: 4 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
                 <Ionicons name="image-outline" size={13} color={theme.accent} />
-                <Text style={{ fontSize: 11, fontWeight: "700", color: theme.muted }}>
+                <Text style={{ fontSize: 11, fontWeight: "700", color: theme.textSecondary }}>
                     Attached Images ({validImages.length})
                 </Text>
             </View>
@@ -595,9 +615,9 @@ function QuestionCardImages({
                             accessibilityRole="button"
                             accessibilityLabel={`View attached image ${idx + 1}`}
                             style={({ pressed }) => ({
-                                width: 120,
-                                height: 80,
-                                borderRadius: 8,
+                                width: 130,
+                                height: 86,
+                                borderRadius: 10,
                                 overflow: "hidden",
                                 borderWidth: 1,
                                 borderColor: theme.border,
@@ -611,18 +631,18 @@ function QuestionCardImages({
                                         flex: 1,
                                         alignItems: "center",
                                         justifyContent: "center",
-                                        gap: 2,
+                                        gap: 3,
                                         padding: 4,
                                     }}
                                 >
                                     <Ionicons
                                         name="alert-circle-outline"
-                                        size={18}
+                                        size={20}
                                         color={theme.muted}
                                     />
                                     <Text
                                         style={{
-                                            fontSize: 9,
+                                            fontSize: 10,
                                             color: theme.muted,
                                             fontWeight: "600",
                                             textAlign: "center",
@@ -646,18 +666,18 @@ function QuestionCardImages({
                             <View
                                 style={{
                                     position: "absolute",
-                                    top: 4,
-                                    left: 4,
-                                    backgroundColor: "rgba(0, 0, 0, 0.65)",
-                                    borderRadius: 4,
-                                    paddingHorizontal: 5,
-                                    paddingVertical: 1,
+                                    top: 5,
+                                    left: 5,
+                                    backgroundColor: "rgba(16, 20, 38, 0.75)",
+                                    borderRadius: 5,
+                                    paddingHorizontal: 6,
+                                    paddingVertical: 2,
                                 }}
                             >
                                 <Text
                                     style={{
                                         color: "#FFFFFF",
-                                        fontSize: 9,
+                                        fontSize: 10,
                                         fontWeight: "700",
                                     }}
                                 >
@@ -673,7 +693,7 @@ function QuestionCardImages({
 }
 
 const MAX_TOPIC_BADGES = 3;
-const COLLAPSED_HEIGHT = 140;
+const COLLAPSED_HEIGHT = 130;
 
 export function QuestionCard({
     question,
@@ -691,8 +711,8 @@ export function QuestionCard({
     const extra = topics.length - MAX_TOPIC_BADGES;
 
     const isLong =
-        question.quesText.length > 260 ||
-        question.quesText.split("\n").length > 6;
+        question.quesText.length > 240 ||
+        question.quesText.split("\n").length > 5;
 
     const openDetail = () => {
         router.push(`/question-bank/${question.quesId}` as never);
@@ -704,9 +724,7 @@ export function QuestionCard({
                 backgroundColor: theme.surface,
                 borderWidth: 1,
                 borderColor: theme.border,
-                borderLeftWidth: 3,
-                borderLeftColor: meta.color,
-                borderRadius: 12,
+                borderRadius: 14,
                 padding: 16,
                 gap: 12,
             }}
@@ -724,7 +742,7 @@ export function QuestionCard({
                     style={{
                         flexDirection: "row",
                         alignItems: "center",
-                        gap: 6,
+                        gap: 7,
                         flexWrap: "wrap",
                         flex: 1,
                     }}
@@ -750,12 +768,16 @@ export function QuestionCard({
                         flexDirection: "row",
                         alignItems: "center",
                         gap: 4,
-                        opacity: pressed ? 0.7 : 1,
+                        paddingHorizontal: 8,
+                        paddingVertical: 3,
+                        borderRadius: 6,
+                        backgroundColor: theme.surfaceAlt,
+                        opacity: pressed ? 0.75 : 1,
                     })}
                 >
                     <Text
                         style={{
-                            color: theme.muted,
+                            color: theme.textSecondary,
                             fontSize: 11,
                             fontWeight: "700",
                         }}
@@ -764,8 +786,8 @@ export function QuestionCard({
                     </Text>
                     <Ionicons
                         name="open-outline"
-                        size={13}
-                        color={theme.muted}
+                        size={12}
+                        color={theme.textSecondary}
                     />
                 </Pressable>
             </View>
@@ -796,7 +818,7 @@ export function QuestionCard({
                     accessibilityRole="button"
                     accessibilityLabel={expanded ? "Show less" : "Show more"}
                     hitSlop={8}
-                    style={{ alignSelf: "flex-start" }}
+                    style={{ alignSelf: "flex-start", marginTop: -4 }}
                 >
                     <Text
                         style={{
@@ -825,7 +847,7 @@ export function QuestionCard({
                     alignItems: "center",
                     justifyContent: "space-between",
                     gap: 8,
-                    paddingTop: 4,
+                    paddingTop: 8,
                     borderTopWidth: 1,
                     borderTopColor: theme.border,
                 }}
@@ -839,7 +861,7 @@ export function QuestionCard({
                     }}
                 >
                     {topics.length === 0 ? (
-                        <Text style={{ color: theme.muted, fontSize: 11 }}>
+                        <Text style={{ color: theme.muted, fontSize: 12 }}>
                             General Topic
                         </Text>
                     ) : (
@@ -856,28 +878,28 @@ export function QuestionCard({
                     style={({ pressed }) => ({
                         flexDirection: "row",
                         alignItems: "center",
-                        gap: 4,
-                        paddingHorizontal: 10,
-                        paddingVertical: 5,
-                        borderRadius: 6,
-                        backgroundColor: theme.surfaceAlt,
+                        gap: 5,
+                        paddingHorizontal: 11,
+                        paddingVertical: 6,
+                        borderRadius: 8,
+                        backgroundColor: theme.accentSoft,
                         borderWidth: 1,
-                        borderColor: theme.border,
+                        borderColor: theme.accent + "25",
                         opacity: pressed ? 0.8 : 1,
                     })}
                 >
                     <Text
                         style={{
                             color: theme.accent,
-                            fontSize: 11,
-                            fontWeight: "600",
+                            fontSize: 12,
+                            fontWeight: "700",
                         }}
                     >
                         View Question
                     </Text>
                     <Ionicons
                         name="arrow-forward"
-                        size={12}
+                        size={13}
                         color={theme.accent}
                     />
                 </Pressable>
@@ -894,7 +916,7 @@ export function Card({ children }: { children: ReactNode }) {
                 backgroundColor: theme.surface,
                 borderWidth: 1,
                 borderColor: theme.border,
-                borderRadius: 14,
+                borderRadius: 16,
                 padding: 18,
             }}
         >
@@ -902,7 +924,6 @@ export function Card({ children }: { children: ReactNode }) {
         </View>
     );
 }
-
 
 export function ProgressBar({
     progress,

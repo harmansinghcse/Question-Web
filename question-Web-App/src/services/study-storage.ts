@@ -5,12 +5,21 @@ const STORAGE_KEYS = {
     TODAY_GOALS: "@question-web/today-goals",
     STUDY_STATS: "@question-web/study-stats",
     TIMETABLE_DIVISION: "@question-web/timetable-division",
+    STUDY_REMINDERS: "@question-web/study-reminders",
 };
 
 export interface StudyGoal {
     id: string;
     text: string;
     completed: boolean;
+    createdAt: string;
+}
+
+export interface StudyReminder {
+    id: string;
+    title: string;
+    time: string;
+    active: boolean;
     createdAt: string;
 }
 
@@ -178,6 +187,55 @@ export const studyStorage = {
             STORAGE_KEYS.STUDY_STATS,
             JSON.stringify(updated),
         );
+        return updated;
+    },
+
+    // === Study Reminders ===
+    async getReminders(): Promise<StudyReminder[]> {
+        try {
+            const raw = await AsyncStorage.getItem(STORAGE_KEYS.STUDY_REMINDERS);
+            if (!raw) return [];
+            const parsed = JSON.parse(raw) as StudyReminder[];
+            return Array.isArray(parsed) ? parsed : [];
+        } catch {
+            return [];
+        }
+    },
+    async saveReminders(reminders: StudyReminder[]): Promise<void> {
+        try {
+            await AsyncStorage.setItem(
+                STORAGE_KEYS.STUDY_REMINDERS,
+                JSON.stringify(reminders),
+            );
+        } catch (e) {
+            console.warn("[studyStorage] Error saving reminders", e);
+        }
+    },
+    async toggleReminder(id: string): Promise<StudyReminder[]> {
+        const reminders = await studyStorage.getReminders();
+        const updated = reminders.map((r) =>
+            r.id === id ? { ...r, active: !r.active } : r,
+        );
+        await studyStorage.saveReminders(updated);
+        return updated;
+    },
+    async addReminder(title: string, time: string): Promise<StudyReminder[]> {
+        const reminders = await studyStorage.getReminders();
+        const newReminder: StudyReminder = {
+            id: Date.now().toString(),
+            title: title.trim(),
+            time: time.trim() || "08:00 PM",
+            active: true,
+            createdAt: new Date().toISOString(),
+        };
+        const updated = [newReminder, ...reminders];
+        await studyStorage.saveReminders(updated);
+        return updated;
+    },
+    async deleteReminder(id: string): Promise<StudyReminder[]> {
+        const reminders = await studyStorage.getReminders();
+        const updated = reminders.filter((r) => r.id !== id);
+        await studyStorage.saveReminders(updated);
         return updated;
     },
 };

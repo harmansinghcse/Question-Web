@@ -7,7 +7,7 @@
  *   3. When the user taps a chapter, fetch topics via GET /api/topics?chapterId=<n>.
  */
 
-import { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
     ActivityIndicator,
     Pressable,
@@ -18,6 +18,7 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 
 import { api, type Chapter, type Subject, type Topic } from "../services/api";
 import { useApiData } from "../hooks/use-api-data";
@@ -45,10 +46,6 @@ const SP = {
     xxxl: 32,
 } as const;
 
-function withPalette(t: AppTheme): AppTheme {
-    return t;
-}
-
 // ─── Shared UI primitives ─────────────────────────────────────────────────────
 
 function LoadingRow({ label, accent }: { label: string; accent: string }) {
@@ -63,7 +60,7 @@ function LoadingRow({ label, accent }: { label: string; accent: string }) {
             }}
         >
             <ActivityIndicator color={accent} size="small" />
-            <Text style={{ color: accent, fontSize: 13 }}>{label}</Text>
+            <Text style={{ color: accent, fontSize: 13, fontWeight: "600" }}>{label}</Text>
         </View>
     );
 }
@@ -72,14 +69,16 @@ function ErrorCard({
     message,
     onRetry,
     styles,
+    dangerColor,
 }: {
     message: string;
     onRetry: () => void;
     styles: ReturnType<typeof makeStyles>;
+    dangerColor: string;
 }) {
     return (
         <View style={styles.errorCard}>
-            <Text style={styles.errorIcon}>⚠</Text>
+            <Ionicons name="alert-circle-outline" size={20} color={dangerColor} />
             <View style={{ flex: 1 }}>
                 <Text style={styles.errorTitle}>Could not load data</Text>
                 <Text style={styles.errorMessage} numberOfLines={3}>
@@ -96,13 +95,15 @@ function ErrorCard({
 function EmptyCard({
     text,
     styles,
+    mutedColor,
 }: {
     text: string;
     styles: ReturnType<typeof makeStyles>;
+    mutedColor: string;
 }) {
     return (
         <View style={styles.emptyCard}>
-            <Text style={styles.emptyIcon}>☁</Text>
+            <Ionicons name="file-tray-outline" size={28} color={mutedColor} />
             <Text style={styles.emptyText}>{text}</Text>
         </View>
     );
@@ -111,9 +112,8 @@ function EmptyCard({
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
 export default function SyllabusScreen() {
-    const { theme: appTheme } = useAppTheme();
+    const { theme } = useAppTheme();
     const { user } = useAuth();
-    const theme = useMemo(() => withPalette(appTheme), [appTheme]);
     const styles = useMemo(() => makeStyles(theme), [theme]);
     const insets = useSafeAreaInsets();
     const router = useRouter();
@@ -180,8 +180,6 @@ export default function SyllabusScreen() {
         [chaptersData],
     );
 
-
-
     // ── Topics ────────────────────────────────────────────────────────────────
     const fetchTopics = useCallback(
         () =>
@@ -208,14 +206,14 @@ export default function SyllabusScreen() {
     }
 
     // ── Semester filter + grouping ────────────────────────────────────────────
-    // Default to student's current semester if available, or null (All)
     const [semesterFilter, setSemesterFilter] = useState<number | null>(() => {
-        if (params.subjectKey) return null; // If subject key passed, show all
+        if (params.subjectKey) return null;
         return studentProfile?.currentSemester ?? null;
     });
 
-    // Ensure filter updates as soon as authenticated student profile finishes restoring
-    const [prevProfileSem, setPrevProfileSem] = useState<number | undefined>(studentProfile?.currentSemester);
+    const [prevProfileSem, setPrevProfileSem] = useState<number | undefined>(
+        studentProfile?.currentSemester,
+    );
     if (!params.subjectKey && studentProfile?.currentSemester !== prevProfileSem) {
         setPrevProfileSem(studentProfile?.currentSemester);
         setSemesterFilter(studentProfile?.currentSemester ?? null);
@@ -254,6 +252,7 @@ export default function SyllabusScreen() {
                         message={topicsState.message}
                         onRetry={topicsState.refresh}
                         styles={styles}
+                        dangerColor={theme.danger}
                     />
                 )}
                 {topicsState.status === "success" && topics.length === 0 && (
@@ -292,6 +291,7 @@ export default function SyllabusScreen() {
                         message={chaptersState.message}
                         onRetry={chaptersState.refresh}
                         styles={styles}
+                        dangerColor={theme.danger}
                     />
                 )}
                 {chaptersState.status === "success" && chapters.length === 0 && (
@@ -339,9 +339,11 @@ export default function SyllabusScreen() {
                                 >
                                     {chapter.chapterName}
                                 </Text>
-                                <Text style={styles.chevron}>
-                                    {open ? "▲" : "▼"}
-                                </Text>
+                                <Ionicons
+                                    name={open ? "chevron-up" : "chevron-down"}
+                                    size={16}
+                                    color={theme.muted}
+                                />
                             </Pressable>
 
                             {open && renderTopics(colour)}
@@ -378,7 +380,7 @@ export default function SyllabusScreen() {
                         accessibilityRole="button"
                         accessibilityLabel="Go back"
                     >
-                        <Text style={styles.iconButtonText}>←</Text>
+                        <Ionicons name="chevron-back" size={20} color={theme.text} />
                     </Pressable>
 
                     <Text style={styles.topBarTitle}>Syllabus</Text>
@@ -412,6 +414,7 @@ export default function SyllabusScreen() {
 
                 {/* ── Header ──────────────────────────────────────────────────── */}
                 <View style={styles.header}>
+                    <Text style={styles.eyebrow}>CURRICULUM REPOSITORY</Text>
                     <Text style={styles.headerTitle}>Course Syllabus</Text>
                     <Text style={styles.headerSubtitle}>
                         {studentProfile
@@ -510,6 +513,7 @@ export default function SyllabusScreen() {
                         message={subjectsState.message}
                         onRetry={subjectsState.refresh}
                         styles={styles}
+                        dangerColor={theme.danger}
                     />
                 )}
                 {subjectsState.status === "success" &&
@@ -522,6 +526,7 @@ export default function SyllabusScreen() {
                                         : "No subjects found."
                                 }
                                 styles={styles}
+                                mutedColor={theme.muted}
                             />
                             {semesterFilter !== null && (
                                 <Pressable
@@ -624,9 +629,11 @@ export default function SyllabusScreen() {
                                                     {subjectMeta(subject)}
                                                 </Text>
                                             </View>
-                                            <Text style={styles.chevron}>
-                                                {active ? "▲" : "▼"}
-                                            </Text>
+                                            <Ionicons
+                                                name={active ? "chevron-up" : "chevron-down"}
+                                                size={18}
+                                                color={theme.muted}
+                                            />
                                         </View>
                                     </Pressable>
 
@@ -653,12 +660,15 @@ function makeStyles(t: AppTheme) {
         scrollContent: {
             padding: SP.lg,
             gap: SP.lg,
+            maxWidth: 1000,
+            alignSelf: "center",
+            width: "100%",
         },
         topBar: {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
-            marginBottom: SP.sm,
+            marginBottom: SP.xs,
         },
         topBarTitle: {
             fontSize: 16,
@@ -671,12 +681,12 @@ function makeStyles(t: AppTheme) {
             gap: 8,
         },
         trackerLinkBtn: {
-            backgroundColor: t.accent + "1F",
+            backgroundColor: t.surfaceAlt,
             borderWidth: 1,
-            borderColor: t.accent + "55",
+            borderColor: t.accent,
             paddingHorizontal: 10,
-            paddingVertical: 5,
-            borderRadius: 7,
+            paddingVertical: 6,
+            borderRadius: 8,
         },
         trackerLinkText: {
             fontSize: 11,
@@ -684,10 +694,12 @@ function makeStyles(t: AppTheme) {
             color: t.accent,
         },
         profileBadge: {
-            backgroundColor: t.accent + "22",
+            backgroundColor: t.surfaceAlt,
             paddingHorizontal: 8,
-            paddingVertical: 4,
-            borderRadius: 6,
+            paddingVertical: 5,
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: t.border,
         },
         profileBadgeText: {
             fontSize: 11,
@@ -697,28 +709,32 @@ function makeStyles(t: AppTheme) {
         iconButton: {
             width: 36,
             height: 36,
-            borderRadius: 8,
+            borderRadius: 10,
             backgroundColor: t.surface,
             borderWidth: 1,
             borderColor: t.border,
             alignItems: "center",
             justifyContent: "center",
         },
-        iconButtonText: {
-            fontSize: 18,
-            color: t.text,
-        },
         header: {
             gap: SP.xs,
         },
-        headerTitle: {
-            fontSize: 24,
+        eyebrow: {
+            fontSize: 11,
             fontWeight: "800",
+            letterSpacing: 1.2,
+            color: t.accent,
+        },
+        headerTitle: {
+            fontSize: 26,
+            fontWeight: "900",
             color: t.text,
+            letterSpacing: -0.4,
         },
         headerSubtitle: {
             fontSize: 13,
             color: t.muted,
+            lineHeight: 18,
         },
         filterRow: {
             gap: SP.sm,
@@ -727,7 +743,7 @@ function makeStyles(t: AppTheme) {
         filterPill: {
             paddingVertical: 6,
             paddingHorizontal: 12,
-            borderRadius: 8,
+            borderRadius: 10,
             backgroundColor: t.surface,
             borderWidth: 1,
             borderColor: t.border,
@@ -771,7 +787,7 @@ function makeStyles(t: AppTheme) {
         },
         subjectCard: {
             backgroundColor: t.surface,
-            borderRadius: 12,
+            borderRadius: 14,
             borderWidth: 1,
             borderColor: t.border,
             overflow: "hidden",
@@ -788,9 +804,9 @@ function makeStyles(t: AppTheme) {
             gap: SP.md,
         },
         subjectIconBox: {
-            width: 40,
-            height: 40,
-            borderRadius: 8,
+            width: 42,
+            height: 42,
+            borderRadius: 10,
             alignItems: "center",
             justifyContent: "center",
         },
@@ -808,22 +824,17 @@ function makeStyles(t: AppTheme) {
             fontSize: 12,
             color: t.muted,
         },
-        chevron: {
-            fontSize: 11,
-            color: t.muted,
-            marginLeft: SP.xs,
-        },
         chapterList: {
             paddingHorizontal: SP.md,
             paddingBottom: SP.md,
             gap: SP.sm,
             borderTopWidth: 1,
-            borderTopColor: t.border + "44",
+            borderTopColor: t.border,
             paddingTop: SP.md,
         },
         chapterCard: {
             backgroundColor: t.surfaceAlt,
-            borderRadius: 8,
+            borderRadius: 10,
             borderWidth: 1,
             borderColor: t.border,
             overflow: "hidden",
@@ -835,9 +846,9 @@ function makeStyles(t: AppTheme) {
             gap: SP.md,
         },
         chapterNumberBadge: {
-            paddingHorizontal: 6,
-            paddingVertical: 2,
-            borderRadius: 4,
+            paddingHorizontal: 7,
+            paddingVertical: 3,
+            borderRadius: 6,
         },
         chapterNumberText: {
             fontSize: 10,
@@ -861,12 +872,12 @@ function makeStyles(t: AppTheme) {
             flexDirection: "row",
             alignItems: "center",
             gap: SP.sm,
-            paddingVertical: 2,
+            paddingVertical: 3,
         },
         topicDot: {
-            width: 5,
-            height: 5,
-            borderRadius: 2.5,
+            width: 6,
+            height: 6,
+            borderRadius: 3,
         },
         topicName: {
             fontSize: 12,
@@ -886,15 +897,11 @@ function makeStyles(t: AppTheme) {
             flexDirection: "row",
             alignItems: "center",
             backgroundColor: t.surface,
-            borderRadius: 8,
+            borderRadius: 10,
             padding: SP.md,
             gap: SP.md,
             borderWidth: 1,
-            borderColor: "#FF4D4F",
-        },
-        errorIcon: {
-            fontSize: 18,
-            color: "#FF4D4F",
+            borderColor: t.danger,
         },
         errorTitle: {
             fontSize: 13,
@@ -909,7 +916,7 @@ function makeStyles(t: AppTheme) {
             backgroundColor: t.accent,
             paddingVertical: 6,
             paddingHorizontal: 12,
-            borderRadius: 6,
+            borderRadius: 8,
             alignSelf: "center",
         },
         retryText: {
@@ -922,14 +929,10 @@ function makeStyles(t: AppTheme) {
             justifyContent: "center",
             padding: SP.xl,
             backgroundColor: t.surface,
-            borderRadius: 12,
+            borderRadius: 14,
             borderWidth: 1,
             borderColor: t.border,
             gap: SP.xs,
-        },
-        emptyIcon: {
-            fontSize: 24,
-            color: t.muted,
         },
         emptyText: {
             fontSize: 13,

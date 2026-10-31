@@ -5,27 +5,32 @@ import type {
     WeeklyActivityBucket,
 } from "../../services/syllabus-tracker-api";
 
-// Brand palette tailored for Question Web's dark charcoal + crimson academic workspace
+// Unified design palette tailored for Question Web's navy & purple academic workspace
 export const TRACKER_PALETTE = {
-    bg: "#09090B",
-    surface: "#121216",
-    surfaceElevated: "#18181E",
-    surfaceMuted: "#1F1F27",
-    border: "#272732",
-    borderStrong: "#383846",
-    crimson: "#EF4444",
-    crimsonDeep: "#991B1B",
-    crimsonGlow: "rgba(239, 68, 68, 0.16)",
-    crimsonBorder: "rgba(239, 68, 68, 0.42)",
+    bg: "#101426",
+    surface: "#191F35",
+    surfaceElevated: "#252D46",
+    surfaceMuted: "#212946",
+    border: "#303951",
+    borderStrong: "#424E6D",
+    purple: "#9275F5",
+    purpleDeep: "#7457D9",
+    purpleGlow: "rgba(146, 117, 245, 0.16)",
+    purpleBorder: "rgba(146, 117, 245, 0.40)",
+    // Aliases to maintain 100% backward compatibility
+    crimson: "#9275F5",
+    crimsonDeep: "#7457D9",
+    crimsonGlow: "rgba(146, 117, 245, 0.16)",
+    crimsonBorder: "rgba(146, 117, 245, 0.40)",
     emerald: "#10B981",
     emeraldSoft: "rgba(16, 185, 129, 0.14)",
     emeraldBorder: "rgba(16, 185, 129, 0.38)",
     amber: "#F59E0B",
     amberSoft: "rgba(245, 158, 11, 0.14)",
     amberBorder: "rgba(245, 158, 11, 0.38)",
-    text: "#F4F4F6",
-    textSecondary: "#B4B4C0",
-    muted: "#767687",
+    text: "#F5F5FA",
+    textSecondary: "#A3AAC0",
+    muted: "#76809E",
 };
 
 /**
@@ -47,7 +52,7 @@ export function KnowledgeWebMotif() {
 }
 
 /**
- * Animated radial dial built with 20 orbital segments so it renders identically
+ * Animated radial dial built with 24 orbital segments so it renders identically
  * on iOS, Android, and Web without extra native SVG modules.
  */
 export function CoverageOrbitDial({
@@ -78,8 +83,8 @@ export function CoverageOrbitDial({
                     height: size - 6,
                     borderRadius: (size - 6) / 2,
                     borderWidth: 1,
-                    borderColor: "rgba(239, 68, 68, 0.18)",
-                    backgroundColor: "rgba(239, 68, 68, 0.04)",
+                    borderColor: TRACKER_PALETTE.purpleBorder,
+                    backgroundColor: TRACKER_PALETTE.purpleGlow,
                 }}
             />
 
@@ -103,7 +108,7 @@ export function CoverageOrbitDial({
                             backgroundColor: active
                                 ? complete
                                     ? TRACKER_PALETTE.emerald
-                                    : TRACKER_PALETTE.crimson
+                                    : TRACKER_PALETTE.purple
                                 : TRACKER_PALETTE.borderStrong,
                             opacity: active ? 1 : 0.45,
                         }}
@@ -196,7 +201,7 @@ export function AnimatedCoverageBar({
         status === "COVERED" || clamped >= 100
             ? TRACKER_PALETTE.emerald
             : status === "PARTIAL"
-              ? TRACKER_PALETTE.crimson
+              ? TRACKER_PALETTE.purple
               : TRACKER_PALETTE.muted;
 
     return (
@@ -218,7 +223,6 @@ export function AnimatedCoverageBar({
 
 /**
  * Trailing 6-week activity visualization derived strictly from dated events.
- * Distinguishes newly covered unique topics from revisited topics and sessions.
  */
 export function WeeklyActivityCard({
     buckets,
@@ -251,8 +255,8 @@ export function WeeklyActivityCard({
                         <Text style={styles.weeklyCounterVal}>{totalSessions}</Text>
                         <Text style={styles.weeklyCounterLbl}>sessions</Text>
                     </View>
-                    <View style={[styles.weeklyCounterPill, { borderColor: TRACKER_PALETTE.crimsonBorder }]}>
-                        <Text style={[styles.weeklyCounterVal, { color: TRACKER_PALETTE.crimson }]}>
+                    <View style={[styles.weeklyCounterPill, { borderColor: TRACKER_PALETTE.purpleBorder }]}>
+                        <Text style={[styles.weeklyCounterVal, { color: TRACKER_PALETTE.purple }]}>
                             {totalNewlyCovered}
                         </Text>
                         <Text style={styles.weeklyCounterLbl}>new topics</Text>
@@ -312,12 +316,12 @@ export function WeeklyActivityCard({
 
             <View style={styles.legendRow}>
                 <View style={styles.legendItem}>
-                    <View style={[styles.legendDot, { backgroundColor: TRACKER_PALETTE.crimson }]} />
+                    <View style={[styles.legendDot, { backgroundColor: TRACKER_PALETTE.purple }]} />
                     <Text style={styles.legendText}>First-time covered topics</Text>
                 </View>
                 <View style={styles.legendItem}>
                     <View style={[styles.legendDot, { backgroundColor: TRACKER_PALETTE.amber }]} />
-                    <Text style={styles.legendText}>+r = Revisited topics (no % inflation)</Text>
+                    <Text style={styles.legendText}>+r = Revisited topics</Text>
                 </View>
             </View>
         </View>
@@ -336,26 +340,26 @@ const styles = StyleSheet.create({
     motifEdge: {
         position: "absolute",
         height: 1,
-        backgroundColor: "rgba(239, 68, 68, 0.18)",
+        backgroundColor: TRACKER_PALETTE.purpleGlow,
     },
     motifNode: {
         position: "absolute",
         width: 8,
         height: 8,
         borderRadius: 4,
-        backgroundColor: "#272732",
+        backgroundColor: TRACKER_PALETTE.border,
         borderWidth: 1.5,
-        borderColor: "#525266",
+        borderColor: TRACKER_PALETTE.borderStrong,
     },
     motifNodePrimary: {
         width: 10,
         height: 10,
         borderRadius: 5,
-        backgroundColor: "rgba(239, 68, 68, 0.35)",
-        borderColor: TRACKER_PALETTE.crimson,
+        backgroundColor: TRACKER_PALETTE.purpleGlow,
+        borderColor: TRACKER_PALETTE.purple,
     },
     motifNodeCovered: {
-        backgroundColor: "rgba(16, 185, 129, 0.35)",
+        backgroundColor: TRACKER_PALETTE.emeraldSoft,
         borderColor: TRACKER_PALETTE.emerald,
     },
     dialPct: {
@@ -412,7 +416,7 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         borderWidth: 1,
         borderColor: TRACKER_PALETTE.border,
-        padding: 16,
+        padding: 18,
         gap: 14,
     },
     weeklyHeader: {
@@ -494,7 +498,7 @@ const styles = StyleSheet.create({
     },
     weekBarNew: {
         width: "100%",
-        backgroundColor: TRACKER_PALETTE.crimson,
+        backgroundColor: TRACKER_PALETTE.purple,
         borderRadius: 6,
     },
     weekLabel: {
@@ -525,7 +529,7 @@ const styles = StyleSheet.create({
         borderRadius: 4,
     },
     legendText: {
-        color: TRACKER_PALETTE.muted,
+        color: TRACKER_PALETTE.textSecondary,
         fontSize: 11,
     },
 });

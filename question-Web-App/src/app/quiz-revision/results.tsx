@@ -102,9 +102,9 @@ export default function QuizRevisionResultsScreen() {
 
     const formatDuration = (totalSec: number) => {
         const m = Math.floor(totalSec / 60);
-        const s = totalSec % 60;
-        if (m === 0) return `${s}s`;
-        return `${m}m ${s}s`;
+        const sec = totalSec % 60;
+        if (m === 0) return `${sec}s`;
+        return `${m}m ${sec}s`;
     };
 
     if (loading) {
@@ -112,7 +112,7 @@ export default function QuizRevisionResultsScreen() {
             <AppShell active="revision">
                 <View style={s.centerBox}>
                     <ActivityIndicator size="large" color={theme.accent} />
-                    <Text style={s.centerText}>Grading and loading review...</Text>
+                    <Text style={s.centerText}>Grading and preparing review report...</Text>
                 </View>
             </AppShell>
         );
@@ -122,14 +122,14 @@ export default function QuizRevisionResultsScreen() {
         return (
             <AppShell active="revision">
                 <View style={s.centerBox}>
-                    <Ionicons name="alert-circle-outline" size={44} color="#EF4444" />
+                    <Ionicons name="alert-circle-outline" size={44} color={theme.danger} />
                     <Text style={s.errorTitle}>Error Loading Results</Text>
                     <Text style={s.centerText}>{error || "Results data could not be found."}</Text>
                     <Pressable
                         onPress={() => router.replace("/quiz-revision" as never)}
                         style={s.returnBtn}
                     >
-                        <Text style={s.returnBtnText}>Return to Revision Home</Text>
+                        <Text style={s.returnBtnText}>Return to Quiz Setup</Text>
                     </Pressable>
                 </View>
             </AppShell>
@@ -148,17 +148,17 @@ export default function QuizRevisionResultsScreen() {
                         <View style={s.summaryLeft}>
                             <View style={[s.badgeWrap, isPassing ? s.badgePass : s.badgeFail]}>
                                 <Ionicons
-                                    name={isPassing ? "trophy" : "analytics"}
+                                    name={isPassing ? "trophy" : "sparkles"}
                                     size={14}
-                                    color={isPassing ? "#10B981" : "#F59E0B"}
+                                    color={isPassing ? theme.success : theme.warning}
                                 />
                                 <Text
                                     style={[
                                         s.badgeText,
-                                        isPassing ? { color: "#10B981" } : { color: "#F59E0B" },
+                                        isPassing ? { color: theme.success } : { color: theme.warning },
                                     ]}
                                 >
-                                    {isPassing ? "Revision Passed" : "Needs Practice"}
+                                    {isPassing ? "Revision Mastered" : "Revision Completed"}
                                 </Text>
                             </View>
 
@@ -171,7 +171,7 @@ export default function QuizRevisionResultsScreen() {
                         </View>
 
                         <View style={s.accuracyCircle}>
-                            <Text style={[s.accuracyNum, isPassing ? { color: "#10B981" } : { color: "#F59E0B" }]}>
+                            <Text style={[s.accuracyNum, isPassing ? { color: theme.success } : { color: theme.warning }]}>
                                 {accuracy}%
                             </Text>
                             <Text style={s.accuracyLabel}>Accuracy</Text>
@@ -181,17 +181,17 @@ export default function QuizRevisionResultsScreen() {
                     {/* Counts Row */}
                     <View style={s.statsGrid}>
                         <View style={[s.statCard, s.statCorrect]}>
-                            <Ionicons name="checkmark-circle" size={16} color="#10B981" />
+                            <Ionicons name="checkmark-circle" size={17} color={theme.success} />
                             <Text style={s.statVal}>{reviewData.correctCount}</Text>
                             <Text style={s.statLbl}>Correct</Text>
                         </View>
                         <View style={[s.statCard, s.statIncorrect]}>
-                            <Ionicons name="close-circle" size={16} color="#EF4444" />
+                            <Ionicons name="close-circle" size={17} color={theme.danger} />
                             <Text style={s.statVal}>{reviewData.incorrectCount}</Text>
                             <Text style={s.statLbl}>Incorrect</Text>
                         </View>
                         <View style={[s.statCard, s.statUnanswered]}>
-                            <Ionicons name="help-circle" size={16} color={theme.muted} />
+                            <Ionicons name="help-circle" size={17} color={theme.textSecondary} />
                             <Text style={s.statVal}>{reviewData.unansweredCount}</Text>
                             <Text style={s.statLbl}>Skipped</Text>
                         </View>
@@ -254,7 +254,7 @@ export default function QuizRevisionResultsScreen() {
                                                 {
                                                     width: `${tp.accuracy}%`,
                                                     backgroundColor:
-                                                        tp.accuracy >= 70 ? "#10B981" : "#F59E0B",
+                                                        tp.accuracy >= 70 ? theme.success : theme.warning,
                                                 },
                                             ]}
                                         />
@@ -321,10 +321,10 @@ function QuestionReviewCard({
                 styles.qCard,
                 { backgroundColor: theme.surfaceAlt, borderColor: theme.border },
                 item.isCorrect
-                    ? styles.qCardCorrect
+                    ? { borderColor: theme.success + "50" }
                     : isUnanswered
-                    ? styles.qCardUnanswered
-                    : styles.qCardIncorrect,
+                    ? { borderColor: theme.border }
+                    : { borderColor: theme.danger + "50" },
             ]}
         >
             <View style={styles.qHeader}>
@@ -333,10 +333,10 @@ function QuestionReviewCard({
                         style={[
                             styles.statusDot,
                             item.isCorrect
-                                ? { backgroundColor: "#10B981" }
+                                ? { backgroundColor: theme.success }
                                 : isUnanswered
                                 ? { backgroundColor: theme.muted }
-                                : { backgroundColor: "#EF4444" },
+                                : { backgroundColor: theme.danger },
                         ]}
                     >
                         <Ionicons
@@ -356,20 +356,20 @@ function QuestionReviewCard({
                         style={[
                             styles.typeChip,
                             item.questionType === "FILLUPS"
-                                ? { borderColor: "#A855F735", backgroundColor: "#A855F715" }
+                                ? { borderColor: theme.accent + "35", backgroundColor: theme.accentSoft }
                                 : item.questionType === "TRUE_FALSE"
-                                ? { borderColor: "#F59E0B35", backgroundColor: "#F59E0B15" }
-                                : { borderColor: "#3B82F635", backgroundColor: "#3B82F615" },
+                                ? { borderColor: theme.warning + "35", backgroundColor: theme.warning + "15" }
+                                : { borderColor: theme.secondaryAccent + "35", backgroundColor: theme.secondaryAccent + "15" },
                         ]}
                     >
                         <Text
                             style={[
                                 styles.typeChipText,
                                 item.questionType === "FILLUPS"
-                                    ? { color: "#A855F7" }
+                                    ? { color: theme.accent }
                                     : item.questionType === "TRUE_FALSE"
-                                    ? { color: "#F59E0B" }
-                                    : { color: "#3B82F6" },
+                                    ? { color: theme.warning }
+                                    : { color: theme.secondaryAccent },
                             ]}
                         >
                             {item.questionType}
@@ -392,15 +392,15 @@ function QuestionReviewCard({
                                 style={[
                                     styles.optionLine,
                                     { backgroundColor: theme.surface, borderColor: theme.border },
-                                    isExpected && styles.optionLineCorrect,
-                                    isStudent && !isExpected && styles.optionLineWrong,
+                                    isExpected && { borderColor: theme.success, backgroundColor: theme.success + "15" },
+                                    isStudent && !isExpected && { borderColor: theme.danger, backgroundColor: theme.danger + "15" },
                                 ]}
                             >
                                 <Text
                                     style={[
                                         styles.optKey,
-                                        isExpected && { color: "#10B981" },
-                                        isStudent && !isExpected && { color: "#EF4444" },
+                                        isExpected && { color: theme.success },
+                                        isStudent && !isExpected && { color: theme.danger },
                                     ]}
                                 >
                                     {k}.
@@ -409,8 +409,8 @@ function QuestionReviewCard({
                                     style={[
                                         styles.optText,
                                         { color: theme.textSecondary },
-                                        isExpected && { color: "#10B981", fontWeight: "700" },
-                                        isStudent && !isExpected && { color: "#EF4444", fontWeight: "600" },
+                                        isExpected && { color: theme.success, fontWeight: "700" },
+                                        isStudent && !isExpected && { color: theme.danger, fontWeight: "600" },
                                     ]}
                                 >
                                     {text}
@@ -423,13 +423,13 @@ function QuestionReviewCard({
 
             {/* Fillups / TF Comparison */}
             {item.questionType !== "MCQ" && (
-                <View style={styles.answerComparisonBox}>
+                <View style={[styles.answerComparisonBox, { backgroundColor: theme.surface }]}>
                     <View style={styles.comparisonRow}>
-                        <Text style={[styles.compLabel, { color: theme.muted }]}>Your Answer:</Text>
+                        <Text style={[styles.compLabel, { color: theme.textSecondary }]}>Your Answer:</Text>
                         <Text
                             style={[
                                 styles.compVal,
-                                item.isCorrect ? { color: "#10B981" } : { color: "#EF4444" },
+                                item.isCorrect ? { color: theme.success } : { color: theme.danger },
                             ]}
                         >
                             {isUnanswered ? "(No answer provided)" : item.studentAnswer}
@@ -437,15 +437,15 @@ function QuestionReviewCard({
                     </View>
 
                     <View style={styles.comparisonRow}>
-                        <Text style={[styles.compLabel, { color: theme.muted }]}>Expected:</Text>
-                        <Text style={[styles.compVal, { color: "#10B981", fontWeight: "700" }]}>
+                        <Text style={[styles.compLabel, { color: theme.textSecondary }]}>Expected:</Text>
+                        <Text style={[styles.compVal, { color: theme.success, fontWeight: "700" }]}>
                             {item.correctAnswer}
                         </Text>
                     </View>
 
                     {item.questionType === "FILLUPS" && item.acceptedAnswers && item.acceptedAnswers.length > 1 && (
                         <View style={styles.altsRow}>
-                            <Text style={[styles.compLabel, { color: theme.muted }]}>Accepted:</Text>
+                            <Text style={[styles.compLabel, { color: theme.textSecondary }]}>Accepted:</Text>
                             <Text style={[styles.compVal, { color: theme.textSecondary }]}>
                                 {item.acceptedAnswers.join(", ")}
                             </Text>
@@ -457,7 +457,7 @@ function QuestionReviewCard({
             {/* Explanation card */}
             {item.explanation ? (
                 <View style={styles.explanationBox}>
-                    <Ionicons name="bulb-outline" size={14} color="#F59E0B" />
+                    <Ionicons name="bulb-outline" size={14} color={theme.warning} />
                     <Text style={[styles.explanationText, { color: theme.textSecondary }]}>
                         {item.explanation}
                     </Text>
@@ -473,15 +473,6 @@ const styles = StyleSheet.create({
         padding: 16,
         borderWidth: 1.5,
         gap: 12,
-    },
-    qCardCorrect: {
-        borderColor: "#10B98130",
-    },
-    qCardIncorrect: {
-        borderColor: "#EF444440",
-    },
-    qCardUnanswered: {
-        borderColor: "transparent",
     },
     qHeader: {
         flexDirection: "row",
@@ -517,7 +508,7 @@ const styles = StyleSheet.create({
     qText: {
         fontSize: 14,
         fontWeight: "600",
-        lineHeight: 20,
+        lineHeight: 21,
     },
     optionsWrap: {
         gap: 6,
@@ -527,17 +518,9 @@ const styles = StyleSheet.create({
         alignItems: "center",
         gap: 8,
         paddingHorizontal: 12,
-        paddingVertical: 8,
+        paddingVertical: 9,
         borderRadius: 8,
         borderWidth: 1,
-    },
-    optionLineCorrect: {
-        borderColor: "#10B981",
-        backgroundColor: "#10B98115",
-    },
-    optionLineWrong: {
-        borderColor: "#EF4444",
-        backgroundColor: "#EF444415",
     },
     optKey: {
         fontSize: 12,
@@ -548,9 +531,8 @@ const styles = StyleSheet.create({
         fontSize: 13,
     },
     answerComparisonBox: {
-        gap: 4,
-        padding: 10,
-        backgroundColor: "rgba(0,0,0,0.15)",
+        gap: 6,
+        padding: 12,
         borderRadius: 8,
     },
     comparisonRow: {
@@ -567,7 +549,7 @@ const styles = StyleSheet.create({
     compLabel: {
         fontSize: 11,
         fontWeight: "600",
-        width: 75,
+        width: 80,
     },
     compVal: {
         fontSize: 12,
@@ -579,9 +561,9 @@ const styles = StyleSheet.create({
         gap: 8,
         padding: 10,
         borderRadius: 8,
-        backgroundColor: "#F59E0B10",
+        backgroundColor: "rgba(245, 158, 11, 0.10)",
         borderWidth: 1,
-        borderColor: "#F59E0B25",
+        borderColor: "rgba(245, 158, 11, 0.25)",
         alignItems: "flex-start",
     },
     explanationText: {
@@ -596,6 +578,9 @@ function makeStyles(t: AppTheme) {
         container: {
             gap: 20,
             paddingBottom: 40,
+            width: "100%",
+            maxWidth: 880,
+            alignSelf: "center",
         },
         centerBox: {
             padding: 40,
@@ -604,7 +589,7 @@ function makeStyles(t: AppTheme) {
             gap: 12,
         },
         centerText: {
-            color: t.muted,
+            color: t.textSecondary,
             fontSize: 13,
             textAlign: "center",
         },
@@ -628,7 +613,7 @@ function makeStyles(t: AppTheme) {
         summaryCard: {
             backgroundColor: t.surface,
             borderRadius: 18,
-            padding: 20,
+            padding: 22,
             borderWidth: 1,
             borderColor: t.border,
             gap: 18,
@@ -645,53 +630,53 @@ function makeStyles(t: AppTheme) {
             flexDirection: "row",
             alignItems: "center",
             gap: 5,
-            paddingHorizontal: 8,
-            paddingVertical: 3,
+            paddingHorizontal: 9,
+            paddingVertical: 3.5,
             borderRadius: 6,
             borderWidth: 1,
             alignSelf: "flex-start",
         },
         badgePass: {
-            borderColor: "#10B98135",
-            backgroundColor: "#10B98115",
+            borderColor: t.success + "40",
+            backgroundColor: t.success + "15",
         },
         badgeFail: {
-            borderColor: "#F59E0B35",
-            backgroundColor: "#F59E0B15",
+            borderColor: t.warning + "40",
+            backgroundColor: t.warning + "15",
         },
         badgeText: {
             fontSize: 11,
             fontWeight: "700",
-            textTransform: "uppercase",
+            letterSpacing: 0.4,
         },
         scoreBig: {
-            fontSize: 28,
+            fontSize: 32,
             fontWeight: "900",
             color: t.text,
-            letterSpacing: -0.5,
+            letterSpacing: -0.6,
         },
         timeSpent: {
             fontSize: 12,
-            color: t.muted,
+            color: t.textSecondary,
         },
         accuracyCircle: {
             alignItems: "center",
             justifyContent: "center",
             backgroundColor: t.surfaceAlt,
-            width: 80,
-            height: 80,
-            borderRadius: 40,
+            width: 84,
+            height: 84,
+            borderRadius: 42,
             borderWidth: 2,
             borderColor: t.border,
         },
         accuracyNum: {
-            fontSize: 20,
+            fontSize: 22,
             fontWeight: "900",
         },
         accuracyLabel: {
             fontSize: 10,
             fontWeight: "600",
-            color: t.muted,
+            color: t.textSecondary,
             textTransform: "uppercase",
         },
         statsGrid: {
@@ -709,25 +694,25 @@ function makeStyles(t: AppTheme) {
         },
         statCorrect: {
             borderWidth: 1,
-            borderColor: "#10B98125",
+            borderColor: t.success + "30",
         },
         statIncorrect: {
             borderWidth: 1,
-            borderColor: "#EF444425",
+            borderColor: t.danger + "30",
         },
         statUnanswered: {
             borderWidth: 1,
             borderColor: t.border,
         },
         statVal: {
-            fontSize: 16,
+            fontSize: 17,
             fontWeight: "800",
             color: t.text,
         },
         statLbl: {
             fontSize: 10,
             fontWeight: "600",
-            color: t.muted,
+            color: t.textSecondary,
             textTransform: "uppercase",
         },
         actionRow: {
@@ -741,7 +726,7 @@ function makeStyles(t: AppTheme) {
             alignItems: "center",
             justifyContent: "center",
             gap: 6,
-            backgroundColor: "#EF4444",
+            backgroundColor: t.accent,
             paddingVertical: 12,
             borderRadius: 12,
         },
@@ -769,8 +754,8 @@ function makeStyles(t: AppTheme) {
         },
         sectionCard: {
             backgroundColor: t.surface,
-            borderRadius: 16,
-            padding: 18,
+            borderRadius: 18,
+            padding: 20,
             borderWidth: 1,
             borderColor: t.border,
             gap: 14,
@@ -779,8 +764,7 @@ function makeStyles(t: AppTheme) {
             fontSize: 14,
             fontWeight: "800",
             color: t.text,
-            textTransform: "uppercase",
-            letterSpacing: 0.5,
+            letterSpacing: 0.4,
         },
         topicList: {
             gap: 12,
@@ -800,7 +784,7 @@ function makeStyles(t: AppTheme) {
         topicScore: {
             fontSize: 11,
             fontWeight: "700",
-            color: t.muted,
+            color: t.textSecondary,
         },
         progressBarTrack: {
             height: 6,
@@ -824,9 +808,9 @@ function makeStyles(t: AppTheme) {
             gap: 6,
         },
         filterPill: {
-            paddingHorizontal: 8,
-            paddingVertical: 4,
-            borderRadius: 6,
+            paddingHorizontal: 9,
+            paddingVertical: 5,
+            borderRadius: 7,
             backgroundColor: t.surfaceAlt,
             borderWidth: 1,
             borderColor: t.border,

@@ -135,10 +135,10 @@ export default function QuizRevisionSessionScreen() {
     // Exit confirmation
     const handleExit = () => {
         Alert.alert(
-            "Quit Revision Session?",
-            "Your progress in this session will not be graded or saved.",
+            "Quit Quiz Session?",
+            "Your progress in this session will not be saved or graded.",
             [
-                { text: "Continue Revision", style: "cancel" },
+                { text: "Continue Quiz", style: "cancel" },
                 {
                     text: "Exit",
                     style: "destructive",
@@ -151,11 +151,11 @@ export default function QuizRevisionSessionScreen() {
     if (!quizData || questions.length === 0) {
         return (
             <View style={[s.centerScreen, { paddingTop: insets.top }]}>
-                <Ionicons name="alert-circle-outline" size={40} color="#EF4444" />
+                <Ionicons name="alert-circle-outline" size={44} color={theme.danger} />
                 <Text style={s.centerTitle}>Quiz Session Not Found</Text>
                 <Text style={s.centerSub}>Could not load the revision questions.</Text>
                 <Pressable onPress={() => router.back()} style={s.primaryBtn}>
-                    <Text style={s.primaryBtnText}>Return to Revision Home</Text>
+                    <Text style={s.primaryBtnText}>Return to Quiz Setup</Text>
                 </Pressable>
             </View>
         );
@@ -165,6 +165,7 @@ export default function QuizRevisionSessionScreen() {
         <KeyboardAvoidingView
             style={[s.screen, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
             behavior={Platform.OS === "ios" ? "padding" : undefined}
+            keyboardVerticalOffset={Platform.OS === "ios" ? 20 : 0}
         >
             {/* Top Navigation Bar */}
             <View style={s.topBar}>
@@ -177,7 +178,7 @@ export default function QuizRevisionSessionScreen() {
                         Question {currentIndex + 1} of {totalQ}
                     </Text>
                     <View style={s.timerPill}>
-                        <Ionicons name="time-outline" size={13} color="#EF4444" />
+                        <Ionicons name="time-outline" size={13} color={theme.accent} />
                         <Text style={s.timerText}>{formatTimer(secondsElapsed)}</Text>
                     </View>
                 </View>
@@ -185,7 +186,7 @@ export default function QuizRevisionSessionScreen() {
                 <Pressable
                     onPress={handlePromptSubmit}
                     disabled={submitting}
-                    style={({ pressed }) => [s.submitPill, pressed && { opacity: 0.8 }]}
+                    style={({ pressed }) => [s.submitPill, pressed && { opacity: 0.85 }]}
                 >
                     {submitting ? (
                         <ActivityIndicator size="small" color="#FFF" />
@@ -237,175 +238,171 @@ export default function QuizRevisionSessionScreen() {
                 style={s.contentScroll}
                 contentContainerStyle={s.contentScrollInner}
                 keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
             >
-                {/* Meta Badges */}
-                <View style={s.metaRow}>
-                    <View
-                        style={[
-                            s.typeBadge,
-                            currentQ.questionType === "FILLUPS"
-                                ? s.typeFillups
-                                : currentQ.questionType === "TRUE_FALSE"
-                                ? s.typeTF
-                                : s.typeMCQ,
-                        ]}
-                    >
-                        <Text
-                            style={[
-                                s.typeBadgeText,
-                                currentQ.questionType === "FILLUPS"
-                                    ? { color: "#A855F7" }
-                                    : currentQ.questionType === "TRUE_FALSE"
-                                    ? { color: "#F59E0B" }
-                                    : { color: "#3B82F6" },
-                            ]}
-                        >
-                            {currentQ.questionType === "FILLUPS"
-                                ? "Fill in the Blanks"
-                                : currentQ.questionType === "TRUE_FALSE"
-                                ? "True / False"
-                                : "Multiple Choice"}
-                        </Text>
-                    </View>
-
-                    <View
-                        style={[
-                            s.diffBadge,
-                            currentQ.difficulty === "EASY"
-                                ? { borderColor: "#10B98135", backgroundColor: "#10B98115" }
-                                : currentQ.difficulty === "HARD"
-                                ? { borderColor: "#EF444435", backgroundColor: "#EF444415" }
-                                : { borderColor: "#F59E0B35", backgroundColor: "#F59E0B15" },
-                        ]}
-                    >
-                        <Text
-                            style={[
-                                s.diffBadgeText,
-                                currentQ.difficulty === "EASY"
-                                    ? { color: "#10B981" }
-                                    : currentQ.difficulty === "HARD"
-                                    ? { color: "#EF4444" }
-                                    : { color: "#F59E0B" },
-                            ]}
-                        >
-                            {currentQ.difficulty}
-                        </Text>
-                    </View>
-                </View>
-
-                {/* Question Statement */}
-                <Text style={s.questionText}>{currentQ.quesText}</Text>
-
-                {/* Dynamic Answer Component */}
-                <View style={s.interactiveZone}>
-                    {/* 1. MCQ OPTIONS */}
-                    {currentQ.questionType === "MCQ" && currentQ.options && (
-                        <View style={s.optionsContainer}>
-                            {Object.entries(currentQ.options).map(([optKey, optText]) => {
-                                const selected = answers[currentQ.quizQuesId] === optKey;
-                                return (
-                                    <Pressable
-                                        key={optKey}
-                                        onPress={() => handleSelectAnswer(optKey)}
-                                        style={[s.optionItem, selected && s.optionItemSelected]}
-                                    >
-                                        <View
-                                            style={[
-                                                s.optionKeyBox,
-                                                selected && s.optionKeyBoxSelected,
-                                            ]}
-                                        >
-                                            <Text
-                                                style={[
-                                                    s.optionKeyText,
-                                                    selected && s.optionKeyTextSelected,
-                                                ]}
-                                            >
-                                                {optKey}
-                                            </Text>
-                                        </View>
-                                        <Text
-                                            style={[
-                                                s.optionItemText,
-                                                selected && s.optionItemTextSelected,
-                                            ]}
-                                        >
-                                            {optText}
-                                        </Text>
-                                    </Pressable>
-                                );
-                            })}
-                        </View>
-                    )}
-
-                    {/* 2. FILL IN THE BLANKS */}
-                    {currentQ.questionType === "FILLUPS" && (
-                        <View style={s.fillupsContainer}>
-                            <Text style={s.fillupPrompt}>Type your answer below:</Text>
-                            <TextInput
-                                value={answers[currentQ.quizQuesId] || ""}
-                                onChangeText={handleSelectAnswer}
-                                placeholder="Enter answer here..."
-                                placeholderTextColor={theme.muted}
-                                autoCapitalize="none"
-                                autoCorrect={false}
-                                style={s.fillupInput}
+                <View style={s.questionCard}>
+                    {/* Meta Badges */}
+                    <View style={s.metaRow}>
+                        <View style={s.typeBadge}>
+                            <Ionicons
+                                name={
+                                    currentQ.questionType === "FILLUPS"
+                                        ? "create-outline"
+                                        : currentQ.questionType === "TRUE_FALSE"
+                                        ? "checkmark-done-outline"
+                                        : "list-outline"
+                                }
+                                size={12}
+                                color={theme.accent}
                             />
-                            <Text style={s.fillupHint}>
-                                Grading is case-insensitive and automatically balances spacing around punctuation.
+                            <Text style={s.typeBadgeText}>
+                                {currentQ.questionType === "FILLUPS"
+                                    ? "Fill in the Blanks"
+                                    : currentQ.questionType === "TRUE_FALSE"
+                                    ? "True / False"
+                                    : "Multiple Choice"}
                             </Text>
                         </View>
-                    )}
 
-                    {/* 3. TRUE / FALSE */}
-                    {currentQ.questionType === "TRUE_FALSE" && (
-                        <View style={s.tfContainer}>
-                            {["TRUE", "FALSE"].map((val) => {
-                                const isSel =
-                                    (answers[currentQ.quizQuesId] || "").toUpperCase() === val;
-                                const isTrue = val === "TRUE";
-                                return (
-                                    <Pressable
-                                        key={val}
-                                        onPress={() => handleSelectAnswer(val)}
-                                        style={[
-                                            s.tfCard,
-                                            isSel && (isTrue ? s.tfCardTrue : s.tfCardFalse),
-                                        ]}
-                                    >
-                                        <Ionicons
-                                            name={
-                                                isTrue
-                                                    ? isSel
-                                                        ? "checkmark-circle"
-                                                        : "checkmark-circle-outline"
-                                                    : isSel
-                                                    ? "close-circle"
-                                                    : "close-circle-outline"
-                                            }
-                                            size={28}
-                                            color={
-                                                isSel
-                                                    ? "#FFF"
-                                                    : isTrue
-                                                    ? "#10B981"
-                                                    : "#EF4444"
-                                            }
-                                        />
-                                        <Text
+                        <View
+                            style={[
+                                s.diffBadge,
+                                currentQ.difficulty === "EASY"
+                                    ? { borderColor: theme.success + "40", backgroundColor: theme.success + "15" }
+                                    : currentQ.difficulty === "HARD"
+                                    ? { borderColor: theme.danger + "40", backgroundColor: theme.danger + "15" }
+                                    : { borderColor: theme.warning + "40", backgroundColor: theme.warning + "15" },
+                            ]}
+                        >
+                            <Text
+                                style={[
+                                    s.diffBadgeText,
+                                    currentQ.difficulty === "EASY"
+                                        ? { color: theme.success }
+                                        : currentQ.difficulty === "HARD"
+                                        ? { color: theme.danger }
+                                        : { color: theme.warning },
+                                ]}
+                            >
+                                {currentQ.difficulty}
+                            </Text>
+                        </View>
+                    </View>
+
+                    {/* Question Statement */}
+                    <Text style={s.questionText}>{currentQ.quesText}</Text>
+
+                    {/* Dynamic Answer Component */}
+                    <View style={s.interactiveZone}>
+                        {/* 1. MCQ OPTIONS */}
+                        {currentQ.questionType === "MCQ" && currentQ.options && (
+                            <View style={s.optionsContainer}>
+                                {Object.entries(currentQ.options).map(([optKey, optText]) => {
+                                    const selected = answers[currentQ.quizQuesId] === optKey;
+                                    return (
+                                        <Pressable
+                                            key={optKey}
+                                            onPress={() => handleSelectAnswer(optKey)}
+                                            style={[s.optionItem, selected && s.optionItemSelected]}
+                                        >
+                                            <View
+                                                style={[
+                                                    s.optionKeyBox,
+                                                    selected && s.optionKeyBoxSelected,
+                                                ]}
+                                            >
+                                                <Text
+                                                    style={[
+                                                        s.optionKeyText,
+                                                        selected && s.optionKeyTextSelected,
+                                                    ]}
+                                                >
+                                                    {optKey}
+                                                </Text>
+                                            </View>
+                                            <Text
+                                                style={[
+                                                    s.optionItemText,
+                                                    selected && s.optionItemTextSelected,
+                                                ]}
+                                            >
+                                                {optText}
+                                            </Text>
+                                        </Pressable>
+                                    );
+                                })}
+                            </View>
+                        )}
+
+                        {/* 2. FILL IN THE BLANKS */}
+                        {currentQ.questionType === "FILLUPS" && (
+                            <View style={s.fillupsContainer}>
+                                <Text style={s.fillupPrompt}>Type your answer below:</Text>
+                                <TextInput
+                                    value={answers[currentQ.quizQuesId] || ""}
+                                    onChangeText={handleSelectAnswer}
+                                    placeholder="Enter your answer here..."
+                                    placeholderTextColor={theme.muted}
+                                    autoCapitalize="none"
+                                    autoCorrect={false}
+                                    style={s.fillupInput}
+                                />
+                                <Text style={s.fillupHint}>
+                                    Grading is case-insensitive and normalizes spacing automatically.
+                                </Text>
+                            </View>
+                        )}
+
+                        {/* 3. TRUE / FALSE */}
+                        {currentQ.questionType === "TRUE_FALSE" && (
+                            <View style={s.tfContainer}>
+                                {["TRUE", "FALSE"].map((val) => {
+                                    const isSel =
+                                        (answers[currentQ.quizQuesId] || "").toUpperCase() === val;
+                                    const isTrue = val === "TRUE";
+                                    return (
+                                        <Pressable
+                                            key={val}
+                                            onPress={() => handleSelectAnswer(val)}
                                             style={[
-                                                s.tfText,
-                                                isSel && s.tfTextActive,
-                                                !isSel && { color: isTrue ? "#10B981" : "#EF4444" },
+                                                s.tfCard,
+                                                isSel && (isTrue ? s.tfCardTrue : s.tfCardFalse),
                                             ]}
                                         >
-                                            {val}
-                                        </Text>
-                                    </Pressable>
-                                );
-                            })}
-                        </View>
-                    )}
+                                            <Ionicons
+                                                name={
+                                                    isTrue
+                                                        ? isSel
+                                                            ? "checkmark-circle"
+                                                            : "checkmark-circle-outline"
+                                                        : isSel
+                                                        ? "close-circle"
+                                                        : "close-circle-outline"
+                                                }
+                                                size={30}
+                                                color={
+                                                    isSel
+                                                        ? "#FFF"
+                                                        : isTrue
+                                                        ? theme.success
+                                                        : theme.danger
+                                                }
+                                            />
+                                            <Text
+                                                style={[
+                                                    s.tfText,
+                                                    isSel && s.tfTextActive,
+                                                    !isSel && { color: isTrue ? theme.success : theme.danger },
+                                                ]}
+                                            >
+                                                {val}
+                                            </Text>
+                                        </Pressable>
+                                    );
+                                })}
+                            </View>
+                        )}
+                    </View>
                 </View>
             </ScrollView>
 
@@ -438,7 +435,7 @@ export default function QuizRevisionSessionScreen() {
                             <ActivityIndicator size="small" color="#FFF" />
                         ) : (
                             <>
-                                <Text style={s.finishBtnText}>Submit Revision</Text>
+                                <Text style={s.finishBtnText}>Submit Quiz</Text>
                                 <Ionicons name="checkmark-done" size={16} color="#FFF" />
                             </>
                         )}
@@ -451,11 +448,11 @@ export default function QuizRevisionSessionScreen() {
                 <View style={s.modalOverlay}>
                     <View style={s.modalCard}>
                         <View style={s.modalIconWrap}>
-                            <Ionicons name="help-circle" size={32} color="#F59E0B" />
+                            <Ionicons name="help-circle" size={32} color={theme.warning} />
                         </View>
-                        <Text style={s.modalTitle}>Submit Revision?</Text>
+                        <Text style={s.modalTitle}>Submit Quiz?</Text>
                         <Text style={s.modalSub}>
-                            You have left <Text style={{ color: "#EF4444", fontWeight: "700" }}>{unansweredCount}</Text> of {totalQ} questions unanswered. Unanswered questions will be scored as 0.
+                            You have left <Text style={{ color: theme.danger, fontWeight: "700" }}>{unansweredCount}</Text> of {totalQ} questions unanswered. Unanswered questions will receive 0 marks.
                         </Text>
 
                         <View style={s.modalBtnRow}>
@@ -494,45 +491,47 @@ function makeStyles(t: AppTheme) {
             backgroundColor: t.background,
         },
         centerTitle: {
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: "800",
             color: t.text,
         },
         centerSub: {
             fontSize: 13,
-            color: t.muted,
+            color: t.textSecondary,
             textAlign: "center",
         },
         primaryBtn: {
-            marginTop: 10,
+            marginTop: 12,
             backgroundColor: t.accent,
-            paddingHorizontal: 20,
+            paddingHorizontal: 22,
             paddingVertical: 12,
             borderRadius: 10,
         },
         primaryBtnText: {
             color: "#FFF",
-            fontSize: 13,
+            fontSize: 14,
             fontWeight: "700",
         },
         topBar: {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
-            paddingHorizontal: 16,
+            paddingHorizontal: 18,
             paddingVertical: 12,
             borderBottomWidth: 1,
             borderColor: t.border,
             backgroundColor: t.surface,
         },
         exitBtn: {
-            padding: 6,
-            borderRadius: 8,
+            padding: 8,
+            borderRadius: 9,
             backgroundColor: t.surfaceAlt,
+            borderWidth: 1,
+            borderColor: t.border,
         },
         progressTitleBlock: {
             alignItems: "center",
-            gap: 2,
+            gap: 3,
         },
         progressTitle: {
             fontSize: 14,
@@ -543,7 +542,7 @@ function makeStyles(t: AppTheme) {
             flexDirection: "row",
             alignItems: "center",
             gap: 4,
-            backgroundColor: "#EF444415",
+            backgroundColor: t.accentSoft,
             paddingHorizontal: 8,
             paddingVertical: 2,
             borderRadius: 6,
@@ -551,14 +550,19 @@ function makeStyles(t: AppTheme) {
         timerText: {
             fontSize: 11,
             fontWeight: "700",
-            color: "#EF4444",
+            color: t.accent,
             fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
         },
         submitPill: {
-            backgroundColor: "#EF4444",
-            paddingHorizontal: 14,
-            paddingVertical: 6,
-            borderRadius: 8,
+            backgroundColor: t.accent,
+            paddingHorizontal: 16,
+            paddingVertical: 8,
+            borderRadius: 9,
+            shadowColor: t.accent,
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.2,
+            shadowRadius: 4,
+            elevation: 2,
         },
         submitPillText: {
             color: "#FFF",
@@ -572,13 +576,13 @@ function makeStyles(t: AppTheme) {
             paddingVertical: 10,
         },
         paletteScroll: {
-            paddingHorizontal: 16,
+            paddingHorizontal: 18,
             gap: 8,
         },
         dot: {
-            width: 32,
-            height: 32,
-            borderRadius: 8,
+            width: 34,
+            height: 34,
+            borderRadius: 9,
             alignItems: "center",
             justifyContent: "center",
             backgroundColor: t.surfaceAlt,
@@ -586,12 +590,12 @@ function makeStyles(t: AppTheme) {
             borderColor: t.border,
         },
         dotAnswered: {
-            backgroundColor: "#10B98125",
-            borderColor: "#10B981",
+            backgroundColor: t.success + "20",
+            borderColor: t.success,
         },
         dotCurrent: {
-            borderColor: "#EF4444",
-            backgroundColor: "#EF4444",
+            borderColor: t.accent,
+            backgroundColor: t.accent,
         },
         dotText: {
             fontSize: 12,
@@ -599,7 +603,7 @@ function makeStyles(t: AppTheme) {
             color: t.textSecondary,
         },
         dotTextAnswered: {
-            color: "#10B981",
+            color: t.success,
             fontWeight: "700",
         },
         dotTextCurrent: {
@@ -610,6 +614,16 @@ function makeStyles(t: AppTheme) {
             flex: 1,
         },
         contentScrollInner: {
+            padding: 18,
+            maxWidth: 820,
+            width: "100%",
+            alignSelf: "center",
+        },
+        questionCard: {
+            backgroundColor: t.surface,
+            borderRadius: 16,
+            borderWidth: 1,
+            borderColor: t.border,
             padding: 20,
             gap: 16,
         },
@@ -619,39 +633,30 @@ function makeStyles(t: AppTheme) {
             gap: 8,
         },
         typeBadge: {
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 5,
             paddingHorizontal: 10,
             paddingVertical: 4,
             borderRadius: 6,
+            backgroundColor: t.accentSoft,
             borderWidth: 1,
-        },
-        typeMCQ: {
-            borderColor: "#3B82F635",
-            backgroundColor: "#3B82F615",
-        },
-        typeFillups: {
-            borderColor: "#A855F735",
-            backgroundColor: "#A855F715",
-        },
-        typeTF: {
-            borderColor: "#F59E0B35",
-            backgroundColor: "#F59E0B15",
+            borderColor: t.accent + "33",
         },
         typeBadgeText: {
             fontSize: 11,
             fontWeight: "700",
-            textTransform: "uppercase",
-            letterSpacing: 0.5,
+            color: t.accent,
         },
         diffBadge: {
-            paddingHorizontal: 8,
+            paddingHorizontal: 9,
             paddingVertical: 4,
             borderRadius: 6,
             borderWidth: 1,
         },
         diffBadgeText: {
-            fontSize: 10,
+            fontSize: 11,
             fontWeight: "700",
-            textTransform: "uppercase",
         },
         questionText: {
             fontSize: 17,
@@ -661,7 +666,7 @@ function makeStyles(t: AppTheme) {
             letterSpacing: -0.2,
         },
         interactiveZone: {
-            marginTop: 8,
+            marginTop: 4,
         },
         optionsContainer: {
             gap: 10,
@@ -672,27 +677,28 @@ function makeStyles(t: AppTheme) {
             gap: 12,
             padding: 14,
             borderRadius: 12,
-            backgroundColor: t.surface,
+            backgroundColor: t.surfaceAlt,
             borderWidth: 1.5,
             borderColor: t.border,
+            minHeight: 52,
         },
         optionItemSelected: {
-            borderColor: "#3B82F6",
-            backgroundColor: "#3B82F612",
+            borderColor: t.accent,
+            backgroundColor: t.accentSoft,
         },
         optionKeyBox: {
-            width: 30,
-            height: 30,
+            width: 32,
+            height: 32,
             borderRadius: 8,
             alignItems: "center",
             justifyContent: "center",
-            backgroundColor: t.surfaceAlt,
+            backgroundColor: t.surface,
             borderWidth: 1,
             borderColor: t.border,
         },
         optionKeyBoxSelected: {
-            backgroundColor: "#3B82F6",
-            borderColor: "#3B82F6",
+            backgroundColor: t.accent,
+            borderColor: t.accent,
         },
         optionKeyText: {
             fontSize: 13,
@@ -713,15 +719,15 @@ function makeStyles(t: AppTheme) {
             fontWeight: "600",
         },
         fillupsContainer: {
-            gap: 8,
+            gap: 10,
         },
         fillupPrompt: {
             fontSize: 12,
             fontWeight: "600",
-            color: t.muted,
+            color: t.textSecondary,
         },
         fillupInput: {
-            backgroundColor: t.surface,
+            backgroundColor: t.surfaceAlt,
             borderWidth: 1.5,
             borderColor: t.border,
             borderRadius: 12,
@@ -746,17 +752,17 @@ function makeStyles(t: AppTheme) {
             justifyContent: "center",
             gap: 8,
             borderRadius: 14,
-            backgroundColor: t.surface,
+            backgroundColor: t.surfaceAlt,
             borderWidth: 2,
             borderColor: t.border,
         },
         tfCardTrue: {
-            backgroundColor: "#10B981",
-            borderColor: "#10B981",
+            backgroundColor: t.success,
+            borderColor: t.success,
         },
         tfCardFalse: {
-            backgroundColor: "#EF4444",
-            borderColor: "#EF4444",
+            backgroundColor: t.danger,
+            borderColor: t.danger,
         },
         tfText: {
             fontSize: 15,
@@ -770,8 +776,8 @@ function makeStyles(t: AppTheme) {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
-            paddingHorizontal: 16,
-            paddingVertical: 12,
+            paddingHorizontal: 18,
+            paddingVertical: 13,
             borderTopWidth: 1,
             borderColor: t.border,
             backgroundColor: t.surface,
@@ -783,13 +789,13 @@ function makeStyles(t: AppTheme) {
             gap: 6,
             paddingHorizontal: 16,
             paddingVertical: 10,
-            borderRadius: 10,
+            borderRadius: 9,
             backgroundColor: t.surfaceAlt,
             borderWidth: 1,
             borderColor: t.border,
         },
         navBtnDisabled: {
-            opacity: 0.4,
+            opacity: 0.35,
         },
         navBtnText: {
             fontSize: 13,
@@ -802,7 +808,7 @@ function makeStyles(t: AppTheme) {
             gap: 6,
             paddingHorizontal: 20,
             paddingVertical: 11,
-            borderRadius: 10,
+            borderRadius: 9,
             backgroundColor: t.accent,
         },
         nextBtnText: {
@@ -816,8 +822,8 @@ function makeStyles(t: AppTheme) {
             gap: 6,
             paddingHorizontal: 20,
             paddingVertical: 11,
-            borderRadius: 10,
-            backgroundColor: "#EF4444",
+            borderRadius: 9,
+            backgroundColor: t.accent,
         },
         finishBtnText: {
             fontSize: 13,
@@ -825,8 +831,12 @@ function makeStyles(t: AppTheme) {
             color: "#FFF",
         },
         modalOverlay: {
-            ...StyleSheet.absoluteFill,
-            backgroundColor: "rgba(0,0,0,0.7)",
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.65)",
             alignItems: "center",
             justifyContent: "center",
             padding: 24,
@@ -844,23 +854,23 @@ function makeStyles(t: AppTheme) {
             borderColor: t.border,
         },
         modalIconWrap: {
-            width: 54,
-            height: 54,
-            borderRadius: 27,
-            backgroundColor: "#F59E0B15",
+            width: 52,
+            height: 52,
+            borderRadius: 26,
+            backgroundColor: t.warning + "20",
             alignItems: "center",
             justifyContent: "center",
         },
         modalTitle: {
-            fontSize: 17,
+            fontSize: 18,
             fontWeight: "800",
             color: t.text,
         },
         modalSub: {
             fontSize: 13,
-            color: t.muted,
+            color: t.textSecondary,
             textAlign: "center",
-            lineHeight: 18,
+            lineHeight: 19,
         },
         modalBtnRow: {
             flexDirection: "row",
@@ -889,7 +899,7 @@ function makeStyles(t: AppTheme) {
             alignItems: "center",
             justifyContent: "center",
             borderRadius: 10,
-            backgroundColor: "#EF4444",
+            backgroundColor: t.accent,
         },
         modalSubmitText: {
             fontSize: 13,

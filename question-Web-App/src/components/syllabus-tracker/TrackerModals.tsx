@@ -330,7 +330,7 @@ export function RecordCoverageModal({
                                 <Ionicons
                                     name="alert-circle"
                                     size={16}
-                                    color={TRACKER_PALETTE.crimson}
+                                    color={TRACKER_PALETTE.purple}
                                 />
                                 <Text style={styles.errorText}>{error}</Text>
                             </View>
@@ -518,7 +518,7 @@ export function AsOfDateModal({
                             <Ionicons
                                 name="alert-circle"
                                 size={16}
-                                color={TRACKER_PALETTE.crimson}
+                                color={TRACKER_PALETTE.purple}
                             />
                             <Text style={styles.errorText}>{error}</Text>
                         </View>
@@ -670,7 +670,7 @@ export function EventDetailModal({
                                 <Ionicons
                                     name="alert-circle"
                                     size={16}
-                                    color={TRACKER_PALETTE.crimson}
+                                    color={TRACKER_PALETTE.purple}
                                 />
                                 <Text style={styles.errorText}>{error}</Text>
                             </View>
@@ -711,7 +711,7 @@ export function EventDetailModal({
                                     <Ionicons
                                         name="trash-outline"
                                         size={15}
-                                        color={TRACKER_PALETTE.crimson}
+                                        color={TRACKER_PALETTE.purple}
                                     />
                                     <Text style={styles.dangerOutlineText}>Delete</Text>
                                 </Pressable>
@@ -773,7 +773,7 @@ const styles = StyleSheet.create({
         marginBottom: 12,
     },
     eyebrow: {
-        color: TRACKER_PALETTE.crimson,
+        color: TRACKER_PALETTE.purple,
         fontSize: 10,
         fontWeight: "800",
         letterSpacing: 0.9,
@@ -856,8 +856,8 @@ const styles = StyleSheet.create({
         borderColor: TRACKER_PALETTE.border,
     },
     quickChipActive: {
-        backgroundColor: TRACKER_PALETTE.crimsonGlow,
-        borderColor: TRACKER_PALETTE.crimsonBorder,
+        backgroundColor: TRACKER_PALETTE.purpleGlow,
+        borderColor: TRACKER_PALETTE.purpleBorder,
     },
     quickChipText: {
         color: TRACKER_PALETTE.textSecondary,
@@ -865,7 +865,7 @@ const styles = StyleSheet.create({
         fontWeight: "600",
     },
     quickChipTextActive: {
-        color: TRACKER_PALETTE.crimson,
+        color: TRACKER_PALETTE.purple,
         fontWeight: "700",
     },
     notesInput: {
@@ -897,7 +897,7 @@ const styles = StyleSheet.create({
         gap: 6,
     },
     groupTitle: {
-        color: TRACKER_PALETTE.crimson,
+        color: TRACKER_PALETTE.purple,
         fontSize: 11,
         fontWeight: "700",
     },
@@ -954,9 +954,9 @@ const styles = StyleSheet.create({
         marginTop: 10,
         padding: 12,
         borderRadius: 10,
-        backgroundColor: TRACKER_PALETTE.crimsonGlow,
+        backgroundColor: TRACKER_PALETTE.purpleGlow,
         borderWidth: 1,
-        borderColor: TRACKER_PALETTE.crimsonBorder,
+        borderColor: TRACKER_PALETTE.purpleBorder,
         gap: 4,
     },
     deleteConfirmTitle: {
@@ -976,9 +976,9 @@ const styles = StyleSheet.create({
         marginTop: 12,
         padding: 10,
         borderRadius: 10,
-        backgroundColor: TRACKER_PALETTE.crimsonGlow,
+        backgroundColor: TRACKER_PALETTE.purpleGlow,
         borderWidth: 1,
-        borderColor: TRACKER_PALETTE.crimsonBorder,
+        borderColor: TRACKER_PALETTE.purpleBorder,
     },
     errorText: {
         color: TRACKER_PALETTE.text,
@@ -1010,16 +1010,16 @@ const styles = StyleSheet.create({
         flex: 1,
         height: 44,
         borderRadius: 12,
-        backgroundColor: TRACKER_PALETTE.crimsonGlow,
+        backgroundColor: TRACKER_PALETTE.purpleGlow,
         borderWidth: 1,
-        borderColor: TRACKER_PALETTE.crimsonBorder,
+        borderColor: TRACKER_PALETTE.purpleBorder,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
         gap: 6,
     },
     dangerOutlineText: {
-        color: TRACKER_PALETTE.crimson,
+        color: TRACKER_PALETTE.purple,
         fontSize: 13,
         fontWeight: "700",
     },
@@ -1027,7 +1027,7 @@ const styles = StyleSheet.create({
         flex: 1.4,
         height: 44,
         borderRadius: 12,
-        backgroundColor: TRACKER_PALETTE.crimson,
+        backgroundColor: TRACKER_PALETTE.purple,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",

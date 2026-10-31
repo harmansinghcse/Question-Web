@@ -1,9 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
     Modal,
+    Platform,
     Pressable,
     ScrollView,
     StyleSheet,
+    Switch,
     Text,
     TextInput,
     View,
@@ -15,6 +17,7 @@ import { useAppTheme } from "../providers/ThemeProvider";
 import {
     studyStorage,
     type StudyGoal,
+    type StudyReminder,
     type StudyStats,
 } from "../services/study-storage";
 import type { MyTimetable, UpcomingExam } from "../services/api";
@@ -64,9 +67,26 @@ export default function StudyToolsModals({
     const [timerIsRunning, setTimerIsRunning] = useState(false);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-    // === Inputs ===
+    // === Goal Inputs ===
     const [newGoalText, setNewGoalText] = useState("");
     const [currentTimestamp, setCurrentTimestamp] = useState(() => Date.now());
+
+    // === Reminders State ===
+    const [reminders, setReminders] = useState<StudyReminder[]>([]);
+    const [newReminderTitle, setNewReminderTitle] = useState("");
+    const [newReminderTime, setNewReminderTime] = useState("08:00 PM");
+
+    useEffect(() => {
+        let isMounted = true;
+        if (activeModal === "study-reminders") {
+            void studyStorage.getReminders().then((data) => {
+                if (isMounted) setReminders(data);
+            });
+        }
+        return () => {
+            isMounted = false;
+        };
+    }, [activeModal]);
 
     useEffect(() => {
         if (activeModal !== "upcoming-exams") return;
@@ -125,6 +145,29 @@ export default function StudyToolsModals({
         onGoalsChange(updated);
     };
 
+    // Reminder Handlers
+    const handleAddReminder = async () => {
+        if (!newReminderTitle.trim()) return;
+        const updated = await studyStorage.addReminder(
+            newReminderTitle,
+            newReminderTime,
+        );
+        setReminders(updated);
+        setNewReminderTitle("");
+    };
+
+    const handleToggleReminder = async (id: string) => {
+        const updated = await studyStorage.toggleReminder(id);
+        setReminders(updated);
+    };
+
+    const handleDeleteReminder = async (id: string) => {
+        const updated = await studyStorage.deleteReminder(id);
+        setReminders(updated);
+    };
+
+    const completedGoalsCount = goals.filter((g) => g.completed).length;
+
     return (
         <>
             {/* === FOCUS TIMER MODAL === */}
@@ -138,16 +181,26 @@ export default function StudyToolsModals({
                     <View style={s.modalDialog}>
                         <View style={s.modalHeader}>
                             <View style={s.modalTitleRow}>
-                                <Ionicons
-                                    name="timer-outline"
-                                    size={20}
-                                    color={theme.accent}
-                                />
-                                <Text style={s.modalTitle}>Focus Timer</Text>
+                                <View style={s.modalIconWrap}>
+                                    <Ionicons
+                                        name="timer-outline"
+                                        size={18}
+                                        color={theme.accent}
+                                    />
+                                </View>
+                                <View>
+                                    <Text style={s.modalTitle}>Focus Timer</Text>
+                                    <Text style={s.modalSubtitle}>
+                                        25-minute Pomodoro study block
+                                    </Text>
+                                </View>
                             </View>
                             <Pressable
                                 onPress={onClose}
                                 style={s.modalCloseBtn}
+                                hitSlop={8}
+                                accessibilityRole="button"
+                                accessibilityLabel="Close focus timer modal"
                             >
                                 <Ionicons
                                     name="close"
@@ -156,22 +209,34 @@ export default function StudyToolsModals({
                                 />
                             </Pressable>
                         </View>
+
                         <View style={s.timerCircleBox}>
-                            <Text style={s.timerTime}>
-                                {Math.floor(timerSecondsLeft / 60)
-                                    .toString()
-                                    .padStart(2, "0")}
-                                :
-                                {(timerSecondsLeft % 60)
-                                    .toString()
-                                    .padStart(2, "0")}
-                            </Text>
-                            <Text style={s.timerSub}>
-                                {timerIsRunning
-                                    ? "Deep Focus Session"
-                                    : "Ready to focus"}
-                            </Text>
+                            <View style={s.timerProgressOuter}>
+                                <Text style={s.timerTime}>
+                                    {Math.floor(timerSecondsLeft / 60)
+                                        .toString()
+                                        .padStart(2, "0")}
+                                    :
+                                    {(timerSecondsLeft % 60)
+                                        .toString()
+                                        .padStart(2, "0")}
+                                </Text>
+                                <View style={s.timerStatusPill}>
+                                    <View
+                                        style={[
+                                            s.timerPulseDot,
+                                            timerIsRunning && s.timerPulseDotActive,
+                                        ]}
+                                    />
+                                    <Text style={s.timerSub}>
+                                        {timerIsRunning
+                                            ? "Deep Focus Session"
+                                            : "Ready to focus"}
+                                    </Text>
+                                </View>
+                            </View>
                         </View>
+
                         <View style={s.timerActions}>
                             <Pressable
                                 onPress={() =>
@@ -179,19 +244,17 @@ export default function StudyToolsModals({
                                 }
                                 style={[
                                     s.timerMainBtn,
-                                    timerIsRunning && {
-                                        backgroundColor: theme.danger,
-                                    },
+                                    timerIsRunning && s.timerMainBtnActive,
                                 ]}
                             >
                                 <Ionicons
                                     name={timerIsRunning ? "pause" : "play"}
-                                    size={16}
+                                    size={18}
                                     color="#FFFFFF"
                                 />
                                 <Text style={s.timerMainBtnText}>
                                     {timerIsRunning
-                                        ? "Pause"
+                                        ? "Pause Session"
                                         : "Start 25m Focus"}
                                 </Text>
                             </Pressable>
@@ -204,16 +267,28 @@ export default function StudyToolsModals({
                             >
                                 <Ionicons
                                     name="refresh"
-                                    size={15}
-                                    color={theme.muted}
+                                    size={16}
+                                    color={theme.text}
                                 />
                                 <Text style={s.timerResetText}>Reset</Text>
                             </Pressable>
                         </View>
-                        <Text style={s.timerStatsFooter}>
-                            Total logged: {studyStats.totalMinutes} mins (
-                            {studyStats.sessionsCompleted} sessions)
-                        </Text>
+
+                        <View style={s.timerStatsFooterBox}>
+                            <View style={s.timerStatColumn}>
+                                <Text style={s.timerStatVal}>
+                                    {studyStats.totalMinutes}m
+                                </Text>
+                                <Text style={s.timerStatLbl}>Total Logged</Text>
+                            </View>
+                            <View style={s.timerStatDivider} />
+                            <View style={s.timerStatColumn}>
+                                <Text style={s.timerStatVal}>
+                                    {studyStats.sessionsCompleted}
+                                </Text>
+                                <Text style={s.timerStatLbl}>Sessions Done</Text>
+                            </View>
+                        </View>
                     </View>
                 </View>
             </Modal>
@@ -229,18 +304,26 @@ export default function StudyToolsModals({
                     <View style={s.modalDialog}>
                         <View style={s.modalHeader}>
                             <View style={s.modalTitleRow}>
-                                <Ionicons
-                                    name="checkbox-outline"
-                                    size={20}
-                                    color={theme.accent}
-                                />
-                                <Text style={s.modalTitle}>
-                                    Daily Study Goals
-                                </Text>
+                                <View style={s.modalIconWrap}>
+                                    <Ionicons
+                                        name="checkbox-outline"
+                                        size={18}
+                                        color={theme.accent}
+                                    />
+                                </View>
+                                <View>
+                                    <Text style={s.modalTitle}>Daily Goals</Text>
+                                    <Text style={s.modalSubtitle}>
+                                        {completedGoalsCount} of {goals.length} tasks completed today
+                                    </Text>
+                                </View>
                             </View>
                             <Pressable
                                 onPress={onClose}
                                 style={s.modalCloseBtn}
+                                hitSlop={8}
+                                accessibilityRole="button"
+                                accessibilityLabel="Close daily goals modal"
                             >
                                 <Ionicons
                                     name="close"
@@ -249,89 +332,97 @@ export default function StudyToolsModals({
                                 />
                             </Pressable>
                         </View>
+
                         <View style={s.inputRow}>
                             <TextInput
                                 value={newGoalText}
                                 onChangeText={setNewGoalText}
-                                placeholder="Add a new goal for today..."
+                                placeholder="Add a study goal (e.g. Revise OS paging)..."
                                 placeholderTextColor={theme.muted}
                                 style={s.textInput}
                                 onSubmitEditing={handleAddGoal}
+                                returnKeyType="done"
                             />
                             <Pressable
                                 onPress={handleAddGoal}
-                                style={s.addGoalBtn}
+                                style={({ pressed }) => [
+                                    s.addGoalBtn,
+                                    pressed && { opacity: 0.8 },
+                                ]}
                             >
                                 <Ionicons
                                     name="add"
-                                    size={18}
+                                    size={20}
                                     color="#FFFFFF"
                                 />
                             </Pressable>
                         </View>
-                        <ScrollView style={{ maxHeight: 280, marginTop: 12 }}>
-                            {goals.length === 0 && (
-                                <Text
-                                    style={{
-                                        color: theme.muted,
-                                        fontSize: 13,
-                                        textAlign: "center",
-                                        marginVertical: 20,
-                                    }}
-                                >
-                                    No goals yet. Add one above to get started.
-                                </Text>
-                            )}
-                            {goals.map((g) => (
-                                <View key={g.id} style={s.modalGoalRow}>
-                                    <Pressable
-                                        onPress={() =>
-                                            void handleToggleGoal(g.id)
-                                        }
-                                        style={{
-                                            flexDirection: "row",
-                                            alignItems: "center",
-                                            flex: 1,
-                                            gap: 10,
-                                        }}
-                                    >
-                                        <Ionicons
-                                            name={
-                                                g.completed
-                                                    ? "checkmark-circle"
-                                                    : "ellipse-outline"
-                                            }
-                                            size={18}
-                                            color={
-                                                g.completed
-                                                    ? theme.success
-                                                    : theme.muted
-                                            }
-                                        />
-                                        <Text
-                                            style={[
-                                                s.modalGoalText,
-                                                g.completed &&
-                                                    s.goalTextCompleted,
-                                            ]}
-                                        >
-                                            {g.text}
-                                        </Text>
-                                    </Pressable>
-                                    <Pressable
-                                        onPress={() =>
-                                            void handleDeleteGoal(g.id)
-                                        }
-                                        hitSlop={8}
-                                    >
-                                        <Ionicons
-                                            name="trash-outline"
-                                            size={16}
-                                            color={theme.muted}
-                                        />
-                                    </Pressable>
+
+                        <ScrollView
+                            style={s.modalListScroll}
+                            showsVerticalScrollIndicator={false}
+                        >
+                            {goals.length === 0 ? (
+                                <View style={s.modalEmptyState}>
+                                    <Ionicons
+                                        name="checkmark-circle-outline"
+                                        size={36}
+                                        color={theme.muted}
+                                    />
+                                    <Text style={s.modalEmptyTitle}>No study goals set</Text>
+                                    <Text style={s.modalEmptyText}>
+                                        Write down key topics or exercises above to track your daily output.
+                                    </Text>
                                 </View>
-                            ))}
+                            ) : (
+                                goals.map((g) => (
+                                    <View key={g.id} style={s.modalGoalRow}>
+                                        <Pressable
+                                            onPress={() =>
+                                                void handleToggleGoal(g.id)
+                                            }
+                                            style={s.goalPressable}
+                                        >
+                                            <View
+                                                style={[
+                                                    s.checkbox,
+                                                    g.completed && s.checkboxChecked,
+                                                ]}
+                                            >
+                                                {g.completed && (
+                                                    <Ionicons
+                                                        name="checkmark"
+                                                        size={14}
+                                                        color="#FFFFFF"
+                                                    />
+                                                )}
+                                            </View>
+                                            <Text
+                                                style={[
+                                                    s.modalGoalText,
+                                                    g.completed &&
+                                                        s.goalTextCompleted,
+                                                ]}
+                                            >
+                                                {g.text}
+                                            </Text>
+                                        </Pressable>
+                                        <Pressable
+                                            onPress={() =>
+                                                void handleDeleteGoal(g.id)
+                                            }
+                                            style={s.deleteItemBtn}
+                                            hitSlop={8}
+                                        >
+                                            <Ionicons
+                                                name="trash-outline"
+                                                size={16}
+                                                color={theme.muted}
+                                            />
+                                        </Pressable>
+                                    </View>
+                                ))
+                            )}
                         </ScrollView>
                     </View>
                 </View>
@@ -345,21 +436,31 @@ export default function StudyToolsModals({
                 onRequestClose={onClose}
             >
                 <View style={s.modalOverlay}>
-                    <View style={s.modalDialog}>
+                    <View style={s.modalDialogLarge}>
                         <View style={s.modalHeader}>
                             <View style={s.modalTitleRow}>
-                                <Ionicons
-                                    name="time-outline"
-                                    size={20}
-                                    color={theme.accent}
-                                />
-                                <Text style={s.modalTitle}>
-                                    Full Class Timetable
-                                </Text>
+                                <View style={s.modalIconWrap}>
+                                    <Ionicons
+                                        name="time-outline"
+                                        size={18}
+                                        color={theme.accent}
+                                    />
+                                </View>
+                                <View>
+                                    <Text style={s.modalTitle}>
+                                        Class Timetable
+                                    </Text>
+                                    <Text style={s.modalSubtitle}>
+                                        Weekly scheduled lectures and labs
+                                    </Text>
+                                </View>
                             </View>
                             <Pressable
                                 onPress={onClose}
                                 style={s.modalCloseBtn}
+                                hitSlop={8}
+                                accessibilityRole="button"
+                                accessibilityLabel="Close timetable modal"
                             >
                                 <Ionicons
                                     name="close"
@@ -369,7 +470,7 @@ export default function StudyToolsModals({
                             </Pressable>
                         </View>
                         <ScrollView
-                            style={{ maxHeight: 400, marginVertical: 10 }}
+                            style={s.modalScrollLarge}
                             showsVerticalScrollIndicator={false}
                         >
                             {timetable.status === "unauthenticated" ? (
@@ -391,36 +492,30 @@ export default function StudyToolsModals({
                             ) : (
                                 <>
                                     {!!timetableData && (
-                                        <Text
-                                            style={{
-                                                color: theme.muted,
-                                                fontSize: 12,
-                                                marginBottom: 10,
-                                            }}
-                                        >
-                                            {[
-                                                timetableData.deptName,
-                                                `Semester ${timetableData.semester}`,
-                                                timetableData.division
-                                                    ? `Division ${timetableData.division}`
-                                                    : null,
-                                                timetableData.timetable
-                                                    ?.academicYear,
-                                            ]
-                                                .filter(Boolean)
-                                                .join(" \u2022 ")}
-                                        </Text>
+                                        <View style={s.timetableMetaBadge}>
+                                            <Ionicons
+                                                name="school-outline"
+                                                size={14}
+                                                color={theme.accent}
+                                            />
+                                            <Text style={s.timetableMetaText}>
+                                                {[
+                                                    timetableData.deptName,
+                                                    `Sem ${timetableData.semester}`,
+                                                    timetableData.division
+                                                        ? `Div ${timetableData.division}`
+                                                        : null,
+                                                    timetableData.timetable?.academicYear,
+                                                ]
+                                                    .filter(Boolean)
+                                                    .join(" • ")}
+                                            </Text>
+                                        </View>
                                     )}
+
                                     {!!timetableData &&
                                         timetableData.divisions.length > 1 && (
-                                            <View
-                                                style={{
-                                                    flexDirection: "row",
-                                                    flexWrap: "wrap",
-                                                    gap: 8,
-                                                    marginBottom: 12,
-                                                }}
-                                            >
+                                            <View style={s.divisionRow}>
                                                 {timetableData.divisions.map(
                                                     (d) => {
                                                         const active =
@@ -430,36 +525,22 @@ export default function StudyToolsModals({
                                                             <Pressable
                                                                 key={d}
                                                                 onPress={() =>
-                                                                    onSelectDivision(
-                                                                        d,
-                                                                    )
+                                                                    onSelectDivision(d)
                                                                 }
-                                                                style={{
-                                                                    paddingHorizontal: 14,
-                                                                    paddingVertical: 6,
-                                                                    borderRadius: 16,
-                                                                    borderWidth: 1,
-                                                                    borderColor:
-                                                                        active
-                                                                            ? theme.accent
-                                                                            : theme.border,
-                                                                    backgroundColor:
-                                                                        active
-                                                                            ? theme.accent
-                                                                            : theme.surfaceAlt,
-                                                                }}
+                                                                style={[
+                                                                    s.divisionPill,
+                                                                    active &&
+                                                                        s.divisionPillActive,
+                                                                ]}
                                                             >
                                                                 <Text
-                                                                    style={{
-                                                                        fontSize: 12,
-                                                                        fontWeight:
-                                                                            "700",
-                                                                        color: active
-                                                                            ? "#FFFFFF"
-                                                                            : theme.text,
-                                                                    }}
+                                                                    style={[
+                                                                        s.divisionPillText,
+                                                                        active &&
+                                                                            s.divisionPillTextActive,
+                                                                    ]}
                                                                 >
-                                                                    {`Div ${d}`}
+                                                                    Division {d}
                                                                 </Text>
                                                             </Pressable>
                                                         );
@@ -467,6 +548,7 @@ export default function StudyToolsModals({
                                                 )}
                                             </View>
                                         )}
+
                                     {timetableEntries.length > 0 ? (
                                         DAYS_OF_WEEK.map((day) => {
                                             const dayEntries = timetableEntries
@@ -483,105 +565,54 @@ export default function StudyToolsModals({
                                             return (
                                                 <View
                                                     key={day}
-                                                    style={{ marginBottom: 12 }}
+                                                    style={s.dayGroup}
                                                 >
-                                                    <Text
-                                                        style={{
-                                                            fontSize: 13,
-                                                            fontWeight: "700",
-                                                            color: theme.accent,
-                                                            marginBottom: 8,
-                                                        }}
-                                                    >
-                                                        {day}
-                                                    </Text>
+                                                    <View style={s.dayHeader}>
+                                                        <Text style={s.dayTitle}>
+                                                            {day}
+                                                        </Text>
+                                                        <Text style={s.dayClassCount}>
+                                                            {dayEntries.length} {dayEntries.length === 1 ? "class" : "classes"}
+                                                        </Text>
+                                                    </View>
                                                     {dayEntries.map((item) => (
                                                         <View
                                                             key={item.entryId}
-                                                            style={
-                                                                s.modalScheduleRow
-                                                            }
+                                                            style={s.scheduleItem}
                                                         >
-                                                            <View
-                                                                style={{
-                                                                    width: 72,
-                                                                }}
-                                                            >
-                                                                <Text
-                                                                    style={
-                                                                        s.modalScheduleTime
-                                                                    }
-                                                                >
-                                                                    {
-                                                                        item.startTime
-                                                                    }
+                                                            <View style={s.scheduleTimeCol}>
+                                                                <Text style={s.scheduleStartTime}>
+                                                                    {item.startTime}
                                                                 </Text>
-                                                                <Text
-                                                                    style={
-                                                                        s.modalScheduleLoc
-                                                                    }
-                                                                >
-                                                                    {
-                                                                        item.endTime
-                                                                    }
+                                                                <Text style={s.scheduleEndTime}>
+                                                                    {item.endTime}
                                                                 </Text>
                                                             </View>
-                                                            <View
-                                                                style={{
-                                                                    flex: 1,
-                                                                }}
-                                                            >
-                                                                <Text
-                                                                    style={
-                                                                        s.modalScheduleTitle
-                                                                    }
-                                                                >
-                                                                    {item
-                                                                        .subject
-                                                                        ?.subjectName ||
-                                                                        item
-                                                                            .subject
-                                                                            ?.subjectId ||
-                                                                        `Subject #${item.subjectKey}`}{" "}
-                                                                    <Text
-                                                                        style={{
-                                                                            fontSize: 10,
-                                                                            color: theme.muted,
-                                                                            fontWeight:
-                                                                                "400",
-                                                                        }}
-                                                                    >
-                                                                        (
-                                                                        {
-                                                                            item.classType
-                                                                        }
-                                                                        )
+                                                            <View style={s.scheduleInfoCol}>
+                                                                <View style={s.scheduleTitleRow}>
+                                                                    <Text style={s.scheduleTitle}>
+                                                                        {item.subject?.subjectName ||
+                                                                            item.subject?.subjectId ||
+                                                                            `Subject #${item.subjectKey}`}
                                                                     </Text>
-                                                                </Text>
-                                                                {!!item.classroom && (
-                                                                    <Text
-                                                                        style={
-                                                                            s.modalScheduleLoc
-                                                                        }
-                                                                    >
-                                                                        Room:{" "}
-                                                                        {
-                                                                            item.classroom
-                                                                        }
-                                                                    </Text>
-                                                                )}
-                                                                {!!item.teacher && (
-                                                                    <Text
-                                                                        style={
-                                                                            s.modalScheduleLoc
-                                                                        }
-                                                                    >
-                                                                        Teacher:{" "}
-                                                                        {
-                                                                            item.teacher
-                                                                        }
-                                                                    </Text>
-                                                                )}
+                                                                    <View style={s.classTypeBadge}>
+                                                                        <Text style={s.classTypeText}>
+                                                                            {item.classType}
+                                                                        </Text>
+                                                                    </View>
+                                                                </View>
+                                                                <View style={s.scheduleMetaRow}>
+                                                                    {!!item.classroom && (
+                                                                        <Text style={s.scheduleMetaTag}>
+                                                                            <Ionicons name="location-outline" size={11} color={theme.muted} /> Room {item.classroom}
+                                                                        </Text>
+                                                                    )}
+                                                                    {!!item.teacher && (
+                                                                        <Text style={s.scheduleMetaTag}>
+                                                                            <Ionicons name="person-outline" size={11} color={theme.muted} /> {item.teacher}
+                                                                        </Text>
+                                                                    )}
+                                                                </View>
                                                             </View>
                                                         </View>
                                                     ))}
@@ -589,23 +620,21 @@ export default function StudyToolsModals({
                                             );
                                         })
                                     ) : (
-                                        <Text
-                                            style={{
-                                                color: theme.muted,
-                                                fontSize: 13,
-                                                textAlign: "center",
-                                                marginTop: 20,
-                                            }}
-                                        >
-                                            {!timetableData
-                                                ? "No timetable data."
-                                                : timetableData.divisions
-                                                        .length === 0
-                                                  ? "No active timetable has been published for your department and semester yet."
-                                                  : !timetableData.timetable
-                                                    ? "Select your division above to view your timetable."
-                                                    : "This timetable has no classes yet."}
-                                        </Text>
+                                        <View style={s.modalEmptyState}>
+                                            <Ionicons
+                                                name="calendar-outline"
+                                                size={36}
+                                                color={theme.muted}
+                                            />
+                                            <Text style={s.modalEmptyTitle}>No classes found</Text>
+                                            <Text style={s.modalEmptyText}>
+                                                {!timetableData
+                                                    ? "No timetable data available."
+                                                    : !timetableData.timetable
+                                                      ? "Select your division above to view classes."
+                                                      : "This division has no registered classes."}
+                                            </Text>
+                                        </View>
                                     )}
                                 </>
                             )}
@@ -622,19 +651,29 @@ export default function StudyToolsModals({
                 onRequestClose={onClose}
             >
                 <View style={s.modalOverlay}>
-                    <View style={s.modalDialog}>
+                    <View style={s.modalDialogLarge}>
                         <View style={s.modalHeader}>
                             <View style={s.modalTitleRow}>
-                                <Ionicons
-                                    name="calendar-outline"
-                                    size={20}
-                                    color={theme.warning}
-                                />
-                                <Text style={s.modalTitle}>Upcoming Exams</Text>
+                                <View style={[s.modalIconWrap, { backgroundColor: "rgba(245, 158, 11, 0.12)" }]}>
+                                    <Ionicons
+                                        name="calendar-outline"
+                                        size={18}
+                                        color={theme.warning}
+                                    />
+                                </View>
+                                <View>
+                                    <Text style={s.modalTitle}>Upcoming Exams</Text>
+                                    <Text style={s.modalSubtitle}>
+                                        Examination schedules & countdowns
+                                    </Text>
+                                </View>
                             </View>
                             <Pressable
                                 onPress={onClose}
                                 style={s.modalCloseBtn}
+                                hitSlop={8}
+                                accessibilityRole="button"
+                                accessibilityLabel="Close upcoming exams modal"
                             >
                                 <Ionicons
                                     name="close"
@@ -644,7 +683,7 @@ export default function StudyToolsModals({
                             </Pressable>
                         </View>
                         <ScrollView
-                            style={{ maxHeight: 300, marginTop: 12 }}
+                            style={s.modalScrollLarge}
                             showsVerticalScrollIndicator={false}
                         >
                             {exams.status === "unauthenticated" ? (
@@ -673,26 +712,22 @@ export default function StudyToolsModals({
                                     const details = [
                                         exam.venue ? `Venue: ${exam.venue}` : null,
                                         exam.durationMinutes
-                                            ? `${exam.durationMinutes} min`
+                                            ? `${exam.durationMinutes} mins`
                                             : null,
-                                        exam.semester
-                                            ? `Sem ${exam.semester}`
-                                            : null,
+                                        exam.semester ? `Sem ${exam.semester}` : null,
                                     ].filter(Boolean);
+
                                     return (
                                         <View
                                             key={exam.examId}
                                             style={s.examCard}
                                         >
-                                            <View style={{ flex: 1 }}>
+                                            <View style={{ flex: 1, gap: 4 }}>
                                                 <Badge
                                                     label={
-                                                        exam.subject
-                                                            ?.subjectName ||
-                                                        exam.subject
-                                                            ?.subjectId ||
-                                                        exam.department
-                                                            ?.deptName ||
+                                                        exam.subject?.subjectName ||
+                                                        exam.subject?.subjectId ||
+                                                        exam.department?.deptName ||
                                                         "Exam"
                                                     }
                                                     color={theme.warning}
@@ -700,41 +735,34 @@ export default function StudyToolsModals({
                                                 <Text style={s.examTitle}>
                                                     {exam.title}
                                                 </Text>
-                                                <Text style={s.examDate}>
-                                                    {examTime.toLocaleString(
-                                                        "en-US",
-                                                        {
-                                                            weekday: "short",
-                                                            month: "short",
-                                                            day: "numeric",
-                                                            hour: "2-digit",
-                                                            minute: "2-digit",
-                                                        },
-                                                    )}
+                                                <Text style={s.examDateText}>
+                                                    {examTime.toLocaleString("en-US", {
+                                                        weekday: "short",
+                                                        month: "short",
+                                                        day: "numeric",
+                                                        hour: "2-digit",
+                                                        minute: "2-digit",
+                                                    })}
                                                 </Text>
                                                 {details.length > 0 && (
-                                                    <Text style={s.examDate}>
-                                                        {details.join(" \u2022 ")}
+                                                    <Text style={s.examMetaText}>
+                                                        {details.join(" • ")}
                                                     </Text>
                                                 )}
                                                 {!!exam.instructions && (
                                                     <Text
-                                                        style={s.examDate}
-                                                        numberOfLines={3}
+                                                        style={s.examInstructions}
+                                                        numberOfLines={2}
                                                     >
                                                         {exam.instructions}
                                                     </Text>
                                                 )}
                                             </View>
                                             <View style={s.examCountdownBox}>
-                                                <Text
-                                                    style={s.examCountdownDays}
-                                                >
+                                                <Text style={s.examCountdownDays}>
                                                     {diffDays > 0 ? diffDays : 0}
                                                 </Text>
-                                                <Text
-                                                    style={s.examCountdownLabel}
-                                                >
+                                                <Text style={s.examCountdownLabel}>
                                                     days left
                                                 </Text>
                                             </View>
@@ -742,17 +770,17 @@ export default function StudyToolsModals({
                                     );
                                 })
                             ) : (
-                                <Text
-                                    style={{
-                                        color: theme.muted,
-                                        fontSize: 13,
-                                        textAlign: "center",
-                                        marginVertical: 20,
-                                    }}
-                                >
-                                    No upcoming exams have been scheduled for
-                                    your department.
-                                </Text>
+                                <View style={s.modalEmptyState}>
+                                    <Ionicons
+                                        name="shield-checkmark-outline"
+                                        size={36}
+                                        color={theme.muted}
+                                    />
+                                    <Text style={s.modalEmptyTitle}>No upcoming exams</Text>
+                                    <Text style={s.modalEmptyText}>
+                                        No exams are currently scheduled for your department.
+                                    </Text>
+                                </View>
                             )}
                         </ScrollView>
                     </View>
@@ -770,18 +798,26 @@ export default function StudyToolsModals({
                     <View style={s.modalDialog}>
                         <View style={s.modalHeader}>
                             <View style={s.modalTitleRow}>
-                                <Ionicons
-                                    name="bar-chart-outline"
-                                    size={20}
-                                    color={theme.accent}
-                                />
-                                <Text style={s.modalTitle}>
-                                    Weekly Study Report
-                                </Text>
+                                <View style={s.modalIconWrap}>
+                                    <Ionicons
+                                        name="bar-chart-outline"
+                                        size={18}
+                                        color={theme.accent}
+                                    />
+                                </View>
+                                <View>
+                                    <Text style={s.modalTitle}>Study Report</Text>
+                                    <Text style={s.modalSubtitle}>
+                                        Focus metrics and consistency summary
+                                    </Text>
+                                </View>
                             </View>
                             <Pressable
                                 onPress={onClose}
                                 style={s.modalCloseBtn}
+                                hitSlop={8}
+                                accessibilityRole="button"
+                                accessibilityLabel="Close study report modal"
                             >
                                 <Ionicons
                                     name="close"
@@ -790,37 +826,45 @@ export default function StudyToolsModals({
                                 />
                             </Pressable>
                         </View>
+
                         <View style={s.reportSummary}>
                             <View style={s.reportStat}>
                                 <Text style={s.reportStatNumber}>
                                     {studyStats.totalMinutes}m
                                 </Text>
-                                <Text style={s.reportStatLabel}>
-                                    Study Focus Time
-                                </Text>
+                                <Text style={s.reportStatLabel}>Focus Logged</Text>
                             </View>
+                            <View style={s.reportDivider} />
                             <View style={s.reportStat}>
                                 <Text style={s.reportStatNumber}>
                                     {studyStats.sessionsCompleted}
                                 </Text>
-                                <Text style={s.reportStatLabel}>
-                                    Pomodoro Blocks
-                                </Text>
+                                <Text style={s.reportStatLabel}>Pomodoros</Text>
                             </View>
+                            <View style={s.reportDivider} />
                             <View style={s.reportStat}>
                                 <Text style={s.reportStatNumber}>
                                     {goals.filter((g) => g.completed).length}/
                                     {goals.length}
                                 </Text>
-                                <Text style={s.reportStatLabel}>
-                                    Goals Done
+                                <Text style={s.reportStatLabel}>Goals Met</Text>
+                            </View>
+                        </View>
+
+                        <View style={s.reportInsightsBox}>
+                            <View style={s.reportInsightItem}>
+                                <Ionicons name="sparkles" size={16} color={theme.accent} />
+                                <Text style={s.reportInsightText}>
+                                    Consistent 25-minute intervals improve recall and reduce cognitive fatigue before exams.
+                                </Text>
+                            </View>
+                            <View style={s.reportInsightItem}>
+                                <Ionicons name="lock-closed-outline" size={16} color={theme.muted} />
+                                <Text style={s.reportInsightText}>
+                                    Your study stats and task progress are securely persisted on this device.
                                 </Text>
                             </View>
                         </View>
-                        <Text style={s.reportNotice}>
-                            Based on your recorded timer sessions and completed
-                            syllabus tasks stored safely on your device.
-                        </Text>
                     </View>
                 </View>
             </Modal>
@@ -836,18 +880,26 @@ export default function StudyToolsModals({
                     <View style={s.modalDialog}>
                         <View style={s.modalHeader}>
                             <View style={s.modalTitleRow}>
-                                <Ionicons
-                                    name="notifications-outline"
-                                    size={20}
-                                    color={theme.accent}
-                                />
-                                <Text style={s.modalTitle}>
-                                    Study Reminders
-                                </Text>
+                                <View style={s.modalIconWrap}>
+                                    <Ionicons
+                                        name="notifications-outline"
+                                        size={18}
+                                        color={theme.accent}
+                                    />
+                                </View>
+                                <View>
+                                    <Text style={s.modalTitle}>Study Reminders</Text>
+                                    <Text style={s.modalSubtitle}>
+                                        Manage daily study alerts & revision cues
+                                    </Text>
+                                </View>
                             </View>
                             <Pressable
                                 onPress={onClose}
                                 style={s.modalCloseBtn}
+                                hitSlop={8}
+                                accessibilityRole="button"
+                                accessibilityLabel="Close study reminders modal"
                             >
                                 <Ionicons
                                     name="close"
@@ -856,17 +908,106 @@ export default function StudyToolsModals({
                                 />
                             </Pressable>
                         </View>
-                        <Text
-                            style={{
-                                color: theme.muted,
-                                fontSize: 13,
-                                textAlign: "center",
-                                marginVertical: 24,
-                            }}
+
+                        {/* Add Reminder Form */}
+                        <View style={s.addReminderBox}>
+                            <TextInput
+                                value={newReminderTitle}
+                                onChangeText={setNewReminderTitle}
+                                placeholder="Reminder title (e.g. Daily Quiz Practice)..."
+                                placeholderTextColor={theme.muted}
+                                style={s.reminderInput}
+                            />
+                            <View style={s.reminderTimeRow}>
+                                <TextInput
+                                    value={newReminderTime}
+                                    onChangeText={setNewReminderTime}
+                                    placeholder="Time (e.g. 08:00 PM)"
+                                    placeholderTextColor={theme.muted}
+                                    style={s.reminderTimeInput}
+                                />
+                                <Pressable
+                                    onPress={handleAddReminder}
+                                    style={({ pressed }) => [
+                                        s.addReminderBtn,
+                                        pressed && { opacity: 0.8 },
+                                    ]}
+                                >
+                                    <Ionicons name="add" size={18} color="#FFFFFF" />
+                                    <Text style={s.addReminderBtnText}>Add</Text>
+                                </Pressable>
+                            </View>
+                        </View>
+
+                        <ScrollView
+                            style={s.modalListScroll}
+                            showsVerticalScrollIndicator={false}
                         >
-                            You have no reminders set. Reminders are not
-                            available yet.
-                        </Text>
+                            {reminders.length === 0 ? (
+                                <View style={s.modalEmptyState}>
+                                    <Ionicons
+                                        name="notifications-off-outline"
+                                        size={36}
+                                        color={theme.muted}
+                                    />
+                                    <Text style={s.modalEmptyTitle}>No reminders set</Text>
+                                    <Text style={s.modalEmptyText}>
+                                        Schedule custom revision alerts above to keep your study streak active.
+                                    </Text>
+                                </View>
+                            ) : (
+                                reminders.map((r) => (
+                                    <View key={r.id} style={s.reminderCard}>
+                                        <View style={{ flex: 1, gap: 2 }}>
+                                            <Text
+                                                style={[
+                                                    s.reminderCardTitle,
+                                                    !r.active && s.reminderInactiveText,
+                                                ]}
+                                            >
+                                                {r.title}
+                                            </Text>
+                                            <View style={s.reminderMetaRow}>
+                                                <Ionicons
+                                                    name="time-outline"
+                                                    size={12}
+                                                    color={theme.muted}
+                                                />
+                                                <Text style={s.reminderCardTime}>
+                                                    {r.time}
+                                                </Text>
+                                            </View>
+                                        </View>
+                                        <View style={s.reminderActionGroup}>
+                                            <Switch
+                                                value={r.active}
+                                                onValueChange={() =>
+                                                    void handleToggleReminder(r.id)
+                                                }
+                                                trackColor={{
+                                                    false: theme.border,
+                                                    true: theme.accent,
+                                                }}
+                                                thumbColor={Platform.OS === "android" ? "#FFFFFF" : undefined}
+                                            />
+                                            <Pressable
+                                                onPress={() =>
+                                                    void handleDeleteReminder(r.id)
+                                                }
+                                                style={s.deleteItemBtn}
+                                                hitSlop={8}
+                                            >
+                                                <Ionicons
+                                                    name="trash-outline"
+                                                    size={16}
+                                                    color={theme.muted}
+                                                />
+                                            </Pressable>
+                                        </View>
+                                    </View>
+                                ))
+                            )}
+                        </ScrollView>
                     </View>
                 </View>
             </Modal>
@@ -878,7 +1019,7 @@ function makeStyles(t: AppTheme) {
     return StyleSheet.create({
         modalOverlay: {
             flex: 1,
-            backgroundColor: "rgba(0,0,0,0.5)",
+            backgroundColor: "rgba(10, 14, 28, 0.75)",
             justifyContent: "center",
             alignItems: "center",
             padding: 16,
@@ -887,105 +1028,169 @@ function makeStyles(t: AppTheme) {
             width: "100%",
             maxWidth: 440,
             backgroundColor: t.surface,
-            borderRadius: 14,
+            borderRadius: 16,
             borderWidth: 1,
             borderColor: t.border,
-            padding: 18,
+            padding: 20,
+            gap: 14,
+            ...Platform.select({
+                ios: {
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 8 },
+                    shadowOpacity: 0.35,
+                    shadowRadius: 16,
+                },
+                default: {},
+            }),
+        },
+        modalDialogLarge: {
+            width: "100%",
+            maxWidth: 520,
+            backgroundColor: t.surface,
+            borderRadius: 16,
+            borderWidth: 1,
+            borderColor: t.border,
+            padding: 20,
+            gap: 14,
         },
         modalHeader: {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
-            marginBottom: 14,
-            paddingBottom: 10,
+            paddingBottom: 12,
             borderBottomWidth: 1,
             borderBottomColor: t.border,
         },
-        modalTitleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+        modalTitleRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+        modalIconWrap: {
+            width: 36,
+            height: 36,
+            borderRadius: 10,
+            backgroundColor: t.surfaceAlt,
+            alignItems: "center",
+            justifyContent: "center",
+            borderWidth: 1,
+            borderColor: t.border,
+        },
         modalTitle: { color: t.text, fontSize: 16, fontWeight: "700" },
+        modalSubtitle: { color: t.muted, fontSize: 11, marginTop: 1 },
         modalCloseBtn: {
-            width: 28,
-            height: 28,
-            borderRadius: 6,
+            width: 32,
+            height: 32,
+            borderRadius: 8,
             alignItems: "center",
             justifyContent: "center",
             backgroundColor: t.surfaceAlt,
             borderWidth: 1,
             borderColor: t.border,
         },
+        modalListScroll: { maxHeight: 280 },
+        modalScrollLarge: { maxHeight: 420 },
+
+        // Focus Timer
         timerCircleBox: {
             alignItems: "center",
             justifyContent: "center",
-            paddingVertical: 20,
-            borderRadius: 12,
+            paddingVertical: 24,
+            borderRadius: 14,
             backgroundColor: t.surfaceAlt,
             borderWidth: 1,
             borderColor: t.border,
-            marginVertical: 10,
         },
+        timerProgressOuter: { alignItems: "center", gap: 8 },
         timerTime: {
             color: t.text,
-            fontSize: 42,
+            fontSize: 48,
             fontWeight: "800",
-            letterSpacing: 1.5,
+            letterSpacing: 2,
+            fontVariant: ["tabular-nums"],
+        },
+        timerStatusPill: {
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 6,
+            paddingHorizontal: 10,
+            paddingVertical: 4,
+            borderRadius: 12,
+            backgroundColor: t.surface,
+            borderWidth: 1,
+            borderColor: t.border,
+        },
+        timerPulseDot: {
+            width: 8,
+            height: 8,
+            borderRadius: 4,
+            backgroundColor: t.muted,
+        },
+        timerPulseDotActive: {
+            backgroundColor: "#10B981",
         },
         timerSub: {
             color: t.muted,
             fontSize: 12,
-            marginTop: 4,
-            fontWeight: "500",
+            fontWeight: "600",
         },
         timerActions: {
             flexDirection: "row",
             alignItems: "center",
             gap: 10,
-            marginTop: 8,
         },
         timerMainBtn: {
             flex: 1,
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "center",
-            gap: 6,
-            paddingVertical: 10,
-            borderRadius: 8,
+            gap: 8,
+            paddingVertical: 12,
+            borderRadius: 10,
             backgroundColor: t.accent,
         },
-        timerMainBtnText: { color: "#FFFFFF", fontSize: 13, fontWeight: "700" },
+        timerMainBtnActive: {
+            backgroundColor: t.danger,
+        },
+        timerMainBtnText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
         timerResetBtn: {
             flexDirection: "row",
             alignItems: "center",
             gap: 6,
-            paddingHorizontal: 14,
-            paddingVertical: 10,
-            borderRadius: 8,
+            paddingHorizontal: 16,
+            paddingVertical: 12,
+            borderRadius: 10,
             backgroundColor: t.surfaceAlt,
             borderWidth: 1,
             borderColor: t.border,
         },
         timerResetText: { color: t.text, fontSize: 13, fontWeight: "600" },
-        timerStatsFooter: {
-            color: t.muted,
-            fontSize: 11,
-            textAlign: "center",
-            marginTop: 12,
+        timerStatsFooterBox: {
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-around",
+            paddingTop: 12,
+            borderTopWidth: 1,
+            borderTopColor: t.border,
         },
+        timerStatColumn: { alignItems: "center", flex: 1 },
+        timerStatVal: { color: t.text, fontSize: 16, fontWeight: "800" },
+        timerStatLbl: { color: t.muted, fontSize: 11, marginTop: 2 },
+        timerStatDivider: { width: 1, height: 24, backgroundColor: t.border },
+
+        // Daily Planner
         inputRow: { flexDirection: "row", gap: 8, alignItems: "center" },
         textInput: {
             flex: 1,
             backgroundColor: t.surfaceAlt,
             borderWidth: 1,
             borderColor: t.border,
-            borderRadius: 8,
+            borderRadius: 10,
             paddingHorizontal: 12,
-            paddingVertical: 9,
+            paddingVertical: 10,
             color: t.text,
             fontSize: 13,
         },
         addGoalBtn: {
-            width: 38,
-            height: 38,
-            borderRadius: 8,
+            width: 42,
+            height: 42,
+            borderRadius: 10,
             backgroundColor: t.accent,
             alignItems: "center",
             justifyContent: "center",
@@ -994,32 +1199,290 @@ function makeStyles(t: AppTheme) {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
-            paddingVertical: 9,
+            paddingVertical: 10,
             borderBottomWidth: 1,
             borderBottomColor: t.border,
+            gap: 8,
         },
-        modalGoalText: { color: t.text, fontSize: 13, fontWeight: "500" },
+        goalPressable: {
+            flexDirection: "row",
+            alignItems: "center",
+            flex: 1,
+            gap: 10,
+        },
+        checkbox: {
+            width: 20,
+            height: 20,
+            borderRadius: 6,
+            borderWidth: 1.5,
+            borderColor: t.border,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: t.surfaceAlt,
+        },
+        checkboxChecked: {
+            backgroundColor: "#10B981",
+            borderColor: "#10B981",
+        },
+        modalGoalText: { color: t.text, fontSize: 13, fontWeight: "500", flex: 1 },
         goalTextCompleted: {
             color: t.muted,
             textDecorationLine: "line-through",
         },
-        modalScheduleRow: {
+        deleteItemBtn: {
+            padding: 4,
+            borderRadius: 6,
+        },
+
+        // Timetable
+        timetableMetaBadge: {
             flexDirection: "row",
             alignItems: "center",
-            gap: 12,
-            paddingVertical: 9,
+            gap: 6,
+            paddingHorizontal: 10,
+            paddingVertical: 6,
+            borderRadius: 8,
+            backgroundColor: t.surfaceAlt,
+            alignSelf: "flex-start",
+            marginBottom: 10,
+            borderWidth: 1,
+            borderColor: t.border,
+        },
+        timetableMetaText: {
+            color: t.text,
+            fontSize: 11,
+            fontWeight: "600",
+        },
+        divisionRow: {
+            flexDirection: "row",
+            flexWrap: "wrap",
+            gap: 8,
+            marginBottom: 12,
+        },
+        divisionPill: {
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: t.border,
+            backgroundColor: t.surfaceAlt,
+        },
+        divisionPillActive: {
+            backgroundColor: t.accent,
+            borderColor: t.accent,
+        },
+        divisionPillText: {
+            fontSize: 12,
+            fontWeight: "600",
+            color: t.text,
+        },
+        divisionPillTextActive: {
+            color: "#FFFFFF",
+        },
+        dayGroup: {
+            marginBottom: 14,
+            backgroundColor: t.surfaceAlt,
+            borderRadius: 12,
+            padding: 12,
+            borderWidth: 1,
+            borderColor: t.border,
+            gap: 8,
+        },
+        dayHeader: {
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            paddingBottom: 6,
             borderBottomWidth: 1,
             borderBottomColor: t.border,
         },
-        modalScheduleTime: {
+        dayTitle: {
+            fontSize: 13,
+            fontWeight: "800",
             color: t.accent,
+            letterSpacing: 0.5,
+        },
+        dayClassCount: {
+            fontSize: 11,
+            color: t.muted,
+            fontWeight: "500",
+        },
+        scheduleItem: {
+            flexDirection: "row",
+            alignItems: "flex-start",
+            gap: 12,
+            paddingVertical: 6,
+        },
+        scheduleTimeCol: { width: 68 },
+        scheduleStartTime: {
+            color: t.text,
             fontSize: 12,
             fontWeight: "700",
-            width: 72,
         },
-        modalScheduleTitle: { color: t.text, fontSize: 13, fontWeight: "600" },
-        modalScheduleLoc: { color: t.muted, fontSize: 11, marginTop: 2 },
+        scheduleEndTime: {
+            color: t.muted,
+            fontSize: 11,
+            marginTop: 1,
+        },
+        scheduleInfoCol: { flex: 1, gap: 3 },
+        scheduleTitleRow: {
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 6,
+        },
+        scheduleTitle: {
+            color: t.text,
+            fontSize: 13,
+            fontWeight: "600",
+            flex: 1,
+        },
+        classTypeBadge: {
+            paddingHorizontal: 6,
+            paddingVertical: 2,
+            borderRadius: 4,
+            backgroundColor: t.surface,
+            borderWidth: 1,
+            borderColor: t.border,
+        },
+        classTypeText: {
+            color: t.accent,
+            fontSize: 10,
+            fontWeight: "700",
+        },
+        scheduleMetaRow: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+        scheduleMetaTag: {
+            color: t.muted,
+            fontSize: 11,
+        },
+
+        // Exams
         examCard: {
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: 14,
+            borderRadius: 12,
+            backgroundColor: t.surfaceAlt,
+            borderWidth: 1,
+            borderColor: t.border,
+            marginBottom: 10,
+            gap: 12,
+        },
+        examTitle: {
+            color: t.text,
+            fontSize: 14,
+            fontWeight: "700",
+        },
+        examDateText: { color: t.text, fontSize: 12, fontWeight: "500" },
+        examMetaText: { color: t.muted, fontSize: 11 },
+        examInstructions: { color: t.muted, fontSize: 11, fontStyle: "italic" },
+        examCountdownBox: {
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: t.surface,
+            borderWidth: 1,
+            borderColor: t.border,
+            paddingHorizontal: 12,
+            paddingVertical: 8,
+            borderRadius: 10,
+            minWidth: 64,
+        },
+        examCountdownDays: {
+            color: t.warning,
+            fontSize: 20,
+            fontWeight: "800",
+        },
+        examCountdownLabel: { color: t.muted, fontSize: 10, fontWeight: "600" },
+
+        // Study Report
+        reportSummary: {
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-around",
+            paddingVertical: 16,
+            backgroundColor: t.surfaceAlt,
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: t.border,
+        },
+        reportStat: { alignItems: "center", flex: 1 },
+        reportStatNumber: { color: t.text, fontSize: 22, fontWeight: "800" },
+        reportStatLabel: {
+            color: t.muted,
+            fontSize: 11,
+            marginTop: 4,
+            fontWeight: "500",
+        },
+        reportDivider: { width: 1, height: 28, backgroundColor: t.border },
+        reportInsightsBox: { gap: 10, marginTop: 4 },
+        reportInsightItem: {
+            flexDirection: "row",
+            alignItems: "flex-start",
+            gap: 8,
+            padding: 10,
+            borderRadius: 10,
+            backgroundColor: t.surfaceAlt,
+            borderWidth: 1,
+            borderColor: t.border,
+        },
+        reportInsightText: {
+            color: t.muted,
+            fontSize: 12,
+            lineHeight: 17,
+            flex: 1,
+        },
+
+        // Reminders
+        addReminderBox: {
+            backgroundColor: t.surfaceAlt,
+            borderRadius: 12,
+            padding: 12,
+            borderWidth: 1,
+            borderColor: t.border,
+            gap: 8,
+        },
+        reminderInput: {
+            backgroundColor: t.surface,
+            borderWidth: 1,
+            borderColor: t.border,
+            borderRadius: 8,
+            paddingHorizontal: 10,
+            paddingVertical: 8,
+            color: t.text,
+            fontSize: 12,
+        },
+        reminderTimeRow: {
+            flexDirection: "row",
+            gap: 8,
+            alignItems: "center",
+        },
+        reminderTimeInput: {
+            flex: 1,
+            backgroundColor: t.surface,
+            borderWidth: 1,
+            borderColor: t.border,
+            borderRadius: 8,
+            paddingHorizontal: 10,
+            paddingVertical: 8,
+            color: t.text,
+            fontSize: 12,
+        },
+        addReminderBtn: {
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 4,
+            backgroundColor: t.accent,
+            paddingHorizontal: 14,
+            paddingVertical: 8,
+            borderRadius: 8,
+        },
+        addReminderBtnText: {
+            color: "#FFFFFF",
+            fontSize: 12,
+            fontWeight: "700",
+        },
+        reminderCard: {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
@@ -1029,71 +1492,52 @@ function makeStyles(t: AppTheme) {
             borderWidth: 1,
             borderColor: t.border,
             marginBottom: 8,
+            gap: 10,
         },
-        examTitle: {
+        reminderCardTitle: {
             color: t.text,
             fontSize: 13,
-            fontWeight: "700",
-            marginTop: 4,
+            fontWeight: "600",
         },
-        examDate: { color: t.muted, fontSize: 11, marginTop: 2 },
-        examCountdownBox: {
-            alignItems: "center",
-            justifyContent: "center",
-            backgroundColor: t.surface,
-            borderWidth: 1,
-            borderColor: t.border,
-            paddingHorizontal: 10,
-            paddingVertical: 6,
-            borderRadius: 8,
+        reminderInactiveText: {
+            color: t.muted,
+            textDecorationLine: "line-through",
         },
-        examCountdownDays: {
-            color: t.warning,
-            fontSize: 16,
-            fontWeight: "800",
-        },
-        examCountdownLabel: { color: t.muted, fontSize: 10, fontWeight: "600" },
-        reportSummary: {
+        reminderMetaRow: {
             flexDirection: "row",
             alignItems: "center",
-            justifyContent: "space-between",
-            paddingVertical: 12,
-            borderBottomWidth: 1,
-            borderBottomColor: t.border,
+            gap: 4,
+            marginTop: 2,
         },
-        reportStat: { alignItems: "center", flex: 1 },
-        reportStatNumber: { color: t.text, fontSize: 20, fontWeight: "800" },
-        reportStatLabel: {
+        reminderCardTime: {
             color: t.muted,
             fontSize: 11,
-            marginTop: 2,
             fontWeight: "500",
         },
-        reportNotice: {
-            color: t.muted,
-            fontSize: 12,
-            lineHeight: 17,
-            textAlign: "center",
-            marginTop: 12,
-        },
-        reminderItem: {
+        reminderActionGroup: {
             flexDirection: "row",
             alignItems: "center",
-            justifyContent: "space-between",
-            padding: 12,
-            borderRadius: 8,
-            backgroundColor: t.surfaceAlt,
-            borderWidth: 1,
-            borderColor: t.border,
+            gap: 8,
         },
-        reminderTitle: { color: t.text, fontSize: 13, fontWeight: "600" },
-        reminderTime: { color: t.muted, fontSize: 11, marginTop: 2 },
-        reminderFooterNote: {
+
+        // Empty states
+        modalEmptyState: {
+            paddingVertical: 24,
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 6,
+        },
+        modalEmptyTitle: {
+            color: t.text,
+            fontSize: 14,
+            fontWeight: "700",
+        },
+        modalEmptyText: {
             color: t.muted,
-            fontSize: 11,
-            lineHeight: 16,
+            fontSize: 12,
             textAlign: "center",
-            marginTop: 12,
+            lineHeight: 17,
+            maxWidth: 280,
         },
     });
 }

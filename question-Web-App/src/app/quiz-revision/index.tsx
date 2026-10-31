@@ -64,7 +64,7 @@ export default function QuizRevisionHomeScreen() {
 
                 if (res.subjects && res.subjects.length > 0) {
                     // Pick a subject that has active revision questions available
-                    const subjectsWithQs = res.subjects.filter((s) => (s.questionCount || 0) > 0);
+                    const subjectsWithQs = res.subjects.filter((sub) => (sub.questionCount || 0) > 0);
                     const initialSubject = subjectsWithQs.length > 0 ? subjectsWithQs[0] : res.subjects[0];
                     setSelectedSubjectKey(initialSubject.subjectKey);
                 }
@@ -193,8 +193,8 @@ export default function QuizRevisionHomeScreen() {
                     <View style={s.headerContent}>
                         <View style={s.badgeRow}>
                             <View style={s.quizBadge}>
-                                <Ionicons name="flash" size={13} color="#EF4444" />
-                                <Text style={s.quizBadgeText}>Interactive Practice</Text>
+                                <Ionicons name="flash" size={13} color={theme.accent} />
+                                <Text style={s.quizBadgeText}>Interactive Quiz Engine</Text>
                             </View>
                             <Pressable
                                 onPress={() => router.push("/quiz-revision/history" as never)}
@@ -206,7 +206,7 @@ export default function QuizRevisionHomeScreen() {
                         </View>
                         <Text style={s.title}>Quiz & Revision</Text>
                         <Text style={s.subtitle}>
-                            Test your knowledge and strengthen your concepts.
+                            Configure your custom practice session by course, chapter, format, and difficulty.
                         </Text>
                     </View>
                 </View>
@@ -214,11 +214,11 @@ export default function QuizRevisionHomeScreen() {
                 {loadingMeta ? (
                     <View style={s.loadingBox}>
                         <ActivityIndicator size="large" color={theme.accent} />
-                        <Text style={s.loadingText}>Loading curriculum and questions...</Text>
+                        <Text style={s.loadingText}>Loading curriculum and available questions...</Text>
                     </View>
                 ) : metaError ? (
                     <View style={s.errorBox}>
-                        <Ionicons name="alert-circle-outline" size={24} color="#EF4444" />
+                        <Ionicons name="alert-circle-outline" size={24} color={theme.danger} />
                         <Text style={s.errorText}>{metaError}</Text>
                     </View>
                 ) : (
@@ -252,18 +252,18 @@ export default function QuizRevisionHomeScreen() {
                                                 <View
                                                     style={{
                                                         paddingHorizontal: 6,
-                                                        paddingVertical: 1,
-                                                        borderRadius: 4,
+                                                        paddingVertical: 1.5,
+                                                        borderRadius: 5,
                                                         backgroundColor: isSel
                                                             ? "rgba(255,255,255,0.25)"
-                                                            : "#10B98120",
+                                                            : theme.accentSoft,
                                                     }}
                                                 >
                                                     <Text
                                                         style={{
                                                             fontSize: 10,
                                                             fontWeight: "700",
-                                                            color: isSel ? "#FFF" : "#10B981",
+                                                            color: isSel ? "#FFF" : theme.accent,
                                                         }}
                                                     >
                                                         {sub.questionCount} Qs
@@ -280,7 +280,7 @@ export default function QuizRevisionHomeScreen() {
                         {subjectChapters.length > 0 && (
                             <View style={s.section}>
                                 <View style={s.rowBetween}>
-                                    <Text style={s.sectionTitle}>2. Chapter (Optional)</Text>
+                                    <Text style={s.sectionTitle}>2. Chapter Filter (Optional)</Text>
                                     {selectedChapterId && (
                                         <Pressable onPress={() => { setSelectedChapterId(null); setSelectedTopicIds([]); }}>
                                             <Text style={s.clearText}>Clear</Text>
@@ -333,7 +333,7 @@ export default function QuizRevisionHomeScreen() {
                                                 <Ionicons
                                                     name={isSel ? "checkbox" : "square-outline"}
                                                     size={13}
-                                                    color={isSel ? "#FFF" : theme.muted}
+                                                    color={isSel ? theme.accent : theme.muted}
                                                 />
                                                 <Text style={[s.chipText, isSel && s.chipTextActive]}>
                                                     {top.topicName}
@@ -347,11 +347,11 @@ export default function QuizRevisionHomeScreen() {
 
                         {/* 4. Question Format Selector */}
                         <View style={s.section}>
-                            <Text style={s.sectionTitle}>Question Format</Text>
+                            <Text style={s.sectionTitle}>4. Question Format</Text>
                             <View style={s.buttonGroup}>
                                 {[
                                     { key: "ALL", label: "All Formats", icon: "sparkles-outline" },
-                                    { key: "MCQ", label: "MCQ", icon: "list-outline" },
+                                    { key: "MCQ", label: "Multiple Choice", icon: "list-outline" },
                                     { key: "FILLUPS", label: "Fill in Blanks", icon: "create-outline" },
                                     { key: "TRUE_FALSE", label: "True / False", icon: "checkmark-done-outline" },
                                 ].map((item) => {
@@ -364,8 +364,8 @@ export default function QuizRevisionHomeScreen() {
                                         >
                                             <Ionicons
                                                 name={item.icon as any}
-                                                size={16}
-                                                color={isSel ? "#EF4444" : theme.muted}
+                                                size={17}
+                                                color={isSel ? theme.accent : theme.textSecondary}
                                             />
                                             <Text style={[s.typeCardText, isSel && s.typeCardTextActive]}>
                                                 {item.label}
@@ -383,8 +383,8 @@ export default function QuizRevisionHomeScreen() {
 
                         {/* 5. Difficulty & Question Count */}
                         <View style={[s.section, isWide && s.rowWrap]}>
-                            <View style={{ flex: 1, minWidth: 240 }}>
-                                <Text style={s.sectionTitle}>Difficulty</Text>
+                            <View style={{ flex: 1, minWidth: 240, gap: 8 }}>
+                                <Text style={s.sectionTitle}>5. Difficulty</Text>
                                 <View style={s.segRow}>
                                     {[
                                         { key: "ALL", label: "Any" },
@@ -405,8 +405,8 @@ export default function QuizRevisionHomeScreen() {
                                 </View>
                             </View>
 
-                            <View style={{ flex: 1, minWidth: 240 }}>
-                                <Text style={s.sectionTitle}>Number of Questions</Text>
+                            <View style={{ flex: 1, minWidth: 240, gap: 8 }}>
+                                <Text style={s.sectionTitle}>6. Question Count</Text>
                                 <View style={s.segRow}>
                                     {[5, 10, 15, 20].map((num) => (
                                         <Pressable
@@ -426,7 +426,7 @@ export default function QuizRevisionHomeScreen() {
                         {/* Live Summary & Start CTA */}
                         <View style={s.startCard}>
                             <View style={s.startLeft}>
-                                <Text style={s.availLabel}>Available in Question Bank</Text>
+                                <Text style={s.availLabel}>Matched In Question Bank</Text>
                                 <View style={s.availCountRow}>
                                     {loadingCounts ? (
                                         <ActivityIndicator size="small" color={theme.accent} />
@@ -435,7 +435,9 @@ export default function QuizRevisionHomeScreen() {
                                             <Text style={s.availNumber}>
                                                 {availableCount}
                                             </Text>
-                                            <Text style={s.availUnit}>questions match your filter</Text>
+                                            <Text style={s.availUnit}>
+                                                {availableCount === 1 ? "question ready" : "questions ready"}
+                                            </Text>
                                         </>
                                     )}
                                 </View>
@@ -472,11 +474,14 @@ function makeStyles(t: AppTheme) {
         container: {
             gap: 20,
             paddingBottom: 40,
+            width: "100%",
+            maxWidth: 880,
+            alignSelf: "center",
         },
         headerCard: {
             backgroundColor: t.surface,
             borderRadius: 16,
-            padding: 20,
+            padding: 22,
             borderWidth: 1,
             borderColor: t.border,
         },
@@ -491,28 +496,27 @@ function makeStyles(t: AppTheme) {
         quizBadge: {
             flexDirection: "row",
             alignItems: "center",
-            gap: 5,
-            backgroundColor: "#EF444415",
+            gap: 6,
+            backgroundColor: t.accentSoft,
             paddingHorizontal: 10,
             paddingVertical: 4,
             borderRadius: 6,
             borderWidth: 1,
-            borderColor: "#EF444435",
+            borderColor: t.accent + "33",
         },
         quizBadgeText: {
-            color: "#EF4444",
+            color: t.accent,
             fontSize: 11,
             fontWeight: "700",
-            textTransform: "uppercase",
             letterSpacing: 0.5,
         },
         historyBtn: {
             flexDirection: "row",
             alignItems: "center",
-            gap: 5,
+            gap: 6,
             backgroundColor: t.surfaceAlt,
-            paddingHorizontal: 10,
-            paddingVertical: 5,
+            paddingHorizontal: 12,
+            paddingVertical: 6,
             borderRadius: 8,
             borderWidth: 1,
             borderColor: t.border,
@@ -523,15 +527,15 @@ function makeStyles(t: AppTheme) {
             fontWeight: "600",
         },
         title: {
-            fontSize: 22,
+            fontSize: 24,
             fontWeight: "800",
             color: t.text,
-            letterSpacing: -0.3,
+            letterSpacing: -0.4,
         },
         subtitle: {
             fontSize: 13,
-            color: t.muted,
-            lineHeight: 18,
+            color: t.textSecondary,
+            lineHeight: 19,
         },
         loadingBox: {
             padding: 40,
@@ -540,35 +544,34 @@ function makeStyles(t: AppTheme) {
             gap: 12,
         },
         loadingText: {
-            color: t.muted,
+            color: t.textSecondary,
             fontSize: 13,
         },
         errorBox: {
             padding: 20,
-            backgroundColor: "#EF444415",
+            backgroundColor: t.danger + "15",
             borderRadius: 12,
             borderWidth: 1,
-            borderColor: "#EF444435",
+            borderColor: t.danger + "35",
             alignItems: "center",
             gap: 8,
         },
         errorText: {
-            color: "#EF4444",
+            color: t.danger,
             fontSize: 13,
             textAlign: "center",
         },
         formGrid: {
-            gap: 18,
+            gap: 20,
         },
         section: {
             gap: 10,
         },
         sectionTitle: {
-            fontSize: 13,
+            fontSize: 12,
             fontWeight: "700",
             color: t.textSecondary,
-            textTransform: "uppercase",
-            letterSpacing: 0.5,
+            letterSpacing: 0.6,
         },
         rowBetween: {
             flexDirection: "row",
@@ -587,7 +590,7 @@ function makeStyles(t: AppTheme) {
         pill: {
             flexDirection: "row",
             alignItems: "center",
-            gap: 6,
+            gap: 7,
             paddingHorizontal: 14,
             paddingVertical: 9,
             borderRadius: 10,
@@ -640,7 +643,7 @@ function makeStyles(t: AppTheme) {
         buttonGroup: {
             flexDirection: "row",
             flexWrap: "wrap",
-            gap: 8,
+            gap: 10,
         },
         typeCard: {
             flex: 1,
@@ -648,30 +651,30 @@ function makeStyles(t: AppTheme) {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
-            paddingHorizontal: 12,
+            paddingHorizontal: 14,
             paddingVertical: 12,
-            borderRadius: 10,
+            borderRadius: 12,
             backgroundColor: t.surface,
             borderWidth: 1,
             borderColor: t.border,
-            gap: 6,
+            gap: 8,
         },
         typeCardActive: {
-            borderColor: "#EF4444",
-            backgroundColor: "#EF444410",
+            borderColor: t.accent,
+            backgroundColor: t.accentSoft,
         },
         typeCardText: {
             flex: 1,
             color: t.textSecondary,
-            fontSize: 12,
+            fontSize: 13,
             fontWeight: "600",
         },
         typeCardTextActive: {
-            color: t.text,
+            color: t.accent,
             fontWeight: "700",
         },
         typeCount: {
-            color: t.muted,
+            color: t.textSecondary,
             fontSize: 11,
             fontWeight: "700",
             backgroundColor: t.surfaceAlt,
@@ -719,7 +722,7 @@ function makeStyles(t: AppTheme) {
             alignItems: "center",
             justifyContent: "space-between",
             gap: 16,
-            marginTop: 10,
+            marginTop: 6,
         },
         startLeft: {
             flex: 1,
@@ -727,40 +730,42 @@ function makeStyles(t: AppTheme) {
         },
         availLabel: {
             fontSize: 11,
-            color: t.muted,
-            textTransform: "uppercase",
+            color: t.textSecondary,
             fontWeight: "600",
+            letterSpacing: 0.5,
         },
         availCountRow: {
             flexDirection: "row",
             alignItems: "baseline",
             gap: 6,
+            marginTop: 2,
         },
         availNumber: {
-            fontSize: 22,
+            fontSize: 24,
             fontWeight: "900",
-            color: "#10B981",
+            color: t.accent,
         },
         availUnit: {
-            fontSize: 12,
+            fontSize: 13,
             color: t.textSecondary,
+            fontWeight: "500",
         },
         startBtn: {
             flexDirection: "row",
             alignItems: "center",
             gap: 8,
-            backgroundColor: "#EF4444",
-            paddingHorizontal: 20,
-            paddingVertical: 13,
-            borderRadius: 12,
-            shadowColor: "#EF4444",
-            shadowOffset: { width: 0, height: 4 },
+            backgroundColor: t.accent,
+            paddingHorizontal: 22,
+            paddingVertical: 12,
+            borderRadius: 11,
+            shadowColor: t.accent,
+            shadowOffset: { width: 0, height: 3 },
             shadowOpacity: 0.3,
-            shadowRadius: 8,
-            elevation: 4,
+            shadowRadius: 6,
+            elevation: 3,
         },
         startBtnDisabled: {
-            opacity: 0.4,
+            opacity: 0.45,
             shadowOpacity: 0,
         },
         startBtnText: {

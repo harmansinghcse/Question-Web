@@ -10,6 +10,7 @@ import { useAppTheme } from "../providers/ThemeProvider";
 import {
     studyStorage,
     type StudyGoal,
+    type StudyReminder,
     type StudyStats,
 } from "../services/study-storage";
 import { useStudentSchedule } from "../hooks/use-student-schedule";
@@ -22,6 +23,7 @@ export default function StudyToolsScreen() {
 
     // === Local Storage Data ===
     const [goals, setGoals] = useState<StudyGoal[]>([]);
+    const [reminders, setReminders] = useState<StudyReminder[]>([]);
     const [studyStats, setStudyStats] = useState<StudyStats>({
         totalMinutes: 0,
         sessionsCompleted: 0,
@@ -54,13 +56,15 @@ export default function StudyToolsScreen() {
         let isMounted = true;
         async function loadStoredData() {
             try {
-                const [storedGoals, storedStats] = await Promise.all([
+                const [storedGoals, storedStats, storedReminders] = await Promise.all([
                     studyStorage.getGoals(),
                     studyStorage.getStudyStats(),
+                    studyStorage.getReminders(),
                 ]);
                 if (isMounted) {
                     setGoals(storedGoals);
                     setStudyStats(storedStats);
+                    setReminders(storedReminders);
                 }
             } catch {
                 // Silently fallback
@@ -70,7 +74,10 @@ export default function StudyToolsScreen() {
         return () => {
             isMounted = false;
         };
-    }, []);
+    }, [activeModal]);
+
+    const activeRemindersCount = reminders.filter((r) => r.active).length;
+    const completedGoalsCount = goals.filter((g) => g.completed).length;
 
     const toolsList = [
         {
@@ -79,7 +86,8 @@ export default function StudyToolsScreen() {
             subtitle: "Practice MCQs, fill-ups, and True/False with timer and instant grading",
             icon: "flash-outline" as const,
             stat: "Interactive tests",
-            action: () => router.push("/quiz" as never),
+            badge: "Practice",
+            action: () => router.push("/quiz-revision" as never),
         },
         {
             id: "syllabus-tracker",
@@ -88,6 +96,7 @@ export default function StudyToolsScreen() {
                 "Record dated lecture coverage, reconstruct quiz portions, and track pace",
             icon: "git-network-outline" as const,
             stat: "Dated history & analytics",
+            badge: "Analytics",
             action: () => router.push("/syllabus-tracker" as never),
         },
         {
@@ -97,6 +106,7 @@ export default function StudyToolsScreen() {
                 "Browse subjects, chapters, and topics across semesters",
             icon: "book-outline" as const,
             stat: "Browse curriculum",
+            badge: "Curriculum",
             action: () => router.push("/syllabus" as never),
         },
         {
@@ -106,6 +116,7 @@ export default function StudyToolsScreen() {
                 "Manage daily lecture timings, laboratory sessions, and classrooms",
             icon: "time-outline" as const,
             stat: timetableStat,
+            badge: "Schedule",
             action: () => setActiveModal("timetable"),
         },
         {
@@ -114,7 +125,8 @@ export default function StudyToolsScreen() {
             subtitle:
                 "Set study goals, plan your schedule, and check off completed tasks",
             icon: "checkbox-outline" as const,
-            stat: `${goals.filter((g) => g.completed).length} of ${goals.length} goals completed`,
+            stat: `${completedGoalsCount} of ${goals.length} completed`,
+            badge: "Goals",
             action: () => setActiveModal("daily-planner"),
         },
         {
@@ -124,6 +136,7 @@ export default function StudyToolsScreen() {
                 "Timed study intervals using the 25-minute Pomodoro method",
             icon: "timer-outline" as const,
             stat: "25m Interval",
+            badge: "Pomodoro",
             action: () => setActiveModal("focus-timer"),
         },
         {
@@ -133,6 +146,7 @@ export default function StudyToolsScreen() {
                 "Track mid-semester exams, quizzes, and end-sem test countdowns",
             icon: "calendar-outline" as const,
             stat: examsStat,
+            badge: "Exams",
             action: () => setActiveModal("upcoming-exams"),
         },
         {
@@ -142,6 +156,7 @@ export default function StudyToolsScreen() {
                 "Review your focus statistics, logged study time, and consistency",
             icon: "bar-chart-outline" as const,
             stat: `${studyStats.totalMinutes} mins recorded`,
+            badge: "Performance",
             action: () => setActiveModal("study-report"),
         },
         {
@@ -150,7 +165,11 @@ export default function StudyToolsScreen() {
             subtitle:
                 "Set custom alerts for revision sessions, homework, and deadlines",
             icon: "notifications-outline" as const,
-            stat: "Custom notifications",
+            stat:
+                activeRemindersCount > 0
+                    ? `${activeRemindersCount} active alerts`
+                    : "Custom alerts",
+            badge: "Alerts",
             action: () => setActiveModal("study-reminders"),
         },
     ];
@@ -173,15 +192,20 @@ export default function StudyToolsScreen() {
                             onPress={tool.action}
                             style={({ pressed }) => [
                                 s.card,
-                                pressed && { opacity: 0.9 },
+                                pressed && { opacity: 0.9, transform: [{ scale: 0.99 }] },
                             ]}
                         >
-                            <View style={s.iconWrapper}>
-                                <Ionicons
-                                    name={tool.icon}
-                                    size={20}
-                                    color={theme.accent}
-                                />
+                            <View style={s.cardTopRow}>
+                                <View style={s.iconWrapper}>
+                                    <Ionicons
+                                        name={tool.icon}
+                                        size={20}
+                                        color={theme.accent}
+                                    />
+                                </View>
+                                <View style={s.badgePill}>
+                                    <Text style={s.badgePillText}>{tool.badge}</Text>
+                                </View>
                             </View>
                             <View style={s.cardBody}>
                                 <Text style={s.cardTitle}>{tool.title}</Text>
@@ -192,8 +216,8 @@ export default function StudyToolsScreen() {
                                 <View style={s.chevronWrap}>
                                     <Ionicons
                                         name="chevron-forward"
-                                        size={13}
-                                        color={theme.muted}
+                                        size={14}
+                                        color={theme.accent}
                                     />
                                 </View>
                             </View>
@@ -221,58 +245,97 @@ function makeStyles(t: AppTheme) {
     return StyleSheet.create({
         container: {
             width: "100%",
-            maxWidth: 1000,
+            maxWidth: 1040,
             alignSelf: "center",
             gap: 20,
         },
         header: { marginBottom: 4 },
         eyebrow: {
             fontSize: 11,
-            fontWeight: "700",
-            letterSpacing: 0.8,
-            color: t.muted,
+            fontWeight: "800",
+            letterSpacing: 1.2,
+            color: t.accent,
             marginBottom: 4,
         },
         title: {
-            fontSize: 24,
-            fontWeight: "700",
+            fontSize: 26,
+            fontWeight: "900",
             color: t.text,
-            letterSpacing: -0.3,
+            letterSpacing: -0.4,
         },
         subtitle: {
             fontSize: 13,
             color: t.muted,
             marginTop: 4,
-            lineHeight: 18,
+            lineHeight: 19,
         },
-        grid: { flexDirection: "row", flexWrap: "wrap", gap: 16 },
+        grid: {
+            flexDirection: "row",
+            flexWrap: "wrap",
+            gap: 16,
+        },
         card: {
             flex: 1,
-            minWidth: Platform.OS === "web" ? 280 : 220,
+            minWidth: Platform.OS === "web" ? 280 : "46%",
+            maxWidth: Platform.OS === "web" ? undefined : "48%",
             backgroundColor: t.surface,
-            borderRadius: 14,
+            borderRadius: 16,
             borderWidth: 1,
             borderColor: t.border,
             padding: 18,
             justifyContent: "space-between",
-            gap: 12,
+            gap: 14,
+            ...Platform.select({
+                ios: {
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.15,
+                    shadowRadius: 8,
+                },
+                default: {},
+            }),
+        },
+        cardTopRow: {
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
         },
         iconWrapper: {
-            width: 38,
-            height: 38,
-            borderRadius: 10,
+            width: 40,
+            height: 40,
+            borderRadius: 12,
             backgroundColor: t.surfaceAlt,
             alignItems: "center",
             justifyContent: "center",
+            borderWidth: 1,
+            borderColor: t.border,
+        },
+        badgePill: {
+            paddingHorizontal: 8,
+            paddingVertical: 3,
+            borderRadius: 6,
+            backgroundColor: t.surfaceAlt,
+            borderWidth: 1,
+            borderColor: t.border,
+        },
+        badgePillText: {
+            fontSize: 10,
+            fontWeight: "700",
+            color: t.muted,
+            letterSpacing: 0.4,
         },
         cardBody: { gap: 6 },
         cardTitle: {
-            fontSize: 15,
+            fontSize: 16,
             fontWeight: "700",
             color: t.text,
             letterSpacing: -0.2,
         },
-        cardSub: { fontSize: 12, color: t.muted, lineHeight: 17 },
+        cardSub: {
+            fontSize: 12,
+            color: t.muted,
+            lineHeight: 18,
+        },
         cardFooter: {
             flexDirection: "row",
             alignItems: "center",
@@ -280,16 +343,22 @@ function makeStyles(t: AppTheme) {
             paddingTop: 12,
             borderTopWidth: 1,
             borderTopColor: t.border,
-            marginTop: 4,
+            marginTop: 2,
         },
-        statText: { fontSize: 12, fontWeight: "600", color: t.accent },
+        statText: {
+            fontSize: 12,
+            fontWeight: "600",
+            color: t.accent,
+        },
         chevronWrap: {
-            width: 22,
-            height: 22,
-            borderRadius: 6,
+            width: 24,
+            height: 24,
+            borderRadius: 8,
             backgroundColor: t.surfaceAlt,
             alignItems: "center",
             justifyContent: "center",
+            borderWidth: 1,
+            borderColor: t.border,
         },
     });
 }
