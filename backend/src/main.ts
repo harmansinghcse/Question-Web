@@ -19,7 +19,7 @@ async function bootstrap() {
 
     // Question Web deployed frontend
     'https://question-web-git-main-bit-by-bit4.vercel.app',
-    'https://question-web-one.vercel.app/login',
+    'https://question-web-one.vercel.app',
   ];
 
   const rawCors = process.env.CORS_ORIGIN;
