@@ -44,7 +44,10 @@ import * as path from 'path';
         password: config.getOrThrow<string>('DB_PASSWORD'),
         database: config.getOrThrow<string>('DB_DATABASE'),
         ssl: {
-          ca: fs.readFileSync('/etc/secrets/ca.pem', 'utf8'),
+          ca: fs.readFileSync(
+            path.join(process.cwd(), 'certs', 'ca.pem'),
+            'utf8',
+          ),
           rejectUnauthorized: true,
         },
         autoLoadEntities: true,
