@@ -28,9 +28,13 @@ export default function QuizRevisionResultsScreen() {
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [reviewData, setReviewData] = useState<SubmitQuizResponse | null>(null);
+    const [reviewData, setReviewData] = useState<SubmitQuizResponse | null>(
+        null,
+    );
     const [retrying, setRetrying] = useState(false);
-    const [reviewFilter, setReviewFilter] = useState<"ALL" | "CORRECT" | "INCORRECT" | "UNANSWERED">("ALL");
+    const [reviewFilter, setReviewFilter] = useState<
+        "ALL" | "CORRECT" | "INCORRECT" | "UNANSWERED"
+    >("ALL");
 
     // Fetch review details from backend
     useEffect(() => {
@@ -43,7 +47,8 @@ export default function QuizRevisionResultsScreen() {
         }
 
         let mounted = true;
-        void api.getQuizReview(attemptId)
+        void api
+            .getQuizReview(attemptId)
             .then((res) => {
                 if (mounted) {
                     setReviewData(res);
@@ -51,7 +56,11 @@ export default function QuizRevisionResultsScreen() {
             })
             .catch((err) => {
                 if (mounted) {
-                    setError(err instanceof Error ? err.message : "Failed to load quiz results.");
+                    setError(
+                        err instanceof Error
+                            ? err.message
+                            : "Failed to load quiz results.",
+                    );
                 }
             })
             .finally(() => {
@@ -83,7 +92,12 @@ export default function QuizRevisionResultsScreen() {
                 },
             } as never);
         } catch (err) {
-            Alert.alert("Retry Failed", err instanceof Error ? err.message : "Could not initialize retry session.");
+            Alert.alert(
+                "Retry Failed",
+                err instanceof Error
+                    ? err.message
+                    : "Could not initialize retry session.",
+            );
         } finally {
             setRetrying(false);
         }
@@ -94,8 +108,10 @@ export default function QuizRevisionResultsScreen() {
         if (!reviewData?.questions) return [];
         return reviewData.questions.filter((q) => {
             if (reviewFilter === "CORRECT") return q.isCorrect;
-            if (reviewFilter === "INCORRECT") return !q.isCorrect && q.studentAnswer !== null;
-            if (reviewFilter === "UNANSWERED") return q.studentAnswer === null;
+            if (reviewFilter === "INCORRECT")
+                return !q.isCorrect && q.studentAnswer !== null && q.studentAnswer !== "";
+            if (reviewFilter === "UNANSWERED")
+                return q.studentAnswer === null || q.studentAnswer === "";
             return true;
         });
     }, [reviewData, reviewFilter]);
@@ -112,7 +128,9 @@ export default function QuizRevisionResultsScreen() {
             <AppShell active="revision">
                 <View style={s.centerBox}>
                     <ActivityIndicator size="large" color={theme.accent} />
-                    <Text style={s.centerText}>Grading and preparing review report...</Text>
+                    <Text style={s.centerText}>
+                        Grading and preparing review report...
+                    </Text>
                 </View>
             </AppShell>
         );
@@ -122,14 +140,24 @@ export default function QuizRevisionResultsScreen() {
         return (
             <AppShell active="revision">
                 <View style={s.centerBox}>
-                    <Ionicons name="alert-circle-outline" size={44} color={theme.danger} />
+                    <Ionicons
+                        name="alert-circle-outline"
+                        size={44}
+                        color={theme.danger}
+                    />
                     <Text style={s.errorTitle}>Error Loading Results</Text>
-                    <Text style={s.centerText}>{error || "Results data could not be found."}</Text>
+                    <Text style={s.centerText}>
+                        {error || "Results data could not be found."}
+                    </Text>
                     <Pressable
-                        onPress={() => router.replace("/quiz-revision" as never)}
+                        onPress={() =>
+                            router.replace("/quiz-revision" as never)
+                        }
                         style={s.returnBtn}
                     >
-                        <Text style={s.returnBtnText}>Return to Quiz Setup</Text>
+                        <Text style={s.returnBtnText}>
+                            Return to Quiz Setup
+                        </Text>
                     </Pressable>
                 </View>
             </AppShell>
@@ -146,19 +174,32 @@ export default function QuizRevisionResultsScreen() {
                 <View style={s.summaryCard}>
                     <View style={s.summaryTop}>
                         <View style={s.summaryLeft}>
-                            <View style={[s.badgeWrap, isPassing ? s.badgePass : s.badgeFail]}>
+                            <View
+                                style={[
+                                    s.badgeWrap,
+                                    isPassing ? s.badgePass : s.badgeFail,
+                                ]}
+                            >
                                 <Ionicons
                                     name={isPassing ? "trophy" : "sparkles"}
                                     size={14}
-                                    color={isPassing ? theme.success : theme.warning}
+                                    color={
+                                        isPassing
+                                            ? theme.success
+                                            : theme.warning
+                                    }
                                 />
                                 <Text
                                     style={[
                                         s.badgeText,
-                                        isPassing ? { color: theme.success } : { color: theme.warning },
+                                        isPassing
+                                            ? { color: theme.success }
+                                            : { color: theme.warning },
                                     ]}
                                 >
-                                    {isPassing ? "Revision Mastered" : "Revision Completed"}
+                                    {isPassing
+                                        ? "Revision Mastered"
+                                        : "Revision Completed"}
                                 </Text>
                             </View>
 
@@ -166,12 +207,20 @@ export default function QuizRevisionResultsScreen() {
                                 {reviewData.score} / {reviewData.totalQuestions}
                             </Text>
                             <Text style={s.timeSpent}>
-                                Completed in {formatDuration(reviewData.timeSpentSeconds)}
+                                Completed in{" "}
+                                {formatDuration(reviewData.timeSpentSeconds)}
                             </Text>
                         </View>
 
                         <View style={s.accuracyCircle}>
-                            <Text style={[s.accuracyNum, isPassing ? { color: theme.success } : { color: theme.warning }]}>
+                            <Text
+                                style={[
+                                    s.accuracyNum,
+                                    isPassing
+                                        ? { color: theme.success }
+                                        : { color: theme.warning },
+                                ]}
+                            >
                                 {accuracy}%
                             </Text>
                             <Text style={s.accuracyLabel}>Accuracy</Text>
@@ -181,18 +230,36 @@ export default function QuizRevisionResultsScreen() {
                     {/* Counts Row */}
                     <View style={s.statsGrid}>
                         <View style={[s.statCard, s.statCorrect]}>
-                            <Ionicons name="checkmark-circle" size={17} color={theme.success} />
-                            <Text style={s.statVal}>{reviewData.correctCount}</Text>
+                            <Ionicons
+                                name="checkmark-circle"
+                                size={17}
+                                color={theme.success}
+                            />
+                            <Text style={s.statVal}>
+                                {reviewData.correctCount}
+                            </Text>
                             <Text style={s.statLbl}>Correct</Text>
                         </View>
                         <View style={[s.statCard, s.statIncorrect]}>
-                            <Ionicons name="close-circle" size={17} color={theme.danger} />
-                            <Text style={s.statVal}>{reviewData.incorrectCount}</Text>
+                            <Ionicons
+                                name="close-circle"
+                                size={17}
+                                color={theme.danger}
+                            />
+                            <Text style={s.statVal}>
+                                {reviewData.incorrectCount}
+                            </Text>
                             <Text style={s.statLbl}>Incorrect</Text>
                         </View>
                         <View style={[s.statCard, s.statUnanswered]}>
-                            <Ionicons name="help-circle" size={17} color={theme.textSecondary} />
-                            <Text style={s.statVal}>{reviewData.unansweredCount}</Text>
+                            <Ionicons
+                                name="help-circle"
+                                size={17}
+                                color={theme.textSecondary}
+                            />
+                            <Text style={s.statVal}>
+                                {reviewData.unansweredCount}
+                            </Text>
                             <Text style={s.statLbl}>Skipped</Text>
                         </View>
                     </View>
@@ -209,12 +276,20 @@ export default function QuizRevisionResultsScreen() {
                                 ]}
                             >
                                 {retrying ? (
-                                    <ActivityIndicator size="small" color="#FFF" />
+                                    <ActivityIndicator
+                                        size="small"
+                                        color="#FFF"
+                                    />
                                 ) : (
                                     <>
-                                        <Ionicons name="refresh" size={16} color="#FFF" />
+                                        <Ionicons
+                                            name="refresh"
+                                            size={16}
+                                            color="#FFF"
+                                        />
                                         <Text style={s.retryBtnText}>
-                                            Retry Missed ({reviewData.incorrectCount})
+                                            Retry Missed (
+                                            {reviewData.incorrectCount})
                                         </Text>
                                     </>
                                 )}
@@ -222,48 +297,67 @@ export default function QuizRevisionResultsScreen() {
                         )}
 
                         <Pressable
-                            onPress={() => router.replace("/quiz-revision" as never)}
+                            onPress={() =>
+                                router.replace("/quiz-revision" as never)
+                            }
                             style={({ pressed }) => [
                                 s.newRevisionBtn,
                                 pressed && { opacity: 0.85 },
                             ]}
                         >
-                            <Ionicons name="add-circle-outline" size={16} color={theme.text} />
-                            <Text style={s.newRevisionBtnText}>New Revision</Text>
+                            <Ionicons
+                                name="add-circle-outline"
+                                size={16}
+                                color={theme.text}
+                            />
+                            <Text style={s.newRevisionBtnText}>
+                                New Revision
+                            </Text>
                         </Pressable>
                     </View>
                 </View>
 
                 {/* Topic Breakdown (if available) */}
-                {reviewData.topicPerformance && reviewData.topicPerformance.length > 0 && (
-                    <View style={s.sectionCard}>
-                        <Text style={s.sectionHeader}>Topic Performance</Text>
-                        <View style={s.topicList}>
-                            {reviewData.topicPerformance.map((tp) => (
-                                <View key={tp.topicId} style={s.topicItem}>
-                                    <View style={s.topicRow}>
-                                        <Text style={s.topicName}>{tp.topicName}</Text>
-                                        <Text style={s.topicScore}>
-                                            {tp.correct}/{tp.total} ({tp.accuracy}%)
-                                        </Text>
+                {reviewData.topicPerformance &&
+                    reviewData.topicPerformance.length > 0 && (
+                        <View style={s.sectionCard}>
+                            <Text style={s.sectionHeader}>
+                                Topic Performance
+                            </Text>
+                            <View style={s.topicList}>
+                                {reviewData.topicPerformance.map((tp) => (
+                                    <View key={tp.topicId} style={s.topicItem}>
+                                        <View style={s.topicRow}>
+                                            <Text
+                                                style={s.topicName}
+                                                numberOfLines={1}
+                                            >
+                                                {tp.topicName}
+                                            </Text>
+                                            <Text style={s.topicScore}>
+                                                {tp.correct}/{tp.total} (
+                                                {tp.accuracy}%)
+                                            </Text>
+                                        </View>
+                                        <View style={s.progressBarTrack}>
+                                            <View
+                                                style={[
+                                                    s.progressBarFill,
+                                                    {
+                                                        width: `${tp.accuracy}%`,
+                                                        backgroundColor:
+                                                            tp.accuracy >= 70
+                                                                ? theme.success
+                                                                : theme.warning,
+                                                    },
+                                                ]}
+                                            />
+                                        </View>
                                     </View>
-                                    <View style={s.progressBarTrack}>
-                                        <View
-                                            style={[
-                                                s.progressBarFill,
-                                                {
-                                                    width: `${tp.accuracy}%`,
-                                                    backgroundColor:
-                                                        tp.accuracy >= 70 ? theme.success : theme.warning,
-                                                },
-                                            ]}
-                                        />
-                                    </View>
-                                </View>
-                            ))}
+                                ))}
+                            </View>
                         </View>
-                    </View>
-                )}
+                    )}
 
                 {/* Detailed Questions Review */}
                 <View style={s.sectionCard}>
@@ -271,19 +365,43 @@ export default function QuizRevisionResultsScreen() {
                         <Text style={s.sectionHeader}>Answers Review</Text>
                         <View style={s.filterPills}>
                             {[
-                                { key: "ALL", label: `All (${reviewData.totalQuestions})` },
-                                { key: "CORRECT", label: `✓ ${reviewData.correctCount}` },
-                                { key: "INCORRECT", label: `✕ ${reviewData.incorrectCount}` },
+                                {
+                                    key: "ALL",
+                                    label: `All (${reviewData.totalQuestions})`,
+                                },
+                                {
+                                    key: "CORRECT",
+                                    label: `✓ ${reviewData.correctCount}`,
+                                },
+                                {
+                                    key: "INCORRECT",
+                                    label: `✕ ${reviewData.incorrectCount}`,
+                                },
+                                ...(reviewData.unansweredCount > 0
+                                    ? [
+                                          {
+                                              key: "UNANSWERED",
+                                              label: `– ${reviewData.unansweredCount}`,
+                                          },
+                                      ]
+                                    : []),
                             ].map((f) => (
                                 <Pressable
                                     key={f.key}
-                                    onPress={() => setReviewFilter(f.key as any)}
-                                    style={[s.filterPill, reviewFilter === f.key && s.filterPillActive]}
+                                    onPress={() =>
+                                        setReviewFilter(f.key as any)
+                                    }
+                                    style={[
+                                        s.filterPill,
+                                        reviewFilter === f.key &&
+                                            s.filterPillActive,
+                                    ]}
                                 >
                                     <Text
                                         style={[
                                             s.filterPillText,
-                                            reviewFilter === f.key && s.filterPillTextActive,
+                                            reviewFilter === f.key &&
+                                                s.filterPillTextActive,
                                         ]}
                                     >
                                         {f.label}
@@ -295,7 +413,12 @@ export default function QuizRevisionResultsScreen() {
 
                     <View style={s.questionsList}>
                         {filteredQuestions.map((q, idx) => (
-                            <QuestionReviewCard key={q.quizQuesId} item={q} index={idx + 1} theme={theme} />
+                            <QuestionReviewCard
+                                key={q.quizQuesId}
+                                item={q}
+                                index={idx + 1}
+                                theme={theme}
+                            />
                         ))}
                     </View>
                 </View>
@@ -313,7 +436,8 @@ function QuestionReviewCard({
     index: number;
     theme: AppTheme;
 }) {
-    const isUnanswered = item.studentAnswer === null || item.studentAnswer === "";
+    const isUnanswered =
+        item.studentAnswer === null || item.studentAnswer === "";
 
     return (
         <View
@@ -323,8 +447,8 @@ function QuestionReviewCard({
                 item.isCorrect
                     ? { borderColor: theme.success + "50" }
                     : isUnanswered
-                    ? { borderColor: theme.border }
-                    : { borderColor: theme.danger + "50" },
+                      ? { borderColor: theme.border }
+                      : { borderColor: theme.danger + "50" },
             ]}
         >
             <View style={styles.qHeader}>
@@ -335,8 +459,8 @@ function QuestionReviewCard({
                             item.isCorrect
                                 ? { backgroundColor: theme.success }
                                 : isUnanswered
-                                ? { backgroundColor: theme.muted }
-                                : { backgroundColor: theme.danger },
+                                  ? { backgroundColor: theme.muted }
+                                  : { backgroundColor: theme.danger },
                         ]}
                     >
                         <Ionicons
@@ -344,22 +468,37 @@ function QuestionReviewCard({
                                 item.isCorrect
                                     ? "checkmark"
                                     : isUnanswered
-                                    ? "remove"
-                                    : "close"
+                                      ? "remove"
+                                      : "close"
                             }
                             size={12}
                             color="#FFF"
                         />
                     </View>
-                    <Text style={[styles.qIndex, { color: theme.textSecondary }]}>Q{index}.</Text>
+                    <Text
+                        style={[styles.qIndex, { color: theme.textSecondary }]}
+                    >
+                        Q{index}.
+                    </Text>
                     <View
                         style={[
                             styles.typeChip,
                             item.questionType === "FILLUPS"
-                                ? { borderColor: theme.accent + "35", backgroundColor: theme.accentSoft }
+                                ? {
+                                      borderColor: theme.accent + "35",
+                                      backgroundColor: theme.accentSoft,
+                                  }
                                 : item.questionType === "TRUE_FALSE"
-                                ? { borderColor: theme.warning + "35", backgroundColor: theme.warning + "15" }
-                                : { borderColor: theme.secondaryAccent + "35", backgroundColor: theme.secondaryAccent + "15" },
+                                  ? {
+                                        borderColor: theme.warning + "35",
+                                        backgroundColor: theme.warning + "15",
+                                    }
+                                  : {
+                                        borderColor:
+                                            theme.secondaryAccent + "35",
+                                        backgroundColor:
+                                            theme.secondaryAccent + "15",
+                                    },
                         ]}
                     >
                         <Text
@@ -368,8 +507,8 @@ function QuestionReviewCard({
                                 item.questionType === "FILLUPS"
                                     ? { color: theme.accent }
                                     : item.questionType === "TRUE_FALSE"
-                                    ? { color: theme.warning }
-                                    : { color: theme.secondaryAccent },
+                                      ? { color: theme.warning }
+                                      : { color: theme.secondaryAccent },
                             ]}
                         >
                             {item.questionType}
@@ -378,7 +517,9 @@ function QuestionReviewCard({
                 </View>
             </View>
 
-            <Text style={[styles.qText, { color: theme.text }]}>{item.quesText}</Text>
+            <Text style={[styles.qText, { color: theme.text }]}>
+                {item.quesText}
+            </Text>
 
             {/* MCQ Options Display if applicable */}
             {item.questionType === "MCQ" && item.options && (
@@ -391,16 +532,30 @@ function QuestionReviewCard({
                                 key={k}
                                 style={[
                                     styles.optionLine,
-                                    { backgroundColor: theme.surface, borderColor: theme.border },
-                                    isExpected && { borderColor: theme.success, backgroundColor: theme.success + "15" },
-                                    isStudent && !isExpected && { borderColor: theme.danger, backgroundColor: theme.danger + "15" },
+                                    {
+                                        backgroundColor: theme.surface,
+                                        borderColor: theme.border,
+                                    },
+                                    isExpected && {
+                                        borderColor: theme.success,
+                                        backgroundColor: theme.success + "15",
+                                    },
+                                    isStudent &&
+                                        !isExpected && {
+                                            borderColor: theme.danger,
+                                            backgroundColor:
+                                                theme.danger + "15",
+                                        },
                                 ]}
                             >
                                 <Text
                                     style={[
                                         styles.optKey,
                                         isExpected && { color: theme.success },
-                                        isStudent && !isExpected && { color: theme.danger },
+                                        isStudent &&
+                                            !isExpected && {
+                                                color: theme.danger,
+                                            },
                                     ]}
                                 >
                                     {k}.
@@ -409,8 +564,15 @@ function QuestionReviewCard({
                                     style={[
                                         styles.optText,
                                         { color: theme.textSecondary },
-                                        isExpected && { color: theme.success, fontWeight: "700" },
-                                        isStudent && !isExpected && { color: theme.danger, fontWeight: "600" },
+                                        isExpected && {
+                                            color: theme.success,
+                                            fontWeight: "700",
+                                        },
+                                        isStudent &&
+                                            !isExpected && {
+                                                color: theme.danger,
+                                                fontWeight: "600",
+                                            },
                                     ]}
                                 >
                                     {text}
@@ -423,42 +585,93 @@ function QuestionReviewCard({
 
             {/* Fillups / TF Comparison */}
             {item.questionType !== "MCQ" && (
-                <View style={[styles.answerComparisonBox, { backgroundColor: theme.surface }]}>
+                <View
+                    style={[
+                        styles.answerComparisonBox,
+                        { backgroundColor: theme.surface },
+                    ]}
+                >
                     <View style={styles.comparisonRow}>
-                        <Text style={[styles.compLabel, { color: theme.textSecondary }]}>Your Answer:</Text>
+                        <Text
+                            style={[
+                                styles.compLabel,
+                                { color: theme.textSecondary },
+                            ]}
+                        >
+                            Your Answer:
+                        </Text>
                         <Text
                             style={[
                                 styles.compVal,
-                                item.isCorrect ? { color: theme.success } : { color: theme.danger },
+                                item.isCorrect
+                                    ? { color: theme.success }
+                                    : { color: theme.danger },
                             ]}
                         >
-                            {isUnanswered ? "(No answer provided)" : item.studentAnswer}
+                            {isUnanswered
+                                ? "(No answer provided)"
+                                : item.studentAnswer}
                         </Text>
                     </View>
 
                     <View style={styles.comparisonRow}>
-                        <Text style={[styles.compLabel, { color: theme.textSecondary }]}>Expected:</Text>
-                        <Text style={[styles.compVal, { color: theme.success, fontWeight: "700" }]}>
+                        <Text
+                            style={[
+                                styles.compLabel,
+                                { color: theme.textSecondary },
+                            ]}
+                        >
+                            Expected:
+                        </Text>
+                        <Text
+                            style={[
+                                styles.compVal,
+                                { color: theme.success, fontWeight: "700" },
+                            ]}
+                        >
                             {item.correctAnswer}
                         </Text>
                     </View>
 
-                    {item.questionType === "FILLUPS" && item.acceptedAnswers && item.acceptedAnswers.length > 1 && (
-                        <View style={styles.altsRow}>
-                            <Text style={[styles.compLabel, { color: theme.textSecondary }]}>Accepted:</Text>
-                            <Text style={[styles.compVal, { color: theme.textSecondary }]}>
-                                {item.acceptedAnswers.join(", ")}
-                            </Text>
-                        </View>
-                    )}
+                    {item.questionType === "FILLUPS" &&
+                        item.acceptedAnswers &&
+                        item.acceptedAnswers.length > 1 && (
+                            <View style={styles.altsRow}>
+                                <Text
+                                    style={[
+                                        styles.compLabel,
+                                        { color: theme.textSecondary },
+                                    ]}
+                                >
+                                    Accepted:
+                                </Text>
+                                <Text
+                                    style={[
+                                        styles.compVal,
+                                        { color: theme.textSecondary },
+                                    ]}
+                                >
+                                    {item.acceptedAnswers.join(", ")}
+                                </Text>
+                            </View>
+                        )}
                 </View>
             )}
 
             {/* Explanation card */}
             {item.explanation ? (
                 <View style={styles.explanationBox}>
-                    <Ionicons name="bulb-outline" size={14} color={theme.warning} />
-                    <Text style={[styles.explanationText, { color: theme.textSecondary }]}>
+                    <Ionicons
+                        name="bulb-outline"
+                        size={14}
+                        color={theme.warning}
+                    />
+                    <Text
+                        style={[
+                            styles.explanationText,
+                            { color: theme.textSecondary },
+                        ]}
+                    >
                         {item.explanation}
                     </Text>
                 </View>
@@ -515,7 +728,7 @@ const styles = StyleSheet.create({
     },
     optionLine: {
         flexDirection: "row",
-        alignItems: "center",
+        alignItems: "flex-start",
         gap: 8,
         paddingHorizontal: 12,
         paddingVertical: 9,
@@ -526,9 +739,12 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: "800",
         color: "#64748B",
+        marginTop: 1,
     },
     optText: {
         fontSize: 13,
+        flex: 1,
+        lineHeight: 19,
     },
     answerComparisonBox: {
         gap: 6,
@@ -538,12 +754,12 @@ const styles = StyleSheet.create({
     comparisonRow: {
         flexDirection: "row",
         gap: 8,
-        alignItems: "center",
+        alignItems: "flex-start",
     },
     altsRow: {
         flexDirection: "row",
         gap: 8,
-        alignItems: "center",
+        alignItems: "flex-start",
         marginTop: 2,
     },
     compLabel: {
@@ -613,7 +829,7 @@ function makeStyles(t: AppTheme) {
         summaryCard: {
             backgroundColor: t.surface,
             borderRadius: 18,
-            padding: 22,
+            padding: 20,
             borderWidth: 1,
             borderColor: t.border,
             gap: 18,
@@ -622,9 +838,13 @@ function makeStyles(t: AppTheme) {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: 12,
         },
         summaryLeft: {
             gap: 4,
+            flex: 1,
+            minWidth: 160,
         },
         badgeWrap: {
             flexDirection: "row",
@@ -717,17 +937,20 @@ function makeStyles(t: AppTheme) {
         },
         actionRow: {
             flexDirection: "row",
+            flexWrap: "wrap",
             gap: 10,
             paddingTop: 4,
         },
         retryBtn: {
             flex: 1,
+            minWidth: 150,
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "center",
             gap: 6,
             backgroundColor: t.accent,
             paddingVertical: 12,
+            paddingHorizontal: 14,
             borderRadius: 12,
         },
         retryBtnText: {
@@ -737,12 +960,14 @@ function makeStyles(t: AppTheme) {
         },
         newRevisionBtn: {
             flex: 1,
+            minWidth: 150,
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "center",
             gap: 6,
             backgroundColor: t.surfaceAlt,
             paddingVertical: 12,
+            paddingHorizontal: 14,
             borderRadius: 12,
             borderWidth: 1,
             borderColor: t.border,
@@ -775,11 +1000,13 @@ function makeStyles(t: AppTheme) {
         topicRow: {
             flexDirection: "row",
             justifyContent: "space-between",
+            gap: 8,
         },
         topicName: {
             fontSize: 12,
             fontWeight: "600",
             color: t.text,
+            flex: 1,
         },
         topicScore: {
             fontSize: 11,
@@ -805,6 +1032,7 @@ function makeStyles(t: AppTheme) {
         },
         filterPills: {
             flexDirection: "row",
+            flexWrap: "wrap",
             gap: 6,
         },
         filterPill: {

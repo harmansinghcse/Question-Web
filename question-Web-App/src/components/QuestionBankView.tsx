@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import {
     EmptyBlock,
     ErrorBlock,
+    FilterBottomSheet,
     LoadingBlock,
     Pill,
     QuestionCard,
@@ -23,14 +24,15 @@ import { useAuth } from "../providers/AuthProvider";
 import {
     api,
     QUESTION_TYPES,
+    type Chapter,
     type QuestionPage,
     type QuestionStats,
     type QuestionType,
     type Subject,
+    type Topic,
 } from "../services/api";
 import { useApiData } from "../hooks/use-api-data";
 import {
-    filterSubjectsForStudent,
     parseStudentEmail,
     sortSubjects,
     subjectColour,
@@ -66,21 +68,25 @@ export default function QuestionBankView({
         [user],
     );
 
-    // Subject scope toggle: 'my-semester' | 'all'
-    const [subjectScope, setSubjectScope] = useState<"my-semester" | "all">(
-        () => (params.subjectKey ? "all" : studentProfile ? "my-semester" : "all"),
-    );
-
     // Filter state (seeded from route params)
     const [search, setSearch] = useState(params.q ?? "");
     const [debounced, setDebounced] = useState((params.q ?? "").trim());
+    const [selectedSemester, setSelectedSemester] = useState<number | null>(
+        () =>
+            params.subjectKey
+                ? null
+                : (studentProfile?.currentSemester ?? null),
+    );
     const [subjectKey, setSubjectKey] = useState<number | null>(
         params.subjectKey ? Number(params.subjectKey) : null,
     );
+    const [chapterId, setChapterId] = useState<number | null>(null);
+    const [topicId, setTopicId] = useState<number | null>(null);
     const [quesType, setQuesType] = useState<QuestionType | null>(
         asType(params.type),
     );
     const [page, setPage] = useState(1);
+    const [filterSheetOpen, setFilterSheetOpen] = useState(false);
 
     // Synchronize params changes during render
     const [prevParams, setPrevParams] = useState({
@@ -102,10 +108,12 @@ export default function QuestionBankView({
         setSearch(params.q ?? "");
         setDebounced((params.q ?? "").trim());
         setSubjectKey(params.subjectKey ? Number(params.subjectKey) : null);
+        setChapterId(null);
+        setTopicId(null);
         setQuesType(asType(params.type));
         setPage(1);
         if (params.subjectKey) {
-            setSubjectScope("all");
+            setSelectedSemester(null);
         }
     }
 
@@ -121,23 +129,48 @@ export default function QuestionBankView({
         return () => clearTimeout(id);
     }, [search]);
 
-    // Data Fetching
+    // Data Fetching: Subjects, Chapters (when subjectKey selected), Topics (when chapterId selected)
     const fetchSubjects = useCallback(() => api.getSubjects(), []);
     const fetchStats = useCallback(() => api.getQuestionStats(), []);
+    const fetchChapters = useCallback(
+        () =>
+            subjectKey != null
+                ? api.getChapters(subjectKey)
+                : Promise.resolve([]),
+        [subjectKey],
+    );
+    const fetchTopics = useCallback(
+        () =>
+            chapterId != null
+                ? api.getTopics(chapterId)
+                : Promise.resolve([]),
+        [chapterId],
+    );
     const fetchQuestions = useCallback(
         () =>
             api.searchQuestions({
                 search: debounced || undefined,
+                semester:
+                    subjectKey == null
+                        ? (selectedSemester ?? undefined)
+                        : undefined,
                 subjectKey: subjectKey ?? undefined,
+                chapterId: chapterId ?? undefined,
+                topicId: topicId ?? undefined,
                 quesType: quesType ?? undefined,
                 page,
                 pageSize: PAGE_SIZE,
             }),
-        [debounced, subjectKey, quesType, page],
+        [debounced, selectedSemester, subjectKey, chapterId, topicId, quesType, page],
     );
 
     const subjectsState = useApiData<Subject[]>(fetchSubjects);
     const statsState = useApiData<QuestionStats>(fetchStats);
+    const chaptersState = useApiData<Chapter[]>(
+        fetchChapters,
+        subjectKey !== null,
+    );
+    const topicsState = useApiData<Topic[]>(fetchTopics, chapterId !== null);
     const questionsState = useApiData<QuestionPage>(fetchQuestions);
 
     const allSortedSubjects = useMemo(
@@ -148,13 +181,26 @@ export default function QuestionBankView({
         [subjectsState],
     );
 
+    // Available semesters derived from subjects
+    const availableSemesters = useMemo(() => {
+        const sems = new Set<number>();
+        for (const sub of allSortedSubjects) {
+            if (typeof sub.semester === "number" && sub.semester > 0) {
+                sems.add(sub.semester);
+            }
+        }
+        if (studentProfile?.currentSemester) {
+            sems.add(studentProfile.currentSemester);
+        }
+        return Array.from(sems).sort((a, b) => a - b);
+    }, [allSortedSubjects, studentProfile]);
+
     const displayedSubjects = useMemo(() => {
-        if (subjectScope === "all" || !studentProfile) {
+        if (selectedSemester === null) {
             return allSortedSubjects;
         }
-        const filtered = filterSubjectsForStudent(
-            allSortedSubjects,
-            studentProfile,
+        const filtered = allSortedSubjects.filter(
+            (sub) => sub.semester === selectedSemester,
         );
         if (
             subjectKey !== null &&
@@ -166,10 +212,38 @@ export default function QuestionBankView({
             if (currentSub) return [currentSub, ...filtered];
         }
         return filtered;
-    }, [allSortedSubjects, subjectScope, studentProfile, subjectKey]);
+    }, [allSortedSubjects, selectedSemester, subjectKey]);
 
-    const filtersActive =
-        !!debounced || subjectKey !== null || quesType !== null;
+    const chapters = useMemo(
+        () =>
+            subjectKey !== null && chaptersState.status === "success"
+                ? [...chaptersState.data].sort(
+                      (a, b) => a.chapterNo - b.chapterNo,
+                  )
+                : [],
+        [subjectKey, chaptersState],
+    );
+
+    const topics = useMemo(
+        () =>
+            chapterId !== null && topicsState.status === "success"
+                ? topicsState.data
+                : [],
+        [chapterId, topicsState],
+    );
+
+    const activeFilterCount = useMemo(() => {
+        let count = 0;
+        if (debounced) count++;
+        if (selectedSemester !== null) count++;
+        if (subjectKey !== null) count++;
+        if (chapterId !== null) count++;
+        if (topicId !== null) count++;
+        if (quesType !== null) count++;
+        return count;
+    }, [debounced, selectedSemester, subjectKey, chapterId, topicId, quesType]);
+
+    const filtersActive = activeFilterCount > 0;
     const total =
         questionsState.status === "success" ? questionsState.data.total : null;
     const totalPages =
@@ -178,13 +252,44 @@ export default function QuestionBankView({
     function clearFilters() {
         setSearch("");
         setDebounced("");
+        setSelectedSemester(null);
         setSubjectKey(null);
+        setChapterId(null);
+        setTopicId(null);
         setQuesType(null);
+        setPage(1);
+    }
+
+    function pickSemester(sem: number | null) {
+        setSelectedSemester(sem);
+        if (sem !== null && subjectKey !== null) {
+            const sub = allSortedSubjects.find(
+                (s) => s.subjectKey === subjectKey,
+            );
+            if (sub && sub.semester !== sem) {
+                setSubjectKey(null);
+                setChapterId(null);
+                setTopicId(null);
+            }
+        }
         setPage(1);
     }
 
     function pickSubject(key: number | null) {
         setSubjectKey(key);
+        setChapterId(null);
+        setTopicId(null);
+        setPage(1);
+    }
+
+    function pickChapter(id: number | null) {
+        setChapterId(id);
+        setTopicId(null);
+        setPage(1);
+    }
+
+    function pickTopic(id: number | null) {
+        setTopicId(id);
         setPage(1);
     }
 
@@ -192,6 +297,19 @@ export default function QuestionBankView({
         setQuesType(type);
         setPage(1);
     }
+
+    const selectedSubjectObj = useMemo(
+        () => allSortedSubjects.find((s) => s.subjectKey === subjectKey) ?? null,
+        [allSortedSubjects, subjectKey],
+    );
+    const selectedChapterObj = useMemo(
+        () => chapters.find((c) => c.chapterId === chapterId) ?? null,
+        [chapters, chapterId],
+    );
+    const selectedTopicObj = useMemo(
+        () => topics.find((t) => t.topicId === topicId) ?? null,
+        [topics, topicId],
+    );
 
     return (
         <View style={s.container}>
@@ -206,101 +324,146 @@ export default function QuestionBankView({
                 </View>
             )}
 
-            {/* Search Box */}
-            <View style={s.searchBox}>
-                <Ionicons name="search-outline" size={18} color={theme.textSecondary} />
-                <TextInput
-                    value={search}
-                    onChangeText={setSearch}
-                    placeholder="Search by keywords, topics, or question text..."
-                    placeholderTextColor={theme.muted}
-                    returnKeyType="search"
-                    accessibilityLabel="Search questions"
-                    style={s.searchInput}
-                />
-                {search.length > 0 && (
-                    <Pressable
-                        onPress={() => setSearch("")}
-                        accessibilityRole="button"
-                        accessibilityLabel="Clear search"
-                        hitSlop={8}
+            {/* Search Row + Filter Drawer Trigger */}
+            <View style={s.searchRow}>
+                <View style={s.searchBox}>
+                    <Ionicons
+                        name="search-outline"
+                        size={18}
+                        color={theme.textSecondary}
+                    />
+                    <TextInput
+                        value={search}
+                        onChangeText={setSearch}
+                        placeholder="Search by keywords, topics, or question text..."
+                        placeholderTextColor={theme.muted}
+                        returnKeyType="search"
+                        accessibilityLabel="Search questions"
+                        style={s.searchInput}
+                    />
+                    {search.length > 0 && (
+                        <Pressable
+                            onPress={() => setSearch("")}
+                            accessibilityRole="button"
+                            accessibilityLabel="Clear search"
+                            hitSlop={8}
+                        >
+                            <Ionicons
+                                name="close-circle"
+                                size={18}
+                                color={theme.muted}
+                            />
+                        </Pressable>
+                    )}
+                </View>
+
+                <Pressable
+                    onPress={() => setFilterSheetOpen(true)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Open all filters"
+                    style={({ pressed }) => [
+                        s.filterTriggerBtn,
+                        activeFilterCount > 0 && s.filterTriggerBtnActive,
+                        pressed && { opacity: 0.85 },
+                    ]}
+                >
+                    <Ionicons
+                        name="options-outline"
+                        size={18}
+                        color={
+                            activeFilterCount > 0
+                                ? theme.accent
+                                : theme.textSecondary
+                        }
+                    />
+                    <Text
+                        style={[
+                            s.filterTriggerText,
+                            activeFilterCount > 0 && {
+                                color: theme.accent,
+                                fontWeight: "700",
+                            },
+                        ]}
                     >
-                        <Ionicons
-                            name="close-circle"
-                            size={18}
-                            color={theme.muted}
-                        />
-                    </Pressable>
-                )}
+                        Filters
+                    </Text>
+                    {activeFilterCount > 0 && (
+                        <View style={s.filterBadge}>
+                            <Text style={s.filterBadgeText}>
+                                {activeFilterCount}
+                            </Text>
+                        </View>
+                    )}
+                </Pressable>
             </View>
 
-            {/* Question Type Filter Group */}
-            <View style={s.filterGroup}>
-                <Text style={s.filterGroupLabel}>QUESTION TYPE</Text>
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={s.pillRow}
-                >
-                    <Pill
-                        label="All types"
-                        active={quesType === null}
-                        onPress={() => pickType(null)}
-                    />
-                    {QUESTION_TYPES.map((type) => (
+            {/* Semester Filter Group */}
+            {availableSemesters.length > 0 && (
+                <View style={s.filterGroup}>
+                    <View style={s.subjectHeaderRow}>
+                        <Text style={s.filterGroupLabel}>SEMESTER</Text>
+                        {studentProfile?.currentSemester &&
+                            selectedSemester !==
+                                studentProfile.currentSemester && (
+                                <Pressable
+                                    onPress={() =>
+                                        pickSemester(
+                                            studentProfile.currentSemester,
+                                        )
+                                    }
+                                    hitSlop={6}
+                                >
+                                    <Text style={s.quickActionLink}>
+                                        My Semester (Sem{" "}
+                                        {studentProfile.currentSemester})
+                                    </Text>
+                                </Pressable>
+                            )}
+                    </View>
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={s.pillRow}
+                    >
                         <Pill
-                            key={type}
-                            label={TYPE_META[type].short}
-                            icon={TYPE_META[type].icon}
-                            color={TYPE_META[type].color}
-                            active={quesType === type}
-                            onPress={() =>
-                                pickType(quesType === type ? null : type)
-                            }
+                            label="All Semesters"
+                            compact
+                            active={selectedSemester === null}
+                            onPress={() => pickSemester(null)}
                         />
-                    ))}
-                </ScrollView>
-            </View>
+                        {availableSemesters.map((sem) => (
+                            <Pill
+                                key={sem}
+                                label={`Sem ${sem}`}
+                                compact
+                                active={selectedSemester === sem}
+                                onPress={() =>
+                                    pickSemester(
+                                        selectedSemester === sem ? null : sem,
+                                    )
+                                }
+                            />
+                        ))}
+                    </ScrollView>
+                </View>
+            )}
 
             {/* Subject Filter Group */}
             <View style={s.filterGroup}>
                 <View style={s.subjectHeaderRow}>
-                    <Text style={s.filterGroupLabel}>SUBJECT</Text>
-                    {studentProfile && (
-                        <View style={s.scopeToggle}>
-                            <Pressable
-                                onPress={() => setSubjectScope("my-semester")}
-                                style={[
-                                    s.scopeButton,
-                                    subjectScope === "my-semester" && s.scopeButtonActive,
-                                ]}
-                            >
-                                <Text
-                                    style={[
-                                        s.scopeButtonText,
-                                        subjectScope === "my-semester" && s.scopeButtonTextActive,
-                                    ]}
-                                >
-                                    Sem {studentProfile.currentSemester}
-                                </Text>
-                            </Pressable>
-                            <Pressable
-                                onPress={() => setSubjectScope("all")}
-                                style={[
-                                    s.scopeButton,
-                                    subjectScope === "all" && s.scopeButtonActive,
-                                ]}
-                            >
-                                <Text
-                                    style={[
-                                        s.scopeButtonText,
-                                        subjectScope === "all" && s.scopeButtonTextActive,
-                                    ]}
-                                >
-                                    All Semesters
-                                </Text>
-                            </Pressable>
-                        </View>
+                    <Text style={s.filterGroupLabel}>
+                        SUBJECT{" "}
+                        {selectedSemester !== null
+                            ? `(SEM ${selectedSemester})`
+                            : ""}
+                    </Text>
+                    {subjectKey !== null && (
+                        <Pressable
+                            onPress={() => pickSubject(null)}
+                            hitSlop={6}
+                        >
+                            <Text style={s.quickActionLink}>Reset Subject</Text>
+                        </Pressable>
                     )}
                 </View>
 
@@ -319,14 +482,14 @@ export default function QuestionBankView({
                         <View style={s.emptySubjectNotice}>
                             <Text style={s.emptySubjectText}>
                                 No subjects mapped for Semester{" "}
-                                {studentProfile?.currentSemester}.
+                                {selectedSemester}.
                             </Text>
                             <Pressable
-                                onPress={() => setSubjectScope("all")}
+                                onPress={() => pickSemester(null)}
                                 style={s.emptySubjectAction}
                             >
                                 <Text style={s.emptySubjectActionText}>
-                                    Show all subjects
+                                    Show all semesters
                                 </Text>
                             </Pressable>
                         </View>
@@ -361,31 +524,266 @@ export default function QuestionBankView({
                 )}
             </View>
 
-            {/* Results Header */}
-            <View style={s.resultsHeader}>
-                <View>
-                    <Text style={s.resultsEyebrow}>AVAILABLE QUESTIONS</Text>
-                    <Text style={s.resultsTitle}>
-                        {total === null
-                            ? "All Questions"
-                            : `${total.toLocaleString()} ${total === 1 ? "question found" : "questions found"}`}
-                    </Text>
+            {/* Progressive Disclosure: Chapter Filter Group (when a subject is selected) */}
+            {subjectKey !== null && (
+                <View style={s.filterGroup}>
+                    <View style={s.subjectHeaderRow}>
+                        <Text style={s.filterGroupLabel}>CHAPTER</Text>
+                        {chapterId !== null && (
+                            <Pressable
+                                onPress={() => pickChapter(null)}
+                                hitSlop={6}
+                            >
+                                <Text style={s.quickActionLink}>
+                                    All Chapters
+                                </Text>
+                            </Pressable>
+                        )}
+                    </View>
+                    {chaptersState.status === "loading" ? (
+                        <Text style={s.inlineStatusText}>
+                            Loading chapters...
+                        </Text>
+                    ) : chapters.length === 0 ? (
+                        <Text style={s.inlineStatusText}>
+                            No chapters listed for this subject.
+                        </Text>
+                    ) : (
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={s.pillRow}
+                        >
+                            <Pill
+                                label="All chapters"
+                                compact
+                                active={chapterId === null}
+                                onPress={() => pickChapter(null)}
+                            />
+                            {chapters.map((ch) => (
+                                <Pill
+                                    key={ch.chapterId}
+                                    label={`Ch ${ch.chapterNo}: ${ch.chapterName}`}
+                                    compact
+                                    active={chapterId === ch.chapterId}
+                                    onPress={() =>
+                                        pickChapter(
+                                            chapterId === ch.chapterId
+                                                ? null
+                                                : ch.chapterId,
+                                        )
+                                    }
+                                />
+                            ))}
+                        </ScrollView>
+                    )}
                 </View>
-                {filtersActive && (
-                    <Pressable
-                        onPress={clearFilters}
-                        accessibilityRole="button"
-                        accessibilityLabel="Clear all filters"
-                        hitSlop={8}
-                        style={s.clearBtn}
-                    >
-                        <Ionicons
-                            name="close-circle-outline"
-                            size={14}
-                            color={theme.accent}
+            )}
+
+            {/* Progressive Disclosure: Topic Filter Group (when a chapter is selected) */}
+            {chapterId !== null && (
+                <View style={s.filterGroup}>
+                    <View style={s.subjectHeaderRow}>
+                        <Text style={s.filterGroupLabel}>TOPIC</Text>
+                        {topicId !== null && (
+                            <Pressable
+                                onPress={() => pickTopic(null)}
+                                hitSlop={6}
+                            >
+                                <Text style={s.quickActionLink}>
+                                    All Topics
+                                </Text>
+                            </Pressable>
+                        )}
+                    </View>
+                    {topicsState.status === "loading" ? (
+                        <Text style={s.inlineStatusText}>
+                            Loading topics...
+                        </Text>
+                    ) : topics.length === 0 ? (
+                        <Text style={s.inlineStatusText}>
+                            No specific topics listed for this chapter.
+                        </Text>
+                    ) : (
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={s.pillRow}
+                        >
+                            <Pill
+                                label="All topics"
+                                compact
+                                active={topicId === null}
+                                onPress={() => pickTopic(null)}
+                            />
+                            {topics.map((t) => (
+                                <Pill
+                                    key={t.topicId}
+                                    label={t.topicName}
+                                    compact
+                                    active={topicId === t.topicId}
+                                    onPress={() =>
+                                        pickTopic(
+                                            topicId === t.topicId
+                                                ? null
+                                                : t.topicId,
+                                        )
+                                    }
+                                />
+                            ))}
+                        </ScrollView>
+                    )}
+                </View>
+            )}
+
+            {/* Question Type Filter Group */}
+            <View style={s.filterGroup}>
+                <Text style={s.filterGroupLabel}>QUESTION TYPE</Text>
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={s.pillRow}
+                >
+                    <Pill
+                        label="All types"
+                        compact
+                        active={quesType === null}
+                        onPress={() => pickType(null)}
+                    />
+                    {QUESTION_TYPES.map((type) => (
+                        <Pill
+                            key={type}
+                            label={TYPE_META[type].short}
+                            icon={TYPE_META[type].icon}
+                            color={TYPE_META[type].color}
+                            compact
+                            active={quesType === type}
+                            onPress={() =>
+                                pickType(quesType === type ? null : type)
+                            }
                         />
-                        <Text style={s.clearLink}>Clear filters</Text>
-                    </Pressable>
+                    ))}
+                </ScrollView>
+            </View>
+
+            {/* Results Header & Active Filter Chips */}
+            <View style={s.resultsHeaderBlock}>
+                <View style={s.resultsHeader}>
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                        <Text style={s.resultsEyebrow}>AVAILABLE QUESTIONS</Text>
+                        <Text style={s.resultsTitle}>
+                            {total === null
+                                ? "All Questions"
+                                : `${total.toLocaleString()} ${total === 1 ? "question found" : "questions found"}`}
+                        </Text>
+                    </View>
+                    {filtersActive && (
+                        <Pressable
+                            onPress={clearFilters}
+                            accessibilityRole="button"
+                            accessibilityLabel="Clear all filters"
+                            hitSlop={8}
+                            style={s.clearBtn}
+                        >
+                            <Ionicons
+                                name="close-circle-outline"
+                                size={14}
+                                color={theme.accent}
+                            />
+                            <Text style={s.clearLink}>Clear all</Text>
+                        </Pressable>
+                    )}
+                </View>
+
+                {/* Active filter summary pills */}
+                {filtersActive && (
+                    <View style={s.activeSummaryRow}>
+                        {selectedSemester !== null && (
+                            <Pressable
+                                onPress={() => pickSemester(null)}
+                                style={s.activeChip}
+                            >
+                                <Text style={s.activeChipText}>
+                                    Sem {selectedSemester}
+                                </Text>
+                                <Ionicons
+                                    name="close"
+                                    size={12}
+                                    color={theme.accent}
+                                />
+                            </Pressable>
+                        )}
+                        {selectedSubjectObj && (
+                            <Pressable
+                                onPress={() => pickSubject(null)}
+                                style={s.activeChip}
+                            >
+                                <Text
+                                    style={s.activeChipText}
+                                    numberOfLines={1}
+                                >
+                                    {subjectDisplayName(selectedSubjectObj)}
+                                </Text>
+                                <Ionicons
+                                    name="close"
+                                    size={12}
+                                    color={theme.accent}
+                                />
+                            </Pressable>
+                        )}
+                        {selectedChapterObj && (
+                            <Pressable
+                                onPress={() => pickChapter(null)}
+                                style={s.activeChip}
+                            >
+                                <Text
+                                    style={s.activeChipText}
+                                    numberOfLines={1}
+                                >
+                                    Ch {selectedChapterObj.chapterNo}:{" "}
+                                    {selectedChapterObj.chapterName}
+                                </Text>
+                                <Ionicons
+                                    name="close"
+                                    size={12}
+                                    color={theme.accent}
+                                />
+                            </Pressable>
+                        )}
+                        {selectedTopicObj && (
+                            <Pressable
+                                onPress={() => pickTopic(null)}
+                                style={s.activeChip}
+                            >
+                                <Text
+                                    style={s.activeChipText}
+                                    numberOfLines={1}
+                                >
+                                    {selectedTopicObj.topicName}
+                                </Text>
+                                <Ionicons
+                                    name="close"
+                                    size={12}
+                                    color={theme.accent}
+                                />
+                            </Pressable>
+                        )}
+                        {quesType && (
+                            <Pressable
+                                onPress={() => pickType(null)}
+                                style={s.activeChip}
+                            >
+                                <Text style={s.activeChipText}>
+                                    {TYPE_META[quesType].short}
+                                </Text>
+                                <Ionicons
+                                    name="close"
+                                    size={12}
+                                    color={theme.accent}
+                                />
+                            </Pressable>
+                        )}
+                    </View>
                 )}
             </View>
 
@@ -441,7 +839,9 @@ export default function QuestionBankView({
                                     <Ionicons
                                         name="chevron-back"
                                         size={16}
-                                        color={page <= 1 ? theme.muted : theme.text}
+                                        color={
+                                            page <= 1 ? theme.muted : theme.text
+                                        }
                                     />
                                     <Text
                                         style={[
@@ -459,7 +859,9 @@ export default function QuestionBankView({
 
                                 <Pressable
                                     onPress={() =>
-                                        setPage((p) => Math.min(totalPages, p + 1))
+                                        setPage((p) =>
+                                            Math.min(totalPages, p + 1),
+                                        )
                                     }
                                     disabled={page >= totalPages}
                                     accessibilityRole="button"
@@ -472,7 +874,9 @@ export default function QuestionBankView({
                                     <Text
                                         style={[
                                             s.pagerText,
-                                            page >= totalPages && { color: theme.muted },
+                                            page >= totalPages && {
+                                                color: theme.muted,
+                                            },
                                         ]}
                                     >
                                         Next
@@ -480,20 +884,175 @@ export default function QuestionBankView({
                                     <Ionicons
                                         name="chevron-forward"
                                         size={16}
-                                        color={page >= totalPages ? theme.muted : theme.text}
+                                        color={
+                                            page >= totalPages
+                                                ? theme.muted
+                                                : theme.text
+                                        }
                                     />
                                 </Pressable>
                             </View>
                         )}
                     </>
                 )}
+
+            {/* Filter Bottom Sheet for wrapped multi-category selection */}
+            <FilterBottomSheet
+                visible={filterSheetOpen}
+                title="Filter Questions"
+                subtitle="Refine by semester, subject, chapter, topic, or question type"
+                activeCount={activeFilterCount}
+                onClose={() => setFilterSheetOpen(false)}
+                onReset={clearFilters}
+            >
+                {/* Semester */}
+                <View style={s.sheetSection}>
+                    <Text style={s.filterGroupLabel}>SEMESTER</Text>
+                    <View style={s.sheetWrapGrid}>
+                        <Pill
+                            label="All Semesters"
+                            compact
+                            active={selectedSemester === null}
+                            onPress={() => pickSemester(null)}
+                        />
+                        {availableSemesters.map((sem) => (
+                            <Pill
+                                key={sem}
+                                label={`Sem ${sem}`}
+                                compact
+                                active={selectedSemester === sem}
+                                onPress={() =>
+                                    pickSemester(
+                                        selectedSemester === sem ? null : sem,
+                                    )
+                                }
+                            />
+                        ))}
+                    </View>
+                </View>
+
+                {/* Question Type */}
+                <View style={s.sheetSection}>
+                    <Text style={s.filterGroupLabel}>QUESTION TYPE</Text>
+                    <View style={s.sheetWrapGrid}>
+                        <Pill
+                            label="All types"
+                            compact
+                            active={quesType === null}
+                            onPress={() => pickType(null)}
+                        />
+                        {QUESTION_TYPES.map((type) => (
+                            <Pill
+                                key={type}
+                                label={TYPE_META[type].short}
+                                icon={TYPE_META[type].icon}
+                                color={TYPE_META[type].color}
+                                compact
+                                active={quesType === type}
+                                onPress={() =>
+                                    pickType(quesType === type ? null : type)
+                                }
+                            />
+                        ))}
+                    </View>
+                </View>
+
+                {/* Subject */}
+                <View style={s.sheetSection}>
+                    <Text style={s.filterGroupLabel}>SUBJECT</Text>
+                    <View style={s.sheetWrapGrid}>
+                        <Pill
+                            label="All subjects"
+                            compact
+                            active={subjectKey === null}
+                            onPress={() => pickSubject(null)}
+                        />
+                        {displayedSubjects.map((sub) => (
+                            <Pill
+                                key={sub.subjectKey}
+                                label={subjectDisplayName(sub)}
+                                color={subjectColour(sub)}
+                                compact
+                                active={subjectKey === sub.subjectKey}
+                                onPress={() =>
+                                    pickSubject(
+                                        subjectKey === sub.subjectKey
+                                            ? null
+                                            : sub.subjectKey,
+                                    )
+                                }
+                            />
+                        ))}
+                    </View>
+                </View>
+
+                {/* Chapter */}
+                {subjectKey !== null && chapters.length > 0 && (
+                    <View style={s.sheetSection}>
+                        <Text style={s.filterGroupLabel}>CHAPTER</Text>
+                        <View style={s.sheetWrapGrid}>
+                            <Pill
+                                label="All chapters"
+                                compact
+                                active={chapterId === null}
+                                onPress={() => pickChapter(null)}
+                            />
+                            {chapters.map((ch) => (
+                                <Pill
+                                    key={ch.chapterId}
+                                    label={`Ch ${ch.chapterNo}: ${ch.chapterName}`}
+                                    compact
+                                    active={chapterId === ch.chapterId}
+                                    onPress={() =>
+                                        pickChapter(
+                                            chapterId === ch.chapterId
+                                                ? null
+                                                : ch.chapterId,
+                                        )
+                                    }
+                                />
+                            ))}
+                        </View>
+                    </View>
+                )}
+
+                {/* Topic */}
+                {chapterId !== null && topics.length > 0 && (
+                    <View style={s.sheetSection}>
+                        <Text style={s.filterGroupLabel}>TOPIC</Text>
+                        <View style={s.sheetWrapGrid}>
+                            <Pill
+                                label="All topics"
+                                compact
+                                active={topicId === null}
+                                onPress={() => pickTopic(null)}
+                            />
+                            {topics.map((t) => (
+                                <Pill
+                                    key={t.topicId}
+                                    label={t.topicName}
+                                    compact
+                                    active={topicId === t.topicId}
+                                    onPress={() =>
+                                        pickTopic(
+                                            topicId === t.topicId
+                                                ? null
+                                                : t.topicId,
+                                        )
+                                    }
+                                />
+                            ))}
+                        </View>
+                    </View>
+                )}
+            </FilterBottomSheet>
         </View>
     );
 }
 
 function makeStyles(t: AppTheme) {
     return StyleSheet.create({
-        container: { gap: 18, width: "100%" },
+        container: { gap: 16, width: "100%" },
         header: { gap: 4, marginBottom: 4 },
         title: {
             color: t.text,
@@ -502,7 +1061,14 @@ function makeStyles(t: AppTheme) {
             letterSpacing: -0.3,
         },
         subtitle: { color: t.textSecondary, fontSize: 13, lineHeight: 18 },
+        searchRow: {
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 10,
+        },
         searchBox: {
+            flex: 1,
+            minWidth: 0,
             flexDirection: "row",
             alignItems: "center",
             gap: 10,
@@ -515,18 +1081,64 @@ function makeStyles(t: AppTheme) {
         },
         searchInput: {
             flex: 1,
+            minWidth: 0,
             color: t.text,
             fontSize: 13,
             padding: 0,
         },
+        filterTriggerBtn: {
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 6,
+            height: 44,
+            paddingHorizontal: 14,
+            borderRadius: 12,
+            backgroundColor: t.surface,
+            borderWidth: 1,
+            borderColor: t.border,
+            flexShrink: 0,
+        },
+        filterTriggerBtnActive: {
+            backgroundColor: t.accentSoft,
+            borderColor: t.accent,
+        },
+        filterTriggerText: {
+            fontSize: 13,
+            fontWeight: "600",
+            color: t.textSecondary,
+        },
+        filterBadge: {
+            minWidth: 18,
+            height: 18,
+            borderRadius: 9,
+            backgroundColor: t.accent,
+            alignItems: "center",
+            justifyContent: "center",
+            paddingHorizontal: 5,
+        },
+        filterBadgeText: {
+            color: "#FFFFFF",
+            fontSize: 10,
+            fontWeight: "800",
+        },
         filterGroup: {
-            gap: 8,
+            gap: 7,
         },
         filterGroupLabel: {
             color: t.textSecondary,
             fontSize: 11,
             fontWeight: "700",
             letterSpacing: 0.8,
+        },
+        quickActionLink: {
+            color: t.accent,
+            fontSize: 12,
+            fontWeight: "700",
+        },
+        inlineStatusText: {
+            color: t.muted,
+            fontSize: 12,
+            fontStyle: "italic",
         },
         pillRow: {
             gap: 8,
@@ -536,37 +1148,14 @@ function makeStyles(t: AppTheme) {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
-        },
-        scopeToggle: {
-            flexDirection: "row",
-            alignItems: "center",
-            backgroundColor: t.surfaceAlt,
-            borderRadius: 8,
-            padding: 2,
-            borderWidth: 1,
-            borderColor: t.border,
-        },
-        scopeButton: {
-            paddingHorizontal: 10,
-            paddingVertical: 4,
-            borderRadius: 6,
-        },
-        scopeButtonActive: {
-            backgroundColor: t.accentSoft,
-        },
-        scopeButtonText: {
-            fontSize: 11,
-            fontWeight: "600",
-            color: t.textSecondary,
-        },
-        scopeButtonTextActive: {
-            color: t.accent,
-            fontWeight: "700",
+            gap: 8,
         },
         emptySubjectNotice: {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: 8,
             padding: 12,
             borderRadius: 10,
             backgroundColor: t.surface,
@@ -576,6 +1165,7 @@ function makeStyles(t: AppTheme) {
         emptySubjectText: {
             color: t.textSecondary,
             fontSize: 12,
+            flex: 1,
         },
         emptySubjectAction: {
             paddingHorizontal: 10,
@@ -588,12 +1178,16 @@ function makeStyles(t: AppTheme) {
             fontSize: 11,
             fontWeight: "700",
         },
+        resultsHeaderBlock: {
+            gap: 10,
+            marginTop: 4,
+            paddingBottom: 2,
+        },
         resultsHeader: {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
-            marginTop: 4,
-            paddingBottom: 4,
+            gap: 10,
         },
         resultsEyebrow: {
             color: t.muted,
@@ -612,14 +1206,38 @@ function makeStyles(t: AppTheme) {
             alignItems: "center",
             gap: 5,
             paddingHorizontal: 10,
-            paddingVertical: 5,
-            borderRadius: 6,
+            paddingVertical: 6,
+            borderRadius: 8,
             backgroundColor: t.accentSoft,
+            flexShrink: 0,
         },
         clearLink: {
             color: t.accent,
             fontSize: 12,
             fontWeight: "700",
+        },
+        activeSummaryRow: {
+            flexDirection: "row",
+            flexWrap: "wrap",
+            gap: 8,
+        },
+        activeChip: {
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 5,
+            paddingHorizontal: 10,
+            paddingVertical: 5,
+            borderRadius: 8,
+            backgroundColor: t.accentSoft,
+            borderWidth: 1,
+            borderColor: t.accent + "33",
+            maxWidth: 240,
+        },
+        activeChipText: {
+            color: t.accent,
+            fontSize: 11,
+            fontWeight: "700",
+            flexShrink: 1,
         },
         pager: {
             flexDirection: "row",
@@ -629,6 +1247,7 @@ function makeStyles(t: AppTheme) {
             paddingTop: 16,
             borderTopWidth: 1,
             borderTopColor: t.border,
+            gap: 8,
         },
         pagerButton: {
             flexDirection: "row",
@@ -653,6 +1272,14 @@ function makeStyles(t: AppTheme) {
             color: t.textSecondary,
             fontSize: 12,
             fontWeight: "500",
+        },
+        sheetSection: {
+            gap: 10,
+        },
+        sheetWrapGrid: {
+            flexDirection: "row",
+            flexWrap: "wrap",
+            gap: 8,
         },
     });
 }

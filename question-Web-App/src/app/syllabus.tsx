@@ -1,12 +1,3 @@
-/**
- * Syllabus screen — three-level drill-down: Subject → Chapter → Topic.
- *
- * Data flow:
- *   1. Load all subjects from GET /api/subjects on mount.
- *   2. When the user taps a subject, fetch chapters via GET /api/chapters?subjectKey=<n>.
- *   3. When the user taps a chapter, fetch topics via GET /api/topics?chapterId=<n>.
- */
-
 import React, { useCallback, useMemo, useState } from "react";
 import {
     ActivityIndicator,
@@ -16,697 +7,968 @@ import {
     Text,
     View,
 } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
-import { api, type Chapter, type Subject, type Topic } from "../services/api";
-import { useApiData } from "../hooks/use-api-data";
-import { useAppTheme } from "../providers/ThemeProvider";
-import { useAuth } from "../providers/AuthProvider";
-import type { AppTheme } from "../constants/theme";
+import AppShell from "../components/AppShell";
+import { SearchBar } from "../components/ui";
 import {
     parseStudentEmail,
     sortSubjects,
-    subjectCode,
     subjectColour,
     subjectDisplayName,
     subjectIcon,
-    subjectMeta,
 } from "../constants/subjects";
+import type { AppTheme } from "../constants/theme";
+import { useApiData } from "../hooks/use-api-data";
+import { useAuth } from "../providers/AuthProvider";
+import { useAppTheme } from "../providers/ThemeProvider";
+import {
+    api,
+    type Chapter,
+    type Department,
+    type Subject,
+    type Topic,
+} from "../services/api";
 
-// ─── Spacing scale (8px grid) ─────────────────────────────────────────────────
 const SP = {
     xs: 4,
     sm: 8,
     md: 12,
     lg: 16,
     xl: 20,
-    xxl: 24,
-    xxxl: 32,
+    xxl: 28,
 } as const;
 
-// ─── Shared UI primitives ─────────────────────────────────────────────────────
+type SliceState<T> =
+    | { status: "idle" }
+    | { status: "loading" }
+    | { status: "error"; message: string }
+    | { status: "success"; data: T };
 
-function LoadingRow({ label, accent }: { label: string; accent: string }) {
-    return (
-        <View
-            style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: SP.md,
-                paddingVertical: SP.lg,
-                paddingHorizontal: SP.xs,
-            }}
-        >
-            <ActivityIndicator color={accent} size="small" />
-            <Text style={{ color: accent, fontSize: 13, fontWeight: "600" }}>{label}</Text>
-        </View>
-    );
+function pickDefaultDeptId(
+    departments: Department[],
+    deptCode: string | null | undefined,
+): number | null {
+    if (departments.length === 0) return null;
+    if (deptCode) {
+        const needle = deptCode.toLowerCase();
+        const match = departments.find((d) => {
+            const name = d.deptName.toLowerCase();
+            if (needle === "co") {
+                return (
+                    name.includes("computer") ||
+                    name.includes("cse") ||
+                    name === "co"
+                );
+            }
+            return name.includes(needle);
+        });
+        if (match) return match.deptId;
+    }
+    return departments[0].deptId;
 }
-
-function ErrorCard({
-    message,
-    onRetry,
-    styles,
-    dangerColor,
-}: {
-    message: string;
-    onRetry: () => void;
-    styles: ReturnType<typeof makeStyles>;
-    dangerColor: string;
-}) {
-    return (
-        <View style={styles.errorCard}>
-            <Ionicons name="alert-circle-outline" size={20} color={dangerColor} />
-            <View style={{ flex: 1 }}>
-                <Text style={styles.errorTitle}>Could not load data</Text>
-                <Text style={styles.errorMessage} numberOfLines={3}>
-                    {message}
-                </Text>
-            </View>
-            <Pressable onPress={onRetry} style={styles.retryButton}>
-                <Text style={styles.retryText}>Retry</Text>
-            </Pressable>
-        </View>
-    );
-}
-
-function EmptyCard({
-    text,
-    styles,
-    mutedColor,
-}: {
-    text: string;
-    styles: ReturnType<typeof makeStyles>;
-    mutedColor: string;
-}) {
-    return (
-        <View style={styles.emptyCard}>
-            <Ionicons name="file-tray-outline" size={28} color={mutedColor} />
-            <Text style={styles.emptyText}>{text}</Text>
-        </View>
-    );
-}
-
-// ─── Main screen ──────────────────────────────────────────────────────────────
 
 export default function SyllabusScreen() {
+    const router = useRouter();
     const { theme } = useAppTheme();
     const { user } = useAuth();
-    const styles = useMemo(() => makeStyles(theme), [theme]);
-    const insets = useSafeAreaInsets();
-    const router = useRouter();
-    const params = useLocalSearchParams<{ subjectKey?: string }>();
+    const s = useMemo(() => makeStyles(theme), [theme]);
 
-    // Calculate authenticated student profile dynamically
     const studentProfile = useMemo(
         () => (user?.email ? parseStudentEmail(user.email) : null),
         [user],
     );
 
-    // Store selected subject KEY (number) and chapter as state.
-    const [selectedSubjectKey, setSelectedSubjectKey] = useState<number | null>(
-        () => {
-            const k = Number(params.subjectKey);
-            return Number.isFinite(k) && k > 0 ? k : null;
-        },
-    );
-    const [selectedChapterKey, setSelectedChapterKey] = useState<number | null>(
-        null,
-    );
+    const fetchDepartments = useCallback(() => api.getDepartments(), []);
+    const departmentsState = useApiData<Department[]>(fetchDepartments);
 
-    // ── Subjects ──────────────────────────────────────────────────────────────
-    const fetchSubjects = useCallback(() => api.getSubjects(), []);
-    const subjectsState = useApiData<Subject[]>(fetchSubjects);
+    const fetchAllSubjects = useCallback(() => api.getSubjects(), []);
+    const allSubjectsState = useApiData<Subject[]>(fetchAllSubjects);
 
-    // ── Derived: resolve subject object from key ──────────────────────────────
-    const subjectsData =
-        subjectsState.status === "success" ? subjectsState.data : null;
-    const subjects = useMemo(
-        () => (subjectsData ? sortSubjects(subjectsData) : []),
-        [subjectsData],
-    );
+    const [selectedDeptId, setSelectedDeptId] = useState<number | null>(null);
+    const [semesterFilter, setSemesterFilter] = useState<number | null>(null);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [expandedSubjects, setExpandedSubjects] = useState<
+        Record<number, boolean>
+    >({});
+    const [expandedChapters, setExpandedChapters] = useState<
+        Record<number, boolean>
+    >({});
+    const [chaptersBySubject, setChaptersBySubject] = useState<
+        Record<number, SliceState<Chapter[]>>
+    >({});
+    const [topicsByChapter, setTopicsByChapter] = useState<
+        Record<number, SliceState<Topic[]>>
+    >({});
 
-    const selectedSubject = useMemo(
+    const departments = useMemo(
         () =>
-            selectedSubjectKey != null
-                ? (subjects.find((s) => s.subjectKey === selectedSubjectKey) ??
-                  null)
-                : null,
-        [subjects, selectedSubjectKey],
+            departmentsState.status === "success" ? departmentsState.data : [],
+        [departmentsState],
     );
 
-    // ── Chapters ──────────────────────────────────────────────────────────────
-    const fetchChapters = useCallback(
-        () =>
-            selectedSubjectKey != null
-                ? api.getChapters(selectedSubjectKey)
-                : Promise.resolve([]),
-        [selectedSubjectKey],
-    );
-    const chaptersState = useApiData<Chapter[]>(
-        fetchChapters,
-        selectedSubjectKey != null,
+    const activeDeptId = useMemo(() => {
+        if (selectedDeptId !== null) return selectedDeptId;
+        return pickDefaultDeptId(departments, studentProfile?.deptCode);
+    }, [selectedDeptId, departments, studentProfile]);
+
+    const activeDepartment = useMemo(
+        () => departments.find((d) => d.deptId === activeDeptId) ?? null,
+        [departments, activeDeptId],
     );
 
-    const chaptersData =
-        chaptersState.status === "success" ? chaptersState.data : null;
-    const chapters = useMemo(
-        () =>
-            chaptersData
-                ? [...chaptersData].sort((a, b) => a.chapterNo - b.chapterNo)
-                : [],
-        [chaptersData],
-    );
+    const deptSubjects = useMemo(() => {
+        if (allSubjectsState.status !== "success") return [];
+        const filtered =
+            activeDeptId === null
+                ? allSubjectsState.data
+                : allSubjectsState.data.filter(
+                      (sub) => sub.deptId === activeDeptId,
+                  );
+        return sortSubjects(filtered);
+    }, [allSubjectsState, activeDeptId]);
 
-    // ── Topics ────────────────────────────────────────────────────────────────
-    const fetchTopics = useCallback(
-        () =>
-            selectedChapterKey != null
-                ? api.getTopics(selectedChapterKey)
-                : Promise.resolve([]),
-        [selectedChapterKey],
-    );
-    const topicsState = useApiData<Topic[]>(
-        fetchTopics,
-        selectedChapterKey != null,
-    );
-
-    const topics = topicsState.status === "success" ? topicsState.data : [];
-
-    // ── Helpers ───────────────────────────────────────────────────────
-    function selectSubject(key: number | null) {
-        setSelectedSubjectKey(key);
-        setSelectedChapterKey(null);
-    }
-
-    function selectChapter(id: number | null) {
-        setSelectedChapterKey(id);
-    }
-
-    // ── Semester filter + grouping ────────────────────────────────────────────
-    const [semesterFilter, setSemesterFilter] = useState<number | null>(() => {
-        if (params.subjectKey) return null;
-        return studentProfile?.currentSemester ?? null;
-    });
-
-    const [prevProfileSem, setPrevProfileSem] = useState<number | undefined>(
-        studentProfile?.currentSemester,
-    );
-    if (!params.subjectKey && studentProfile?.currentSemester !== prevProfileSem) {
-        setPrevProfileSem(studentProfile?.currentSemester);
-        setSemesterFilter(studentProfile?.currentSemester ?? null);
-    }
-
-    const semesters = useMemo(
-        () =>
-            Array.from(new Set(subjects.map((s) => s.semester ?? 0))).sort(
-                (a, b) => a - b,
-            ),
-        [subjects],
-    );
-
-    const groupedSubjects = useMemo(() => {
-        const groups = new Map<number, Subject[]>();
-        for (const s of subjects) {
-            const sem = s.semester ?? 0;
-            if (semesterFilter != null && sem !== semesterFilter) continue;
-            if (!groups.has(sem)) groups.set(sem, []);
-            groups.get(sem)!.push(s);
+    const availableSemesters = useMemo(() => {
+        const set = new Set<number>();
+        for (const sub of deptSubjects) {
+            if (typeof sub.semester === "number") {
+                set.add(sub.semester);
+            }
         }
-        return Array.from(groups.entries()).sort(([a], [b]) => a - b);
-    }, [subjects, semesterFilter]);
+        return Array.from(set).sort((a, b) => a - b);
+    }, [deptSubjects]);
 
-    // ── Inline renderers ──────────────────────────────────────────────────────
-    function renderTopics(colour: string) {
-        return (
-            <View
-                style={[styles.topicList, { borderLeftColor: colour + "55" }]}
-            >
-                {topicsState.status === "loading" && (
-                    <LoadingRow label="Loading topics…" accent={colour} />
-                )}
-                {topicsState.status === "error" && (
-                    <ErrorCard
-                        message={topicsState.message}
-                        onRetry={topicsState.refresh}
-                        styles={styles}
-                        dangerColor={theme.danger}
-                    />
-                )}
-                {topicsState.status === "success" && topics.length === 0 && (
-                    <Text style={styles.inlineEmpty}>
-                        No topics found for this chapter.
-                    </Text>
-                )}
-                {topics.map((topic, i) => (
-                    <View key={topic.topicId} style={styles.topicRow}>
-                        <View
-                            style={[
-                                styles.topicDot,
-                                { backgroundColor: colour },
-                            ]}
-                        />
-                        <View style={{ flex: 1 }}>
-                            <Text style={styles.topicName}>
-                                {topic.topicName}
-                            </Text>
-                        </View>
-                        <Text style={styles.topicIdx}>#{i + 1}</Text>
-                    </View>
-                ))}
-            </View>
-        );
-    }
+    const visibleSubjects = useMemo(() => {
+        let base = deptSubjects;
+        if (semesterFilter !== null) {
+            base = base.filter((sub) => sub.semester === semesterFilter);
+        }
+        const q = searchQuery.trim().toLowerCase();
+        if (q) {
+            base = base.filter(
+                (sub) =>
+                    (sub.subjectName ?? "").toLowerCase().includes(q) ||
+                    sub.subjectId.toLowerCase().includes(q),
+            );
+        }
+        return base;
+    }, [deptSubjects, semesterFilter, searchQuery]);
 
-    function renderChapters(colour: string) {
-        return (
-            <View style={styles.chapterList}>
-                {chaptersState.status === "loading" && (
-                    <LoadingRow label="Loading chapters…" accent={colour} />
-                )}
-                {chaptersState.status === "error" && (
-                    <ErrorCard
-                        message={chaptersState.message}
-                        onRetry={chaptersState.refresh}
-                        styles={styles}
-                        dangerColor={theme.danger}
-                    />
-                )}
-                {chaptersState.status === "success" && chapters.length === 0 && (
-                    <Text style={styles.inlineEmpty}>
-                        No chapters listed under this subject.
-                    </Text>
-                )}
-                {chapters.map((chapter) => {
-                    const open = selectedChapterKey === chapter.chapterId;
-                    return (
-                        <View
-                            key={chapter.chapterId}
-                            style={[
-                                styles.chapterCard,
-                                open && { borderColor: colour },
-                            ]}
-                        >
-                            <Pressable
-                                accessibilityRole="button"
-                                accessibilityLabel={`${open ? "Collapse" : "Expand"} chapter ${chapter.chapterNo}: ${chapter.chapterName}`}
-                                accessibilityState={{ expanded: open }}
-                                onPress={() =>
-                                    selectChapter(open ? null : chapter.chapterId)
-                                }
-                                style={styles.chapterPressable}
-                            >
-                                <View
-                                    style={[
-                                        styles.chapterNumberBadge,
-                                        { backgroundColor: colour + "20" },
-                                    ]}
-                                >
-                                    <Text
-                                        style={[
-                                            styles.chapterNumberText,
-                                            { color: colour },
-                                        ]}
-                                    >
-                                        CH {chapter.chapterNo}
-                                    </Text>
-                                </View>
-                                <Text
-                                    style={styles.chapterName}
-                                    numberOfLines={2}
-                                >
-                                    {chapter.chapterName}
-                                </Text>
-                                <Ionicons
-                                    name={open ? "chevron-up" : "chevron-down"}
-                                    size={16}
-                                    color={theme.muted}
-                                />
-                            </Pressable>
+    const groupedBySemester = useMemo(() => {
+        const groups = new Map<number | "other", Subject[]>();
+        for (const sub of visibleSubjects) {
+            const key =
+                typeof sub.semester === "number" ? sub.semester : "other";
+            const bucket = groups.get(key);
+            if (bucket) {
+                bucket.push(sub);
+            } else {
+                groups.set(key, [sub]);
+            }
+        }
+        return Array.from(groups.entries()).sort(([a], [b]) => {
+            if (a === "other") return 1;
+            if (b === "other") return -1;
+            return a - b;
+        });
+    }, [visibleSubjects]);
 
-                            {open && renderTopics(colour)}
-                        </View>
-                    );
-                })}
-            </View>
-        );
-    }
+    const loadChapters = useCallback(async (subjectKey: number) => {
+        setChaptersBySubject((prev) => ({
+            ...prev,
+            [subjectKey]: { status: "loading" },
+        }));
+        try {
+            const chapters = await api.getChapters(subjectKey);
+            const sorted = [...chapters].sort(
+                (a, b) =>
+                    (a.chapterNumber ?? a.chapterNo ?? a.chapterId) -
+                    (b.chapterNumber ?? b.chapterNo ?? b.chapterId),
+            );
+            setChaptersBySubject((prev) => ({
+                ...prev,
+                [subjectKey]: { status: "success", data: sorted },
+            }));
+        } catch (err) {
+            const message =
+                err instanceof Error ? err.message : "Failed to load chapters";
+            setChaptersBySubject((prev) => ({
+                ...prev,
+                [subjectKey]: { status: "error", message },
+            }));
+        }
+    }, []);
+
+    const loadTopics = useCallback(async (chapterId: number) => {
+        setTopicsByChapter((prev) => ({
+            ...prev,
+            [chapterId]: { status: "loading" },
+        }));
+        try {
+            const topics = await api.getTopics(chapterId);
+            setTopicsByChapter((prev) => ({
+                ...prev,
+                [chapterId]: { status: "success", data: topics },
+            }));
+        } catch (err) {
+            const message =
+                err instanceof Error ? err.message : "Failed to load topics";
+            setTopicsByChapter((prev) => ({
+                ...prev,
+                [chapterId]: { status: "error", message },
+            }));
+        }
+    }, []);
+
+    const toggleSubject = useCallback(
+        (subjectKey: number) => {
+            setExpandedSubjects((prev) => {
+                const nextOpen = !prev[subjectKey];
+                if (nextOpen && !chaptersBySubject[subjectKey]) {
+                    void loadChapters(subjectKey);
+                }
+                return { ...prev, [subjectKey]: nextOpen };
+            });
+        },
+        [chaptersBySubject, loadChapters],
+    );
+
+    const toggleChapter = useCallback(
+        (chapterId: number) => {
+            setExpandedChapters((prev) => {
+                const nextOpen = !prev[chapterId];
+                if (nextOpen && !topicsByChapter[chapterId]) {
+                    void loadTopics(chapterId);
+                }
+                return { ...prev, [chapterId]: nextOpen };
+            });
+        },
+        [topicsByChapter, loadTopics],
+    );
+
+    const selectDepartment = (deptId: number) => {
+        setSelectedDeptId(deptId);
+        setSemesterFilter(null);
+    };
+
+    const isLoadingInitial =
+        departmentsState.status === "loading" ||
+        allSubjectsState.status === "loading";
+    const initialError =
+        departmentsState.status === "error"
+            ? departmentsState.message
+            : allSubjectsState.status === "error"
+              ? allSubjectsState.message
+              : null;
+
+    const retryInitial = () => {
+        departmentsState.refresh();
+        allSubjectsState.refresh();
+    };
+
+    const hasActiveFilters = semesterFilter !== null || searchQuery.trim().length > 0;
 
     return (
-        <View
-            style={[
-                styles.screen,
-                { paddingTop: insets.top, paddingBottom: insets.bottom },
-            ]}
-        >
-            <ScrollView
-                style={styles.scroll}
-                contentContainerStyle={styles.scrollContent}
-                showsVerticalScrollIndicator={false}
-            >
-                {/* ── Top Bar ─────────────────────────────────────────────────── */}
-                <View style={styles.topBar}>
+        <AppShell active="syllabus">
+            <View style={s.container}>
+                {/* Header */}
+                <View style={s.header}>
                     <Pressable
-                        onPress={() => {
-                            if (router.canGoBack()) {
-                                router.back();
-                            } else {
-                                router.replace("/");
-                            }
-                        }}
-                        style={styles.iconButton}
-                        accessibilityRole="button"
-                        accessibilityLabel="Go back"
+                        onPress={() => router.back()}
+                        style={s.backBtn}
+                        hitSlop={8}
                     >
-                        <Ionicons name="chevron-back" size={20} color={theme.text} />
+                        <Ionicons
+                            name="chevron-back"
+                            size={20}
+                            color={theme.text}
+                        />
                     </Pressable>
-
-                    <Text style={styles.topBarTitle}>Syllabus</Text>
-
-                    <View style={styles.topBarRight}>
-                        <Pressable
-                            onPress={() =>
-                                router.push(
-                                    (selectedSubjectKey != null
-                                        ? `/syllabus-tracker?subjectKey=${selectedSubjectKey}`
-                                        : "/syllabus-tracker") as never,
-                                )
-                            }
-                            style={styles.trackerLinkBtn}
-                            accessibilityRole="button"
-                            accessibilityLabel="Open Syllabus Tracker"
-                        >
-                            <Text style={styles.trackerLinkText}>
-                                Track Coverage →
-                            </Text>
-                        </Pressable>
-                        {studentProfile && (
-                            <View style={styles.profileBadge}>
-                                <Text style={styles.profileBadgeText}>
-                                    {`Sem ${studentProfile.currentSemester}`}
-                                </Text>
-                            </View>
-                        )}
+                    <View style={{ flex: 1 }}>
+                        <Text style={s.eyebrow}>COURSE CURRICULUM</Text>
+                        <Text style={s.title}>Syllabus</Text>
                     </View>
-                </View>
-
-                {/* ── Header ──────────────────────────────────────────────────── */}
-                <View style={styles.header}>
-                    <Text style={styles.eyebrow}>CURRICULUM REPOSITORY</Text>
-                    <Text style={styles.headerTitle}>Course Syllabus</Text>
-                    <Text style={styles.headerSubtitle}>
-                        {studentProfile
-                            ? `Personalized for ${studentProfile.deptCode} (Semester ${studentProfile.currentSemester})`
-                            : "Browse through subjects, chapters, and topics."}
-                    </Text>
-                </View>
-
-                {/* ── Semester filter pills ──────────────────────────────────── */}
-                {semesters.length > 0 && (
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.filterRow}
+                    <Pressable
+                        onPress={() => router.push("/syllabus-tracker" as never)}
+                        style={s.trackerBannerBtn}
                     >
-                        {studentProfile && (
+                        <Ionicons
+                            name="git-network-outline"
+                            size={15}
+                            color="#FFFFFF"
+                        />
+                        <Text style={s.trackerBannerBtnText}>
+                            Open Tracker
+                        </Text>
+                    </Pressable>
+                </View>
+
+                <Text style={s.subtitle}>
+                    Select your department and semester to explore subjects,
+                    chapters, and topics.
+                </Text>
+
+                {/* Department Selector */}
+                {departments.length > 0 && (
+                    <View style={s.sectionBlock}>
+                        <Text style={s.filterLabel}>DEPARTMENT</Text>
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={s.pillRow}
+                        >
+                            {departments.map((dept) => {
+                                const active = dept.deptId === activeDeptId;
+                                return (
+                                    <Pressable
+                                        key={dept.deptId}
+                                        onPress={() =>
+                                            selectDepartment(dept.deptId)
+                                        }
+                                        style={[
+                                            s.deptCard,
+                                            active && s.deptCardActive,
+                                        ]}
+                                    >
+                                        <View
+                                            style={[
+                                                s.deptIconWrap,
+                                                active && s.deptIconWrapActive,
+                                            ]}
+                                        >
+                                            <Ionicons
+                                                name="school-outline"
+                                                size={16}
+                                                color={
+                                                    active
+                                                        ? "#FFFFFF"
+                                                        : theme.accent
+                                                }
+                                            />
+                                        </View>
+                                        <Text
+                                            style={[
+                                                s.deptText,
+                                                active && s.deptTextActive,
+                                            ]}
+                                        >
+                                            {dept.deptName}
+                                        </Text>
+                                    </Pressable>
+                                );
+                            })}
+                        </ScrollView>
+                    </View>
+                )}
+
+                {/* Search Bar */}
+                <SearchBar
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    placeholder="Search subjects by name or code (e.g. CS201, Operating Systems)..."
+                />
+
+                {/* Semester Filter */}
+                {availableSemesters.length > 0 && (
+                    <View style={s.sectionBlock}>
+                        <View style={s.filterHeaderRow}>
+                            <Text style={s.filterLabel}>SEMESTER</Text>
+                            {hasActiveFilters && (
+                                <Pressable
+                                    onPress={() => {
+                                        setSemesterFilter(null);
+                                        setSearchQuery("");
+                                    }}
+                                    hitSlop={8}
+                                >
+                                    <Text style={s.clearFiltersText}>Clear filters</Text>
+                                </Pressable>
+                            )}
+                        </View>
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={s.pillRow}
+                        >
+                            {studentProfile?.currentSemester &&
+                                availableSemesters.includes(
+                                    studentProfile.currentSemester,
+                                ) && (
+                                    <Pressable
+                                        onPress={() =>
+                                            setSemesterFilter(
+                                                semesterFilter ===
+                                                    studentProfile.currentSemester
+                                                    ? null
+                                                    : studentProfile.currentSemester,
+                                            )
+                                        }
+                                        style={[
+                                            s.semPill,
+                                            semesterFilter ===
+                                                studentProfile.currentSemester &&
+                                                s.semPillActive,
+                                        ]}
+                                    >
+                                        <Text
+                                            style={[
+                                                s.semPillText,
+                                                semesterFilter ===
+                                                    studentProfile.currentSemester &&
+                                                    s.semPillTextActive,
+                                            ]}
+                                        >
+                                            ★ Sem{" "}
+                                            {studentProfile.currentSemester}{" "}
+                                            (My Sem)
+                                        </Text>
+                                    </Pressable>
+                                )}
                             <Pressable
-                                onPress={() =>
-                                    setSemesterFilter(
-                                        semesterFilter === studentProfile.currentSemester
-                                            ? null
-                                            : studentProfile.currentSemester,
-                                    )
-                                }
+                                onPress={() => setSemesterFilter(null)}
                                 style={[
-                                    styles.filterPill,
-                                    semesterFilter === studentProfile.currentSemester &&
-                                        styles.filterPillActive,
+                                    s.semPill,
+                                    semesterFilter === null && s.semPillActive,
                                 ]}
                             >
                                 <Text
                                     style={[
-                                        styles.filterPillText,
-                                        semesterFilter === studentProfile.currentSemester &&
-                                            styles.filterPillTextActive,
+                                        s.semPillText,
+                                        semesterFilter === null &&
+                                            s.semPillTextActive,
                                     ]}
                                 >
-                                    ★ My Semester (Sem {studentProfile.currentSemester})
+                                    All Semesters ({deptSubjects.length})
                                 </Text>
                             </Pressable>
-                        )}
-
-                        <Pressable
-                            onPress={() => setSemesterFilter(null)}
-                            style={[
-                                styles.filterPill,
-                                semesterFilter === null && styles.filterPillActive,
-                            ]}
-                        >
-                            <Text
-                                style={[
-                                    styles.filterPillText,
-                                    semesterFilter === null &&
-                                        styles.filterPillTextActive,
-                                ]}
-                            >
-                                All Semesters
-                            </Text>
-                        </Pressable>
-
-                        {semesters.map((sem) => {
-                            const active = semesterFilter === sem;
-                            return (
-                                <Pressable
-                                    key={sem}
-                                    onPress={() =>
-                                        setSemesterFilter(active ? null : sem)
-                                    }
-                                    style={[
-                                        styles.filterPill,
-                                        active && styles.filterPillActive,
-                                    ]}
-                                >
-                                    <Text
+                            {availableSemesters.map((sem) => {
+                                const active = semesterFilter === sem;
+                                return (
+                                    <Pressable
+                                        key={sem}
+                                        onPress={() =>
+                                            setSemesterFilter(
+                                                active ? null : sem,
+                                            )
+                                        }
                                         style={[
-                                            styles.filterPillText,
-                                            active && styles.filterPillTextActive,
+                                            s.semPill,
+                                            active && s.semPillActive,
                                         ]}
                                     >
-                                        {sem === 0 ? "Other" : `Sem ${sem}`}
-                                    </Text>
-                                </Pressable>
-                            );
-                        })}
-                    </ScrollView>
+                                        <Text
+                                            style={[
+                                                s.semPillText,
+                                                active && s.semPillTextActive,
+                                            ]}
+                                        >
+                                            Semester {sem}
+                                        </Text>
+                                    </Pressable>
+                                );
+                            })}
+                        </ScrollView>
+                    </View>
                 )}
 
-                {subjectsState.status === "loading" && (
-                    <LoadingRow
-                        label="Loading subjects…"
-                        accent={theme.accent}
-                    />
+                {/* Content */}
+                {isLoadingInitial && (
+                    <View style={s.centerCard}>
+                        <ActivityIndicator size="large" color={theme.accent} />
+                        <Text style={s.mutedText}>Loading syllabus...</Text>
+                    </View>
                 )}
-                {subjectsState.status === "error" && (
-                    <ErrorCard
-                        message={subjectsState.message}
-                        onRetry={subjectsState.refresh}
-                        styles={styles}
-                        dangerColor={theme.danger}
-                    />
+
+                {!isLoadingInitial && initialError && (
+                    <View style={s.errorCard}>
+                        <Ionicons
+                            name="alert-circle-outline"
+                            size={24}
+                            color={theme.danger}
+                        />
+                        <View style={{ flex: 1 }}>
+                            <Text style={s.errorTitle}>
+                                Couldn&apos;t load syllabus
+                            </Text>
+                            <Text style={s.errorMessage}>{initialError}</Text>
+                        </View>
+                        <Pressable onPress={retryInitial} style={s.retryButton}>
+                            <Text style={s.retryText}>Retry</Text>
+                        </Pressable>
+                    </View>
                 )}
-                {subjectsState.status === "success" &&
-                    groupedSubjects.length === 0 && (
-                        <View style={{ gap: 12 }}>
-                            <EmptyCard
-                                text={
-                                    semesterFilter !== null
-                                        ? `No subjects found for Semester ${semesterFilter}. Switch to All Semesters to view full curriculum.`
-                                        : "No subjects found."
-                                }
-                                styles={styles}
-                                mutedColor={theme.muted}
+
+                {!isLoadingInitial &&
+                    !initialError &&
+                    visibleSubjects.length === 0 && (
+                        <View style={s.emptyCard}>
+                            <Ionicons
+                                name="book-outline"
+                                size={32}
+                                color={theme.muted}
                             />
-                            {semesterFilter !== null && (
+                            <Text style={s.emptyText}>
+                                {activeDepartment
+                                    ? `No subjects found for ${activeDepartment.deptName}${
+                                          semesterFilter !== null
+                                              ? ` in Semester ${semesterFilter}`
+                                              : ""
+                                      }.`
+                                    : "No subjects available yet."}
+                            </Text>
+                            {hasActiveFilters && (
                                 <Pressable
-                                    onPress={() => setSemesterFilter(null)}
-                                    style={styles.retryButton}
+                                    onPress={() => {
+                                        setSemesterFilter(null);
+                                        setSearchQuery("");
+                                    }}
+                                    style={s.retryButton}
                                 >
-                                    <Text style={styles.retryText}>
-                                        View All Semesters
-                                    </Text>
+                                    <Text style={s.retryText}>Clear Filters</Text>
                                 </Pressable>
                             )}
                         </View>
                     )}
 
-                {/* ── Vertical subject list, grouped by semester ────────────────── */}
-                {groupedSubjects.map(([sem, list]) => (
-                    <View key={sem} style={styles.semesterGroup}>
-                        <View style={styles.semesterHeader}>
-                            <Text style={styles.semesterTitle}>
-                                {sem === 0 ? "OTHER" : `SEMESTER ${sem}`}
-                            </Text>
-                            <View style={styles.semesterLine} />
-                            <Text style={styles.semesterCount}>
-                                {list.length}{" "}
-                                {list.length === 1 ? "subject" : "subjects"}
-                            </Text>
-                        </View>
+                {!isLoadingInitial &&
+                    !initialError &&
+                    groupedBySemester.map(([semKey, subjects]) => (
+                        <View key={String(semKey)} style={s.semesterGroup}>
+                            <View style={s.semesterBanner}>
+                                <View style={s.semesterBadge}>
+                                    <Text style={s.semesterBadgeText}>
+                                        {semKey === "other"
+                                            ? "GENERAL"
+                                            : `SEMESTER ${semKey}`}
+                                    </Text>
+                                </View>
+                                <Text style={s.semesterCount}>
+                                    {subjects.length}{" "}
+                                    {subjects.length === 1
+                                        ? "subject"
+                                        : "subjects"}
+                                </Text>
+                            </View>
 
-                        {list.map((subject) => {
-                            const active =
-                                selectedSubject?.subjectKey ===
-                                subject.subjectKey;
-                            const colour = subjectColour(subject);
-                            const name = subjectDisplayName(subject);
-                            const code = subjectCode(subject);
-                            return (
-                                <View
-                                    key={subject.subjectKey}
-                                    style={[
-                                        styles.subjectCard,
-                                        active && { borderColor: colour },
-                                    ]}
-                                >
-                                    <View
-                                        style={[
-                                            styles.subjectAccent,
-                                            { backgroundColor: colour },
-                                        ]}
-                                    />
-                                    <Pressable
-                                        accessibilityRole="button"
-                                        accessibilityLabel={`${active ? "Collapse" : "Expand"} subject ${name}`}
-                                        accessibilityState={{
-                                            expanded: active,
-                                        }}
-                                        onPress={() =>
-                                            selectSubject(
-                                                active
-                                                    ? null
-                                                    : subject.subjectKey,
-                                            )
-                                        }
-                                        style={styles.subjectPressable}
-                                    >
-                                        <View style={styles.subjectRow}>
+                            <View style={s.subjectList}>
+                                {subjects.map((subject) => {
+                                    const accent = subjectColour(subject);
+                                    const icon = subjectIcon(subject);
+                                    const isOpen =
+                                        !!expandedSubjects[subject.subjectKey];
+                                    const chaptersSlice =
+                                        chaptersBySubject[subject.subjectKey];
+
+                                    return (
+                                        <View
+                                            key={subject.subjectKey}
+                                            style={s.subjectCard}
+                                        >
                                             <View
                                                 style={[
-                                                    styles.subjectIconBox,
-                                                    {
-                                                        backgroundColor:
-                                                            colour + "26",
-                                                    },
+                                                    s.subjectAccent,
+                                                    { backgroundColor: accent },
                                                 ]}
-                                            >
-                                                <Text
-                                                    style={[
-                                                        styles.subjectIcon,
-                                                        { color: colour },
-                                                    ]}
-                                                    numberOfLines={1}
-                                                    adjustsFontSizeToFit
-                                                >
-                                                    {subjectIcon(subject)}
-                                                </Text>
-                                            </View>
-                                            <View style={{ flex: 1 }}>
-                                                <Text
-                                                    style={styles.subjectTitle}
-                                                    numberOfLines={2}
-                                                >
-                                                    {name}
-                                                </Text>
-                                                <Text
-                                                    style={styles.subjectMeta}
-                                                >
-                                                    {code !== "" &&
-                                                    code !== name
-                                                        ? `${code} · `
-                                                        : ""}
-                                                    {subjectMeta(subject)}
-                                                </Text>
-                                            </View>
-                                            <Ionicons
-                                                name={active ? "chevron-up" : "chevron-down"}
-                                                size={18}
-                                                color={theme.muted}
                                             />
-                                        </View>
-                                    </Pressable>
+                                            <Pressable
+                                                onPress={() =>
+                                                    toggleSubject(
+                                                        subject.subjectKey,
+                                                    )
+                                                }
+                                                style={s.subjectPressable}
+                                            >
+                                                <View style={s.subjectRow}>
+                                                    <View
+                                                        style={[
+                                                            s.subjectIconBox,
+                                                            {
+                                                                backgroundColor: `${accent}20`,
+                                                            },
+                                                        ]}
+                                                    >
+                                                        <Text
+                                                            style={[
+                                                                s.subjectIcon,
+                                                                {
+                                                                    color: accent,
+                                                                },
+                                                            ]}
+                                                        >
+                                                            {icon}
+                                                        </Text>
+                                                    </View>
+                                                    <View style={{ flex: 1 }}>
+                                                        <Text
+                                                            style={
+                                                                s.subjectTitle
+                                                            }
+                                                        >
+                                                            {subjectDisplayName(
+                                                                subject,
+                                                            )}
+                                                        </Text>
+                                                        <Text
+                                                            style={
+                                                                s.subjectMeta
+                                                            }
+                                                        >
+                                                            {subject.subjectId}
+                                                            {subject.department
+                                                                ?.deptName
+                                                                ? ` • ${subject.department.deptName}`
+                                                                : ""}
+                                                        </Text>
+                                                    </View>
+                                                    <Ionicons
+                                                        name={
+                                                            isOpen
+                                                                ? "chevron-up"
+                                                                : "chevron-down"
+                                                        }
+                                                        size={18}
+                                                        color={theme.muted}
+                                                    />
+                                                </View>
+                                            </Pressable>
 
-                                    {active && renderChapters(colour)}
-                                </View>
-                            );
-                        })}
-                    </View>
-                ))}
-            </ScrollView>
-        </View>
+                                            {isOpen && (
+                                                <View style={s.chapterList}>
+                                                    {(!chaptersSlice ||
+                                                        chaptersSlice.status ===
+                                                            "loading") && (
+                                                        <View
+                                                            style={s.inlineRow}
+                                                        >
+                                                            <ActivityIndicator
+                                                                size="small"
+                                                                color={accent}
+                                                            />
+                                                            <Text
+                                                                style={
+                                                                    s.mutedText
+                                                                }
+                                                            >
+                                                                Loading
+                                                                chapters...
+                                                            </Text>
+                                                        </View>
+                                                    )}
+
+                                                    {chaptersSlice?.status ===
+                                                        "error" && (
+                                                        <View
+                                                            style={s.inlineRow}
+                                                        >
+                                                            <Text
+                                                                style={
+                                                                    s.errorMessage
+                                                                }
+                                                            >
+                                                                {
+                                                                    chaptersSlice.message
+                                                                }
+                                                            </Text>
+                                                            <Pressable
+                                                                onPress={() =>
+                                                                    loadChapters(
+                                                                        subject.subjectKey,
+                                                                    )
+                                                                }
+                                                            >
+                                                                <Text
+                                                                    style={[
+                                                                        s.retryInline,
+                                                                        {
+                                                                            color: accent,
+                                                                        },
+                                                                    ]}
+                                                                >
+                                                                    Retry
+                                                                </Text>
+                                                            </Pressable>
+                                                        </View>
+                                                    )}
+
+                                                    {chaptersSlice?.status ===
+                                                        "success" &&
+                                                        chaptersSlice.data
+                                                            .length === 0 && (
+                                                            <Text
+                                                                style={
+                                                                    s.inlineEmpty
+                                                                }
+                                                            >
+                                                                No chapters
+                                                                listed for this
+                                                                subject yet.
+                                                            </Text>
+                                                        )}
+
+                                                    {chaptersSlice?.status ===
+                                                        "success" &&
+                                                        chaptersSlice.data.map(
+                                                            (chapter, cIdx) => {
+                                                                const chOpen =
+                                                                    !!expandedChapters[
+                                                                        chapter
+                                                                            .chapterId
+                                                                    ];
+                                                                const topicsSlice =
+                                                                    topicsByChapter[
+                                                                        chapter
+                                                                            .chapterId
+                                                                    ];
+                                                                const numberLabel =
+                                                                    chapter.chapterNumber ??
+                                                                    chapter.chapterNo ??
+                                                                    cIdx + 1;
+
+                                                                return (
+                                                                    <View
+                                                                        key={
+                                                                            chapter.chapterId
+                                                                        }
+                                                                        style={
+                                                                            s.chapterCard
+                                                                        }
+                                                                    >
+                                                                        <Pressable
+                                                                            onPress={() =>
+                                                                                toggleChapter(
+                                                                                    chapter.chapterId,
+                                                                                )
+                                                                            }
+                                                                            style={
+                                                                                s.chapterPressable
+                                                                            }
+                                                                        >
+                                                                            <View
+                                                                                style={[
+                                                                                    s.chapterNumberBadge,
+                                                                                    {
+                                                                                        backgroundColor: `${accent}20`,
+                                                                                    },
+                                                                                ]}
+                                                                            >
+                                                                                <Text
+                                                                                    style={[
+                                                                                        s.chapterNumberText,
+                                                                                        {
+                                                                                            color: accent,
+                                                                                        },
+                                                                                    ]}
+                                                                                >
+                                                                                    Ch{" "}
+                                                                                    {
+                                                                                        numberLabel
+                                                                                    }
+                                                                                </Text>
+                                                                            </View>
+                                                                            <Text
+                                                                                style={
+                                                                                    s.chapterName
+                                                                                }
+                                                                            >
+                                                                                {
+                                                                                    chapter.chapterName
+                                                                                }
+                                                                            </Text>
+                                                                            <Ionicons
+                                                                                name={
+                                                                                    chOpen
+                                                                                        ? "remove-circle-outline"
+                                                                                        : "add-circle-outline"
+                                                                                }
+                                                                                size={
+                                                                                    18
+                                                                                }
+                                                                                color={
+                                                                                    chOpen
+                                                                                        ? accent
+                                                                                        : theme.muted
+                                                                                }
+                                                                            />
+                                                                        </Pressable>
+
+                                                                        {chOpen && (
+                                                                            <View
+                                                                                style={[
+                                                                                    s.topicList,
+                                                                                    {
+                                                                                        borderLeftColor: `${accent}50`,
+                                                                                    },
+                                                                                ]}
+                                                                            >
+                                                                                {(!topicsSlice ||
+                                                                                    topicsSlice.status ===
+                                                                                        "loading") && (
+                                                                                    <View
+                                                                                        style={
+                                                                                            s.inlineRow
+                                                                                        }
+                                                                                    >
+                                                                                        <ActivityIndicator
+                                                                                            size="small"
+                                                                                            color={
+                                                                                                accent
+                                                                                            }
+                                                                                        />
+                                                                                        <Text
+                                                                                            style={
+                                                                                                s.mutedText
+                                                                                            }
+                                                                                        >
+                                                                                            Loading
+                                                                                            topics...
+                                                                                        </Text>
+                                                                                    </View>
+                                                                                )}
+
+                                                                                {topicsSlice?.status ===
+                                                                                    "error" && (
+                                                                                    <View
+                                                                                        style={
+                                                                                            s.inlineRow
+                                                                                        }
+                                                                                    >
+                                                                                        <Text
+                                                                                            style={
+                                                                                                s.errorMessage
+                                                                                            }
+                                                                                        >
+                                                                                            {
+                                                                                                topicsSlice.message
+                                                                                            }
+                                                                                        </Text>
+                                                                                        <Pressable
+                                                                                            onPress={() =>
+                                                                                                loadTopics(
+                                                                                                    chapter.chapterId,
+                                                                                                )
+                                                                                            }
+                                                                                        >
+                                                                                            <Text
+                                                                                                style={[
+                                                                                                    s.retryInline,
+                                                                                                    {
+                                                                                                        color: accent,
+                                                                                                    },
+                                                                                                ]}
+                                                                                            >
+                                                                                                Retry
+                                                                                            </Text>
+                                                                                        </Pressable>
+                                                                                    </View>
+                                                                                )}
+
+                                                                                {topicsSlice?.status ===
+                                                                                    "success" &&
+                                                                                    topicsSlice
+                                                                                        .data
+                                                                                        .length ===
+                                                                                        0 && (
+                                                                                        <Text
+                                                                                            style={
+                                                                                                s.inlineEmpty
+                                                                                            }
+                                                                                        >
+                                                                                            No
+                                                                                            topics
+                                                                                            added
+                                                                                            for
+                                                                                            this
+                                                                                            chapter
+                                                                                            yet.
+                                                                                        </Text>
+                                                                                    )}
+
+                                                                                {topicsSlice?.status ===
+                                                                                    "success" &&
+                                                                                    topicsSlice.data.map(
+                                                                                        (
+                                                                                            topic,
+                                                                                            tIdx,
+                                                                                        ) => (
+                                                                                            <View
+                                                                                                key={
+                                                                                                    topic.topicId
+                                                                                                }
+                                                                                                style={
+                                                                                                    s.topicRow
+                                                                                                }
+                                                                                            >
+                                                                                                <View
+                                                                                                    style={[
+                                                                                                        s.topicDot,
+                                                                                                        {
+                                                                                                            backgroundColor:
+                                                                                                                accent,
+                                                                                                        },
+                                                                                                    ]}
+                                                                                                />
+                                                                                                <Text
+                                                                                                    style={
+                                                                                                        s.topicIdx
+                                                                                                    }
+                                                                                                >
+                                                                                                    {
+                                                                                                        numberLabel
+                                                                                                    }
+                                                                                                    .
+                                                                                                    {tIdx +
+                                                                                                        1}
+                                                                                                </Text>
+                                                                                                <Text
+                                                                                                    style={[
+                                                                                                        s.topicName,
+                                                                                                        {
+                                                                                                            flex: 1,
+                                                                                                        },
+                                                                                                    ]}
+                                                                                                >
+                                                                                                    {
+                                                                                                        topic.topicName
+                                                                                                    }
+                                                                                                </Text>
+                                                                                            </View>
+                                                                                        ),
+                                                                                    )}
+                                                                            </View>
+                                                                        )}
+                                                                    </View>
+                                                                );
+                                                            },
+                                                        )}
+                                                </View>
+                                            )}
+                                        </View>
+                                    );
+                                })}
+                            </View>
+                        </View>
+                    ))}
+            </View>
+        </AppShell>
     );
 }
 
 function makeStyles(t: AppTheme) {
     return StyleSheet.create({
-        screen: {
-            flex: 1,
-            backgroundColor: t.background,
-        },
-        scroll: {
-            flex: 1,
-        },
-        scrollContent: {
-            padding: SP.lg,
-            gap: SP.lg,
-            maxWidth: 1000,
-            alignSelf: "center",
+        container: {
             width: "100%",
+            maxWidth: 1040,
+            alignSelf: "center",
+            gap: SP.lg,
+            paddingBottom: SP.xxl,
         },
-        topBar: {
+        header: {
             flexDirection: "row",
             alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: SP.xs,
+            gap: SP.md,
         },
-        topBarTitle: {
-            fontSize: 16,
-            fontWeight: "700",
-            color: t.text,
-        },
-        topBarRight: {
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 8,
-        },
-        trackerLinkBtn: {
-            backgroundColor: t.surfaceAlt,
-            borderWidth: 1,
-            borderColor: t.accent,
-            paddingHorizontal: 10,
-            paddingVertical: 6,
-            borderRadius: 8,
-        },
-        trackerLinkText: {
-            fontSize: 11,
-            fontWeight: "700",
-            color: t.accent,
-        },
-        profileBadge: {
-            backgroundColor: t.surfaceAlt,
-            paddingHorizontal: 8,
-            paddingVertical: 5,
-            borderRadius: 8,
-            borderWidth: 1,
-            borderColor: t.border,
-        },
-        profileBadgeText: {
-            fontSize: 11,
-            fontWeight: "700",
-            color: t.accent,
-        },
-        iconButton: {
+        backBtn: {
             width: 36,
             height: 36,
             borderRadius: 10,
@@ -716,74 +978,164 @@ function makeStyles(t: AppTheme) {
             alignItems: "center",
             justifyContent: "center",
         },
-        header: {
-            gap: SP.xs,
-        },
         eyebrow: {
             fontSize: 11,
             fontWeight: "800",
-            letterSpacing: 1.2,
+            letterSpacing: 1.1,
             color: t.accent,
         },
-        headerTitle: {
-            fontSize: 26,
+        title: {
+            fontSize: 22,
             fontWeight: "900",
             color: t.text,
-            letterSpacing: -0.4,
         },
-        headerSubtitle: {
+        trackerBannerBtn: {
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 6,
+            backgroundColor: "#8B5CF6",
+            paddingHorizontal: 12,
+            paddingVertical: 8,
+            borderRadius: 10,
+        },
+        trackerBannerBtnText: {
+            fontSize: 12,
+            fontWeight: "800",
+            color: "#FFFFFF",
+        },
+        subtitle: {
             fontSize: 13,
             color: t.muted,
-            lineHeight: 18,
+            lineHeight: 19,
         },
-        filterRow: {
+        sectionBlock: {
             gap: SP.sm,
-            paddingVertical: SP.xs,
         },
-        filterPill: {
-            paddingVertical: 6,
-            paddingHorizontal: 12,
-            borderRadius: 10,
+        filterHeaderRow: {
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+        },
+        filterLabel: {
+            fontSize: 10,
+            fontWeight: "800",
+            letterSpacing: 0.8,
+            color: t.muted,
+        },
+        clearFiltersText: {
+            fontSize: 11,
+            fontWeight: "700",
+            color: t.accent,
+        },
+        pillRow: {
+            gap: SP.sm,
+            paddingVertical: 2,
+        },
+        deptCard: {
+            flexDirection: "row",
+            alignItems: "center",
+            gap: SP.sm,
+            paddingHorizontal: 14,
+            paddingVertical: 10,
+            borderRadius: 12,
             backgroundColor: t.surface,
             borderWidth: 1,
             borderColor: t.border,
         },
-        filterPillActive: {
+        deptCardActive: {
             backgroundColor: t.accent,
             borderColor: t.accent,
         },
-        filterPillText: {
+        deptIconWrap: {
+            width: 28,
+            height: 28,
+            borderRadius: 8,
+            backgroundColor: t.surfaceAlt,
+            alignItems: "center",
+            justifyContent: "center",
+        },
+        deptIconWrapActive: {
+            backgroundColor: "rgba(255,255,255,0.2)",
+        },
+        deptText: {
+            fontSize: 13,
+            fontWeight: "700",
+            color: t.text,
+        },
+        deptTextActive: {
+            color: "#FFFFFF",
+        },
+        semPill: {
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            borderRadius: 9,
+            backgroundColor: t.surface,
+            borderWidth: 1,
+            borderColor: t.border,
+        },
+        semPillActive: {
+            backgroundColor: t.accent,
+            borderColor: t.accent,
+        },
+        semPillText: {
             fontSize: 12,
             fontWeight: "600",
-            color: t.muted,
+            color: t.text,
         },
-        filterPillTextActive: {
+        semPillTextActive: {
             color: "#FFFFFF",
             fontWeight: "700",
         },
-        semesterGroup: {
-            gap: SP.md,
-            marginTop: SP.sm,
+        centerCard: {
+            alignItems: "center",
+            justifyContent: "center",
+            padding: SP.xxl,
+            gap: SP.sm,
         },
-        semesterHeader: {
+        mutedText: {
+            fontSize: 12,
+            color: t.muted,
+        },
+        inlineRow: {
             flexDirection: "row",
             alignItems: "center",
-            gap: SP.md,
+            gap: SP.sm,
+            paddingVertical: SP.xs,
         },
-        semesterTitle: {
-            fontSize: 11,
+        retryInline: {
+            fontSize: 12,
+            fontWeight: "700",
+        },
+        semesterGroup: {
+            gap: SP.sm,
+        },
+        semesterBanner: {
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginTop: SP.xs,
+        },
+        semesterBadge: {
+            paddingHorizontal: 10,
+            paddingVertical: 4,
+            borderRadius: 6,
+            backgroundColor: t.surfaceAlt,
+            borderWidth: 1,
+            borderColor: t.border,
+        },
+        semesterBadgeText: {
+            fontSize: 10,
             fontWeight: "800",
-            color: t.muted,
-            letterSpacing: 1,
-        },
-        semesterLine: {
-            flex: 1,
-            height: 1,
-            backgroundColor: t.border,
+            letterSpacing: 0.8,
+            color: t.accent,
         },
         semesterCount: {
             fontSize: 11,
             color: t.muted,
+            fontWeight: "600",
+        },
+        subjectList: {
+            gap: SP.md,
         },
         subjectCard: {
             backgroundColor: t.surface,

@@ -83,10 +83,13 @@ const NAV_ITEMS: {
 
 /** Breakpoints shared by every screen that uses the shell. */
 export function useLayout() {
-    const { width } = useWindowDimensions();
+    const { width, height } = useWindowDimensions();
     const isWeb = Platform.OS === "web";
     return {
         width,
+        height,
+        isCompact: width < 380,
+        isTablet: width >= 600 && width < 1024,
         isWide: isWeb && width >= 768,
         hasRightPanel: isWeb && width >= 1120,
     };
@@ -98,6 +101,7 @@ export default function AppShell({
     rightPanel,
     floatingFooter,
     hideTopSearch = false,
+    scrollable = true,
 }: {
     active: NavKey;
     children: ReactNode;
@@ -106,6 +110,8 @@ export default function AppShell({
     /** Viewport-pinned footer rendered above bottom navigation */
     floatingFooter?: ReactNode;
     hideTopSearch?: boolean;
+    /** Set false when child screen renders its own FlatList/ScrollView */
+    scrollable?: boolean;
 }) {
     const router = useRouter();
     const { theme, mode, toggleTheme } = useAppTheme();
@@ -155,9 +161,13 @@ export default function AppShell({
                         <View style={s.logo}>
                             <Text style={s.logoText}>Q</Text>
                         </View>
-                        <View>
-                            <Text style={s.brandName}>Question Web</Text>
-                            <Text style={s.brandSub}>Academic Productivity • v2.0</Text>
+                        <View style={{ flexShrink: 1 }}>
+                            <Text style={s.brandName} numberOfLines={1}>
+                                Question Web
+                            </Text>
+                            <Text style={s.brandSub} numberOfLines={1}>
+                                Academic Productivity • v2.0
+                            </Text>
                         </View>
                     </Pressable>
                     <View style={s.mobileActions}>
@@ -223,9 +233,13 @@ export default function AppShell({
                             <View style={s.logo}>
                                 <Text style={s.logoText}>Q</Text>
                             </View>
-                            <View>
-                                <Text style={s.brandName}>Question Web</Text>
-                                <Text style={s.brandSub}>Academic Portal • v2.0</Text>
+                            <View style={{ flex: 1 }}>
+                                <Text style={s.brandName} numberOfLines={1}>
+                                    Question Web
+                                </Text>
+                                <Text style={s.brandSub} numberOfLines={1}>
+                                    Academic Portal • v2.0
+                                </Text>
                             </View>
                         </Pressable>
 
@@ -373,7 +387,7 @@ export default function AppShell({
                                     size={17}
                                     color={theme.muted}
                                 />
-                                <Text style={s.topSearchText}>
+                                <Text style={s.topSearchText} numberOfLines={1}>
                                     Search questions, topics, or resources...
                                 </Text>
                             </Pressable>
@@ -422,7 +436,7 @@ export default function AppShell({
                                                 : theme.textSecondary
                                         }
                                     />
-                                    <Text style={s.topAccountText}>
+                                    <Text style={s.topAccountText} numberOfLines={1}>
                                         {isAuthenticated
                                             ? user?.displayName || "Account"
                                             : "Sign In"}
@@ -433,27 +447,50 @@ export default function AppShell({
                     )}
 
                     <View style={s.mainRow}>
-                        <ScrollView
-                            style={{ flex: 1 }}
-                            contentContainerStyle={[
-                                s.mainContent,
-                                {
-                                    paddingHorizontal: isWide ? 32 : 18,
-                                    paddingTop: isWide ? 26 : 18,
-                                    paddingBottom: floatingFooter
-                                        ? isWide
-                                            ? 110
-                                            : 140
-                                        : isWide
-                                          ? 48
-                                          : 96,
-                                },
-                            ]}
-                            keyboardShouldPersistTaps="handled"
-                            showsVerticalScrollIndicator={false}
-                        >
-                            {children}
-                        </ScrollView>
+                        {scrollable ? (
+                            <ScrollView
+                                style={s.scrollContainer}
+                                contentContainerStyle={[
+                                    s.mainContent,
+                                    {
+                                        paddingHorizontal: isWide ? 32 : 16,
+                                        paddingTop: isWide ? 24 : 16,
+                                        paddingBottom: floatingFooter
+                                            ? isWide
+                                                ? 120
+                                                : 150
+                                            : isWide
+                                              ? 56
+                                              : 108,
+                                    },
+                                ]}
+                                keyboardShouldPersistTaps="handled"
+                                showsVerticalScrollIndicator={false}
+                                nestedScrollEnabled
+                            >
+                                {children}
+                            </ScrollView>
+                        ) : (
+                            <View
+                                style={[
+                                    s.scrollContainer,
+                                    s.mainContent,
+                                    {
+                                        paddingHorizontal: isWide ? 32 : 16,
+                                        paddingTop: isWide ? 24 : 16,
+                                        paddingBottom: floatingFooter
+                                            ? isWide
+                                                ? 100
+                                                : 120
+                                            : isWide
+                                              ? 24
+                                              : 16,
+                                    },
+                                ]}
+                            >
+                                {children}
+                            </View>
+                        )}
                         {hasRightPanel && rightPanel ? (
                             <ScrollView
                                 style={s.rightPanel}
@@ -533,16 +570,40 @@ export default function AppShell({
 
 function makeStyles(t: AppTheme) {
     return StyleSheet.create({
-        screen: { flex: 1, backgroundColor: t.background },
-        body: { flex: 1, flexDirection: "row" },
-        contentArea: { flex: 1, position: "relative" },
-        mainRow: { flex: 1, flexDirection: "row" },
+        screen: {
+            flex: 1,
+            minHeight: 0,
+            backgroundColor: t.background,
+        },
+        body: {
+            flex: 1,
+            minHeight: 0,
+            flexDirection: "row",
+        },
+        contentArea: {
+            flex: 1,
+            minHeight: 0,
+            minWidth: 0,
+            position: "relative",
+        },
+        mainRow: {
+            flex: 1,
+            minHeight: 0,
+            minWidth: 0,
+            flexDirection: "row",
+        },
+        scrollContainer: {
+            flex: 1,
+            minHeight: 0,
+            minWidth: 0,
+        },
         mainContent: {
+            flexGrow: 1,
             width: "100%",
-            maxWidth: 1040,
+            maxWidth: 1080,
             alignSelf: "center",
         },
-        rightPanel: { width: 320 },
+        rightPanel: { width: 320, minHeight: 0 },
         logo: {
             width: 34,
             height: 34,
@@ -557,7 +618,12 @@ function makeStyles(t: AppTheme) {
             elevation: 3,
         },
         logoText: { color: "#FFFFFF", fontWeight: "900", fontSize: 17 },
-        brand: { flexDirection: "row", alignItems: "center", gap: 11 },
+        brand: {
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 11,
+            flexShrink: 1,
+        },
         brandName: {
             color: t.text,
             fontWeight: "800",
@@ -574,16 +640,18 @@ function makeStyles(t: AppTheme) {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
-            paddingHorizontal: 18,
+            paddingHorizontal: 16,
             paddingBottom: 12,
             backgroundColor: t.surface,
             borderBottomWidth: 1,
             borderBottomColor: t.border,
+            gap: 10,
         },
         mobileActions: {
             flexDirection: "row",
             alignItems: "center",
-            gap: 10,
+            gap: 8,
+            flexShrink: 0,
         },
         iconButton: {
             width: 38,
@@ -687,10 +755,11 @@ function makeStyles(t: AppTheme) {
             backgroundColor: t.surface,
             borderBottomWidth: 1,
             borderBottomColor: t.border,
+            gap: 16,
         },
         topSearch: {
             flex: 1,
-            maxWidth: 400,
+            maxWidth: 420,
             flexDirection: "row",
             alignItems: "center",
             gap: 10,
@@ -733,11 +802,13 @@ function makeStyles(t: AppTheme) {
             paddingHorizontal: 13,
             height: 36,
             gap: 7,
+            maxWidth: 200,
         },
         topAccountText: {
             fontSize: 13,
             color: t.text,
             fontWeight: "600",
+            flexShrink: 1,
         },
         bottomBar: {
             flexDirection: "row",

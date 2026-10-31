@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-    Dimensions,
     Modal,
     Pressable,
     ScrollView,
     StyleSheet,
     Text,
     View,
+    useWindowDimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
@@ -21,20 +21,21 @@ import {
     MarkdownText,
     TYPE_META,
 } from "../../components/ui";
-import {
-    api,
-    type QuestionDetail,
-} from "../../services/api";
+import { api, type QuestionDetail } from "../../services/api";
 import type { AppTheme } from "../../constants/theme";
-
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 export default function QuestionDetailsScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const { width: windowWidth } = useWindowDimensions();
     const { theme } = useAppTheme();
-    const s = useMemo(() => makeStyles(theme, insets), [theme, insets]);
+
+    const containerWidth = Math.min(windowWidth, 880);
+    const s = useMemo(
+        () => makeStyles(theme, insets, containerWidth),
+        [theme, insets, containerWidth],
+    );
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -128,39 +129,47 @@ export default function QuestionDetailsScreen() {
         <View style={s.screen}>
             {/* Top Navigation Header with safe area support */}
             <View style={s.header}>
-                <Pressable
-                    onPress={() => {
-                        if (router.canGoBack()) {
-                            router.back();
-                        } else {
-                            router.replace("/question-bank");
-                        }
-                    }}
-                    style={({ pressed }) => [
-                        s.backButton,
-                        pressed && { opacity: 0.7 },
-                    ]}
-                    accessibilityRole="button"
-                    accessibilityLabel="Go back"
-                    hitSlop={8}
-                >
-                    <Ionicons name="chevron-back" size={20} color={theme.text} />
-                </Pressable>
+                <View style={s.headerInner}>
+                    <Pressable
+                        onPress={() => {
+                            if (router.canGoBack()) {
+                                router.back();
+                            } else {
+                                router.replace("/question-bank");
+                            }
+                        }}
+                        style={({ pressed }) => [
+                            s.backButton,
+                            pressed && { opacity: 0.7 },
+                        ]}
+                        accessibilityRole="button"
+                        accessibilityLabel="Go back"
+                        hitSlop={8}
+                    >
+                        <Ionicons
+                            name="chevron-back"
+                            size={20}
+                            color={theme.text}
+                        />
+                    </Pressable>
 
-                <View style={s.headerText}>
-                    <Text style={s.eyebrow}>QUESTION DETAIL</Text>
-                    <Text style={s.title}>
-                        {question ? `Question #${question.quesId}` : "Question"}
-                    </Text>
+                    <View style={s.headerText}>
+                        <Text style={s.eyebrow}>QUESTION DETAIL</Text>
+                        <Text style={s.title} numberOfLines={1}>
+                            {question
+                                ? `Question #${question.quesId}`
+                                : "Question"}
+                        </Text>
+                    </View>
+
+                    {question && (
+                        <Badge
+                            label={typeMeta.short}
+                            color={typeMeta.color}
+                            icon={typeMeta.icon}
+                        />
+                    )}
                 </View>
-
-                {question && (
-                    <Badge
-                        label={typeMeta.short}
-                        color={typeMeta.color}
-                        icon={typeMeta.icon}
-                    />
-                )}
             </View>
 
             {/* Main Content Area */}
@@ -186,212 +195,227 @@ export default function QuestionDetailsScreen() {
                     contentContainerStyle={s.scrollContent}
                     showsVerticalScrollIndicator={false}
                 >
-                    {/* Metadata Card: Subject, Chapter, Topics */}
-                    <View style={s.metaCard}>
-                        {/* Subject & Chapter */}
-                        <View style={s.hierarchyBlock}>
-                            {question.subject && (
-                                <View style={s.metaRow}>
-                                    <Ionicons
-                                        name="book-outline"
-                                        size={15}
-                                        color={theme.accent}
-                                    />
-                                    <Text style={s.metaLabel}>Subject:</Text>
-                                    <Text style={s.metaValue}>
-                                        {question.subject.subjectId} —{" "}
-                                        {question.subject.subjectName ?? "N/A"}
-                                        {question.subject.semester != null
-                                            ? ` (Sem ${question.subject.semester})`
-                                            : ""}
-                                    </Text>
-                                </View>
-                            )}
-
-                            {question.chapter && (
-                                <View style={s.metaRow}>
-                                    <Ionicons
-                                        name="albums-outline"
-                                        size={15}
-                                        color={theme.accent}
-                                    />
-                                    <Text style={s.metaLabel}>Chapter:</Text>
-                                    <Text style={s.metaValue}>
-                                        {question.chapter.chapterNo}.{" "}
-                                        {question.chapter.chapterName}
-                                    </Text>
-                                </View>
-                            )}
-                        </View>
-
-                        {/* Topics */}
-                        {question.topics && question.topics.length > 0 && (
-                            <View style={s.topicsBlock}>
-                                <Text style={s.sectionSubtitle}>
-                                    Tagged Topics
-                                </Text>
-                                <View style={s.pillList}>
-                                    {question.topics.map((t) => (
-                                        <View
-                                            key={t.topicId}
-                                            style={s.topicBadge}
-                                        >
-                                            <Ionicons
-                                                name="pricetag-outline"
-                                                size={11}
-                                                color={theme.accent}
-                                            />
-                                            <Text style={s.topicBadgeText}>
-                                                {t.topicName}
-                                            </Text>
-                                        </View>
-                                    ))}
-                                </View>
-                            </View>
-                        )}
-
-                        {/* Source details */}
-                        {question.source && (
-                            <View style={s.sourceBlock}>
-                                <Text style={s.sectionSubtitle}>
-                                    Source / Reference
-                                </Text>
-                                <View style={s.sourceCard}>
-                                    <Ionicons
-                                        name={
-                                            question.source.sourceType === "EXAM"
-                                                ? "newspaper-outline"
-                                                : "library-outline"
-                                        }
-                                        size={18}
-                                        color={theme.muted}
-                                    />
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={s.sourceLabelText}>
-                                            {question.source.label}
-                                        </Text>
-                                        <Text style={s.sourceSubtext}>
-                                            {question.source.sourceType ===
-                                            "EXAM"
-                                                ? `Exam Type: ${question.source.examType ?? "Semester Exam"}${question.source.examYear ? ` · Year ${question.source.examYear}` : ""}`
-                                                : `Author: ${question.source.authorName ?? "Unknown Author"}`}
+                    <View style={s.contentInner}>
+                        {/* Metadata Card: Subject, Chapter, Topics */}
+                        <View style={s.metaCard}>
+                            {/* Subject & Chapter */}
+                            <View style={s.hierarchyBlock}>
+                                {question.subject && (
+                                    <View style={s.metaRow}>
+                                        <Ionicons
+                                            name="book-outline"
+                                            size={15}
+                                            color={theme.accent}
+                                        />
+                                        <Text style={s.metaLabel}>Subject:</Text>
+                                        <Text style={s.metaValue}>
+                                            {question.subject.subjectId} —{" "}
+                                            {question.subject.subjectName ??
+                                                "N/A"}
+                                            {question.subject.semester != null
+                                                ? ` (Sem ${question.subject.semester})`
+                                                : ""}
                                         </Text>
                                     </View>
-                                </View>
-                            </View>
-                        )}
-                    </View>
+                                )}
 
-                    {/* Question Statement Card */}
-                    <View style={s.questionCard}>
-                        <View style={s.cardHeader}>
-                            <Ionicons
-                                name="help-circle-outline"
-                                size={18}
-                                color={typeMeta.color}
-                            />
-                            <Text style={s.cardHeaderTitle}>
-                                Question Statement
-                            </Text>
-                        </View>
-                        <View style={s.markdownContainer}>
-                            <MarkdownText>{question.quesText}</MarkdownText>
-                        </View>
-                    </View>
-
-                    {/* Attached Images Section - only rendered if question has images */}
-                    {question.images && question.images.length > 0 && (
-                        <View style={s.imagesSection}>
-                            <View style={s.imagesHeader}>
-                                <View style={s.imagesHeaderLeft}>
-                                    <Ionicons
-                                        name="image-outline"
-                                        size={18}
-                                        color={theme.accent}
-                                    />
-                                    <Text style={s.imagesHeaderTitle}>
-                                        Attached Images
-                                    </Text>
-                                    <View style={s.imageCountBadge}>
-                                        <Text style={s.imageCountText}>
-                                            {question.images.length}
+                                {question.chapter && (
+                                    <View style={s.metaRow}>
+                                        <Ionicons
+                                            name="albums-outline"
+                                            size={15}
+                                            color={theme.accent}
+                                        />
+                                        <Text style={s.metaLabel}>Chapter:</Text>
+                                        <Text style={s.metaValue}>
+                                            {question.chapter.chapterNo}.{" "}
+                                            {question.chapter.chapterName}
                                         </Text>
                                     </View>
-                                </View>
-                                <Text style={s.tapHint}>
-                                    Tap image to enlarge
-                                </Text>
+                                )}
                             </View>
 
-                            <View style={s.imagesGrid}>
-                                {question.images.map((img, idx) => {
-                                    const hasFailed =
-                                        failedImageIds.has(img.imageId) ||
-                                        !img.imageUrl ||
-                                        !img.imageUrl.trim();
-                                    const isSingle = question.images.length === 1;
-
-                                    return (
-                                        <Pressable
-                                            key={img.imageId}
-                                            onPress={() =>
-                                                setSelectedImageIndex(idx)
-                                            }
-                                            accessibilityRole="button"
-                                            accessibilityLabel={`Enlarge image ${idx + 1}`}
-                                            style={({ pressed }) => [
-                                                s.imageThumbnailWrapper,
-                                                isSingle && s.singleImageThumbnailWrapper,
-                                                pressed && { opacity: 0.85 },
-                                            ]}
-                                        >
-                                            {hasFailed ? (
-                                                <View
-                                                    style={
-                                                        s.imageFailedFallback
-                                                    }
-                                                >
-                                                    <Ionicons
-                                                        name="alert-circle-outline"
-                                                        size={22}
-                                                        color={theme.muted}
-                                                    />
-                                                    <Text
-                                                        style={
-                                                             s.imageFailedText
-                                                        }
-                                                    >
-                                                        Image Unavailable
-                                                    </Text>
-                                                </View>
-                                            ) : (
-                                                <Image
-                                                    source={{
-                                                        uri: (img.imageUrl || "").trim(),
-                                                    }}
-                                                    style={s.imageThumbnail}
-                                                    contentFit={isSingle ? "contain" : "cover"}
-                                                    transition={300}
-                                                    onError={() =>
-                                                        markImageFailed(
-                                                            img.imageId,
-                                                        )
-                                                    }
+                            {/* Topics */}
+                            {question.topics && question.topics.length > 0 && (
+                                <View style={s.topicsBlock}>
+                                    <Text style={s.sectionSubtitle}>
+                                        Tagged Topics
+                                    </Text>
+                                    <View style={s.pillList}>
+                                        {question.topics.map((t) => (
+                                            <View
+                                                key={t.topicId}
+                                                style={s.topicBadge}
+                                            >
+                                                <Ionicons
+                                                    name="pricetag-outline"
+                                                    size={11}
+                                                    color={theme.accent}
                                                 />
-                                            )}
-                                            <View style={s.imageIndexTag}>
-                                                <Text
-                                                    style={s.imageIndexTagText}
-                                                >
-                                                    #{idx + 1}
+                                                <Text style={s.topicBadgeText}>
+                                                    {t.topicName}
                                                 </Text>
                                             </View>
-                                        </Pressable>
-                                    );
-                                })}
+                                        ))}
+                                    </View>
+                                </View>
+                            )}
+
+                            {/* Source details */}
+                            {question.source && (
+                                <View style={s.sourceBlock}>
+                                    <Text style={s.sectionSubtitle}>
+                                        Source / Reference
+                                    </Text>
+                                    <View style={s.sourceCard}>
+                                        <Ionicons
+                                            name={
+                                                question.source.sourceType ===
+                                                "EXAM"
+                                                    ? "newspaper-outline"
+                                                    : "library-outline"
+                                            }
+                                            size={18}
+                                            color={theme.muted}
+                                        />
+                                        <View style={{ flex: 1, minWidth: 0 }}>
+                                            <Text style={s.sourceLabelText}>
+                                                {question.source.label}
+                                            </Text>
+                                            <Text style={s.sourceSubtext}>
+                                                {question.source.sourceType ===
+                                                "EXAM"
+                                                    ? `Exam Type: ${question.source.examType ?? "Semester Exam"}${question.source.examYear ? ` · Year ${question.source.examYear}` : ""}`
+                                                    : `Author: ${question.source.authorName ?? "Unknown Author"}`}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                </View>
+                            )}
+                        </View>
+
+                        {/* Question Statement Card */}
+                        <View style={s.questionCard}>
+                            <View style={s.cardHeader}>
+                                <Ionicons
+                                    name="help-circle-outline"
+                                    size={18}
+                                    color={typeMeta.color}
+                                />
+                                <Text style={s.cardHeaderTitle}>
+                                    Question Statement
+                                </Text>
+                            </View>
+                            <View style={s.markdownContainer}>
+                                <MarkdownText>{question.quesText}</MarkdownText>
                             </View>
                         </View>
-                    )}
+
+                        {/* Attached Images Section - only rendered if question has images */}
+                        {question.images && question.images.length > 0 && (
+                            <View style={s.imagesSection}>
+                                <View style={s.imagesHeader}>
+                                    <View style={s.imagesHeaderLeft}>
+                                        <Ionicons
+                                            name="image-outline"
+                                            size={18}
+                                            color={theme.accent}
+                                        />
+                                        <Text style={s.imagesHeaderTitle}>
+                                            Attached Images
+                                        </Text>
+                                        <View style={s.imageCountBadge}>
+                                            <Text style={s.imageCountText}>
+                                                {question.images.length}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                    <Text style={s.tapHint}>
+                                        Tap image to enlarge
+                                    </Text>
+                                </View>
+
+                                <View style={s.imagesGrid}>
+                                    {question.images.map((img, idx) => {
+                                        const hasFailed =
+                                            failedImageIds.has(img.imageId) ||
+                                            !img.imageUrl ||
+                                            !img.imageUrl.trim();
+                                        const isSingle =
+                                            question.images.length === 1;
+
+                                        return (
+                                            <Pressable
+                                                key={img.imageId}
+                                                onPress={() =>
+                                                    setSelectedImageIndex(idx)
+                                                }
+                                                accessibilityRole="button"
+                                                accessibilityLabel={`Enlarge image ${idx + 1}`}
+                                                style={({ pressed }) => [
+                                                    s.imageThumbnailWrapper,
+                                                    isSingle &&
+                                                        s.singleImageThumbnailWrapper,
+                                                    pressed && { opacity: 0.85 },
+                                                ]}
+                                            >
+                                                {hasFailed ? (
+                                                    <View
+                                                        style={
+                                                            s.imageFailedFallback
+                                                        }
+                                                    >
+                                                        <Ionicons
+                                                            name="alert-circle-outline"
+                                                            size={22}
+                                                            color={theme.muted}
+                                                        />
+                                                        <Text
+                                                            style={
+                                                                s.imageFailedText
+                                                            }
+                                                        >
+                                                            Image Unavailable
+                                                        </Text>
+                                                    </View>
+                                                ) : (
+                                                    <Image
+                                                        source={{
+                                                            uri: (
+                                                                img.imageUrl ||
+                                                                ""
+                                                            ).trim(),
+                                                        }}
+                                                        style={s.imageThumbnail}
+                                                        contentFit={
+                                                            isSingle
+                                                                ? "contain"
+                                                                : "cover"
+                                                        }
+                                                        transition={300}
+                                                        onError={() =>
+                                                            markImageFailed(
+                                                                img.imageId,
+                                                            )
+                                                        }
+                                                    />
+                                                )}
+                                                <View style={s.imageIndexTag}>
+                                                    <Text
+                                                        style={
+                                                            s.imageIndexTagText
+                                                        }
+                                                    >
+                                                        #{idx + 1}
+                                                    </Text>
+                                                </View>
+                                            </Pressable>
+                                        );
+                                    })}
+                                </View>
+                            </View>
+                        )}
+                    </View>
                 </ScrollView>
             )}
 
@@ -427,24 +451,48 @@ export default function QuestionDetailsScreen() {
 
                     {/* Enlarged Image Container with Prev/Next buttons */}
                     <View style={s.modalImageContainer}>
-                        {currentModalImage && (
-                            failedImageIds.has(currentModalImage.imageId) || !currentModalImage.imageUrl?.trim() ? (
-                                <View style={{ alignItems: "center", justifyContent: "center", gap: 10 }}>
-                                    <Ionicons name="alert-circle-outline" size={48} color="#9CA3AF" />
-                                    <Text style={{ color: "#D1D5DB", fontSize: 14, fontWeight: "600" }}>
+                        {currentModalImage &&
+                            (failedImageIds.has(currentModalImage.imageId) ||
+                            !currentModalImage.imageUrl?.trim() ? (
+                                <View
+                                    style={{
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        gap: 10,
+                                    }}
+                                >
+                                    <Ionicons
+                                        name="alert-circle-outline"
+                                        size={48}
+                                        color="#9CA3AF"
+                                    />
+                                    <Text
+                                        style={{
+                                            color: "#D1D5DB",
+                                            fontSize: 14,
+                                            fontWeight: "600",
+                                        }}
+                                    >
                                         Image Unavailable
                                     </Text>
                                 </View>
                             ) : (
                                 <Image
-                                    source={{ uri: (currentModalImage.imageUrl || "").trim() }}
+                                    source={{
+                                        uri: (
+                                            currentModalImage.imageUrl || ""
+                                        ).trim(),
+                                    }}
                                     style={s.modalImage}
                                     contentFit="contain"
                                     transition={200}
-                                    onError={() => markImageFailed(currentModalImage.imageId)}
+                                    onError={() =>
+                                        markImageFailed(
+                                            currentModalImage.imageId,
+                                        )
+                                    }
                                 />
-                            )
-                        )}
+                            ))}
 
                         {question && question.images.length > 1 && (
                             <>
@@ -501,22 +549,32 @@ export default function QuestionDetailsScreen() {
 function makeStyles(
     t: AppTheme,
     insets: { top: number; bottom: number; left: number; right: number },
+    containerWidth: number,
 ) {
+    const innerAvailWidth = Math.max(240, containerWidth - 64);
+    const thumbWidth = Math.floor((innerAvailWidth - 10) / 2);
+
     return StyleSheet.create({
         screen: {
             flex: 1,
+            minHeight: 0,
             backgroundColor: t.background,
         },
         header: {
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 12,
-            paddingHorizontal: 20,
-            paddingTop: Math.max(insets.top, 14),
-            paddingBottom: 14,
             borderBottomWidth: 1,
             borderBottomColor: t.border,
             backgroundColor: t.surface,
+            paddingTop: Math.max(insets.top, 14),
+            paddingBottom: 14,
+            paddingHorizontal: 16,
+        },
+        headerInner: {
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 12,
+            width: "100%",
+            maxWidth: 880,
+            alignSelf: "center",
         },
         backButton: {
             width: 38,
@@ -527,9 +585,11 @@ function makeStyles(
             borderColor: t.border,
             alignItems: "center",
             justifyContent: "center",
+            flexShrink: 0,
         },
         headerText: {
             flex: 1,
+            minWidth: 0,
         },
         eyebrow: {
             color: t.accent,
@@ -547,14 +607,23 @@ function makeStyles(
             justifyContent: "center",
             alignItems: "center",
             padding: 24,
+            maxWidth: 880,
+            width: "100%",
+            alignSelf: "center",
         },
         scrollView: {
             flex: 1,
+            minHeight: 0,
         },
         scrollContent: {
             padding: 16,
+            paddingBottom: Math.max(insets.bottom + 24, 44),
+        },
+        contentInner: {
+            width: "100%",
+            maxWidth: 880,
+            alignSelf: "center",
             gap: 16,
-            paddingBottom: Math.max(insets.bottom + 20, 40),
         },
 
         /* Meta card */
@@ -571,19 +640,21 @@ function makeStyles(
         },
         metaRow: {
             flexDirection: "row",
-            alignItems: "center",
+            alignItems: "flex-start",
             gap: 8,
         },
         metaLabel: {
             fontSize: 12,
             fontWeight: "700",
             color: t.muted,
+            marginTop: 1,
         },
         metaValue: {
             fontSize: 13,
             fontWeight: "600",
             color: t.text,
             flex: 1,
+            lineHeight: 18,
         },
         sectionSubtitle: {
             fontSize: 11,
@@ -613,11 +684,13 @@ function makeStyles(
             borderRadius: 6,
             paddingHorizontal: 8,
             paddingVertical: 4,
+            maxWidth: "100%",
         },
         topicBadgeText: {
             fontSize: 11,
             color: t.text,
             fontWeight: "600",
+            flexShrink: 1,
         },
         sourceBlock: {
             paddingTop: 8,
@@ -684,6 +757,8 @@ function makeStyles(
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: 8,
         },
         imagesHeaderLeft: {
             flexDirection: "row",
@@ -711,28 +786,13 @@ function makeStyles(
             color: t.muted,
             fontStyle: "italic",
         },
-        noImagesCard: {
-            backgroundColor: t.surfaceAlt,
-            borderRadius: 10,
-            borderWidth: 1,
-            borderColor: t.border,
-            padding: 20,
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 6,
-        },
-        noImagesText: {
-            fontSize: 12,
-            color: t.muted,
-            textAlign: "center",
-        },
         imagesGrid: {
             flexDirection: "row",
             flexWrap: "wrap",
             gap: 10,
         },
         imageThumbnailWrapper: {
-            width: (SCREEN_WIDTH - 64) / 2,
+            width: thumbWidth,
             height: 140,
             borderRadius: 10,
             overflow: "hidden",
@@ -742,7 +802,7 @@ function makeStyles(
             position: "relative",
         },
         singleImageThumbnailWrapper: {
-            width: SCREEN_WIDTH - 64,
+            width: innerAvailWidth,
             height: 220,
         },
         imageThumbnail: {
@@ -803,7 +863,6 @@ function makeStyles(
             flex: 1,
             justifyContent: "center",
             alignItems: "center",
-            padding: 16,
             position: "relative",
         },
         modalImage: {
@@ -817,7 +876,7 @@ function makeStyles(
             width: 44,
             height: 44,
             borderRadius: 22,
-            backgroundColor: "rgba(0, 0, 0, 0.6)",
+            backgroundColor: "rgba(255, 255, 255, 0.18)",
             alignItems: "center",
             justifyContent: "center",
         },
@@ -826,7 +885,8 @@ function makeStyles(
             justifyContent: "center",
             alignItems: "center",
             gap: 8,
-            paddingBottom: Math.max(insets.bottom, 24),
+            paddingVertical: 20,
+            paddingBottom: Math.max(insets.bottom + 16, 28),
         },
         modalDot: {
             width: 8,

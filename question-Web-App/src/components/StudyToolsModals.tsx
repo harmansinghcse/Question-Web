@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
+    KeyboardAvoidingView,
     Modal,
     Platform,
     Pressable,
@@ -47,6 +48,8 @@ interface StudyToolsModalsProps {
 
 const FOCUS_DURATION = 25 * 60; // 25 minutes
 const DAYS_OF_WEEK = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"] as const;
+type DayFilter = "ALL" | (typeof DAYS_OF_WEEK)[number];
+type GoalFilter = "ALL" | "PENDING" | "COMPLETED";
 
 export default function StudyToolsModals({
     activeModal,
@@ -67,9 +70,13 @@ export default function StudyToolsModals({
     const [timerIsRunning, setTimerIsRunning] = useState(false);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-    // === Goal Inputs ===
+    // === Goal Inputs & Filter ===
     const [newGoalText, setNewGoalText] = useState("");
+    const [goalFilter, setGoalFilter] = useState<GoalFilter>("ALL");
     const [currentTimestamp, setCurrentTimestamp] = useState(() => Date.now());
+
+    // === Timetable Day Filter ===
+    const [selectedDay, setSelectedDay] = useState<DayFilter>("ALL");
 
     // === Reminders State ===
     const [reminders, setReminders] = useState<StudyReminder[]>([]);
@@ -167,6 +174,19 @@ export default function StudyToolsModals({
     };
 
     const completedGoalsCount = goals.filter((g) => g.completed).length;
+    const filteredGoals = useMemo(() => {
+        if (goalFilter === "PENDING") return goals.filter((g) => !g.completed);
+        if (goalFilter === "COMPLETED") return goals.filter((g) => g.completed);
+        return goals;
+    }, [goals, goalFilter]);
+
+    const visibleDays = useMemo(
+        () =>
+            selectedDay === "ALL"
+                ? DAYS_OF_WEEK
+                : ([selectedDay] as readonly (typeof DAYS_OF_WEEK)[number][]),
+        [selectedDay],
+    );
 
     return (
         <>
@@ -300,7 +320,10 @@ export default function StudyToolsModals({
                 animationType="fade"
                 onRequestClose={onClose}
             >
-                <View style={s.modalOverlay}>
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === "ios" ? "padding" : undefined}
+                    style={s.modalOverlay}
+                >
                     <View style={s.modalDialog}>
                         <View style={s.modalHeader}>
                             <View style={s.modalTitleRow}>
@@ -358,24 +381,70 @@ export default function StudyToolsModals({
                             </Pressable>
                         </View>
 
+                        {goals.length > 0 && (
+                            <View style={s.filterPillRow}>
+                                {(
+                                    [
+                                        { id: "ALL", label: `All (${goals.length})` },
+                                        {
+                                            id: "PENDING",
+                                            label: `Pending (${goals.length - completedGoalsCount})`,
+                                        },
+                                        {
+                                            id: "COMPLETED",
+                                            label: `Done (${completedGoalsCount})`,
+                                        },
+                                    ] as const
+                                ).map((f) => {
+                                    const active = goalFilter === f.id;
+                                    return (
+                                        <Pressable
+                                            key={f.id}
+                                            onPress={() => setGoalFilter(f.id)}
+                                            style={[
+                                                s.miniFilterPill,
+                                                active && s.miniFilterPillActive,
+                                            ]}
+                                        >
+                                            <Text
+                                                style={[
+                                                    s.miniFilterText,
+                                                    active && s.miniFilterTextActive,
+                                                ]}
+                                            >
+                                                {f.label}
+                                            </Text>
+                                        </Pressable>
+                                    );
+                                })}
+                            </View>
+                        )}
+
                         <ScrollView
                             style={s.modalListScroll}
                             showsVerticalScrollIndicator={false}
+                            keyboardShouldPersistTaps="handled"
                         >
-                            {goals.length === 0 ? (
+                            {filteredGoals.length === 0 ? (
                                 <View style={s.modalEmptyState}>
                                     <Ionicons
                                         name="checkmark-circle-outline"
                                         size={36}
                                         color={theme.muted}
                                     />
-                                    <Text style={s.modalEmptyTitle}>No study goals set</Text>
+                                    <Text style={s.modalEmptyTitle}>
+                                        {goals.length === 0
+                                            ? "No study goals set"
+                                            : "No matching goals"}
+                                    </Text>
                                     <Text style={s.modalEmptyText}>
-                                        Write down key topics or exercises above to track your daily output.
+                                        {goals.length === 0
+                                            ? "Write down key topics or exercises above to track your daily output."
+                                            : "Switch the filter above to see all tasks."}
                                     </Text>
                                 </View>
                             ) : (
-                                goals.map((g) => (
+                                filteredGoals.map((g) => (
                                     <View key={g.id} style={s.modalGoalRow}>
                                         <Pressable
                                             onPress={() =>
@@ -425,7 +494,7 @@ export default function StudyToolsModals({
                             )}
                         </ScrollView>
                     </View>
-                </View>
+                </KeyboardAvoidingView>
             </Modal>
 
             {/* === TIMETABLE MODAL === */}
@@ -549,8 +618,78 @@ export default function StudyToolsModals({
                                             </View>
                                         )}
 
+                                    {/* Day-of-Week Filter Strip */}
+                                    {timetableEntries.length > 0 && (
+                                        <ScrollView
+                                            horizontal
+                                            showsHorizontalScrollIndicator={false}
+                                            contentContainerStyle={[
+                                                s.filterPillRow,
+                                                { marginBottom: 12 },
+                                            ]}
+                                        >
+                                            <Pressable
+                                                onPress={() =>
+                                                    setSelectedDay("ALL")
+                                                }
+                                                style={[
+                                                    s.miniFilterPill,
+                                                    selectedDay === "ALL" &&
+                                                        s.miniFilterPillActive,
+                                                ]}
+                                            >
+                                                <Text
+                                                    style={[
+                                                        s.miniFilterText,
+                                                        selectedDay === "ALL" &&
+                                                            s.miniFilterTextActive,
+                                                    ]}
+                                                >
+                                                    All Days
+                                                </Text>
+                                            </Pressable>
+                                            {DAYS_OF_WEEK.map((day) => {
+                                                const count =
+                                                    timetableEntries.filter(
+                                                        (e) =>
+                                                            e.dayOfWeek === day,
+                                                    ).length;
+                                                if (count === 0) return null;
+                                                const active =
+                                                    selectedDay === day;
+                                                return (
+                                                    <Pressable
+                                                        key={day}
+                                                        onPress={() =>
+                                                            setSelectedDay(
+                                                                active
+                                                                    ? "ALL"
+                                                                    : day,
+                                                            )
+                                                        }
+                                                        style={[
+                                                            s.miniFilterPill,
+                                                            active &&
+                                                                s.miniFilterPillActive,
+                                                        ]}
+                                                    >
+                                                        <Text
+                                                            style={[
+                                                                s.miniFilterText,
+                                                                active &&
+                                                                    s.miniFilterTextActive,
+                                                            ]}
+                                                        >
+                                                            {day} ({count})
+                                                        </Text>
+                                                    </Pressable>
+                                                );
+                                            })}
+                                        </ScrollView>
+                                    )}
+
                                     {timetableEntries.length > 0 ? (
-                                        DAYS_OF_WEEK.map((day) => {
+                                        visibleDays.map((day) => {
                                             const dayEntries = timetableEntries
                                                 .filter(
                                                     (e) => e.dayOfWeek === day,
@@ -876,7 +1015,10 @@ export default function StudyToolsModals({
                 animationType="fade"
                 onRequestClose={onClose}
             >
-                <View style={s.modalOverlay}>
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === "ios" ? "padding" : undefined}
+                    style={s.modalOverlay}
+                >
                     <View style={s.modalDialog}>
                         <View style={s.modalHeader}>
                             <View style={s.modalTitleRow}>
@@ -942,6 +1084,7 @@ export default function StudyToolsModals({
                         <ScrollView
                             style={s.modalListScroll}
                             showsVerticalScrollIndicator={false}
+                            keyboardShouldPersistTaps="handled"
                         >
                             {reminders.length === 0 ? (
                                 <View style={s.modalEmptyState}>
@@ -1009,7 +1152,7 @@ export default function StudyToolsModals({
                             )}
                         </ScrollView>
                     </View>
-                </View>
+                </KeyboardAvoidingView>
             </Modal>
         </>
     );
@@ -1061,7 +1204,7 @@ function makeStyles(t: AppTheme) {
             borderBottomWidth: 1,
             borderBottomColor: t.border,
         },
-        modalTitleRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+        modalTitleRow: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1 },
         modalIconWrap: {
             width: 36,
             height: 36,
@@ -1086,6 +1229,34 @@ function makeStyles(t: AppTheme) {
         },
         modalListScroll: { maxHeight: 280 },
         modalScrollLarge: { maxHeight: 420 },
+
+        filterPillRow: {
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 6,
+            flexWrap: "wrap",
+        },
+        miniFilterPill: {
+            paddingHorizontal: 10,
+            paddingVertical: 5,
+            borderRadius: 999,
+            backgroundColor: t.surfaceAlt,
+            borderWidth: 1,
+            borderColor: t.border,
+        },
+        miniFilterPillActive: {
+            backgroundColor: t.accent,
+            borderColor: t.accent,
+        },
+        miniFilterText: {
+            fontSize: 11,
+            fontWeight: "600",
+            color: t.muted,
+        },
+        miniFilterTextActive: {
+            color: "#FFFFFF",
+            fontWeight: "700",
+        },
 
         // Focus Timer
         timerCircleBox: {
