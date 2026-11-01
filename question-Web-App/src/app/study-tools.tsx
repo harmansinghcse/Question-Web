@@ -383,21 +383,21 @@ function makeStyles(t: AppTheme) {
             paddingHorizontal: 14,
             paddingVertical: 7,
             borderRadius: 999,
-            backgroundColor: t.surface,
+            backgroundColor: t.controlBg,
             borderWidth: 1,
-            borderColor: t.border,
+            borderColor: t.controlBorder,
         },
         catChipActive: {
-            backgroundColor: t.accent,
-            borderColor: t.accent,
+            backgroundColor: t.controlActiveBg,
+            borderColor: t.controlActiveBorder,
         },
         catChipText: {
             fontSize: 12,
             fontWeight: "700",
-            color: t.muted,
+            color: t.controlText,
         },
         catChipTextActive: {
-            color: "#FFFFFF",
+            color: t.controlActiveText,
         },
         grid: {
             flexDirection: "row",

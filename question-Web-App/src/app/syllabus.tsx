@@ -1043,8 +1043,8 @@ function makeStyles(t: AppTheme) {
             borderColor: t.border,
         },
         deptCardActive: {
-            backgroundColor: t.accent,
-            borderColor: t.accent,
+            backgroundColor: t.controlActiveBg,
+            borderColor: t.controlActiveBorder,
         },
         deptIconWrap: {
             width: 28,
@@ -1063,27 +1063,27 @@ function makeStyles(t: AppTheme) {
             color: t.text,
         },
         deptTextActive: {
-            color: "#FFFFFF",
+            color: t.controlActiveText,
         },
         semPill: {
             paddingHorizontal: 12,
             paddingVertical: 6,
             borderRadius: 9,
-            backgroundColor: t.surface,
+            backgroundColor: t.controlBg,
             borderWidth: 1,
-            borderColor: t.border,
+            borderColor: t.controlBorder,
         },
         semPillActive: {
-            backgroundColor: t.accent,
-            borderColor: t.accent,
+            backgroundColor: t.controlActiveBg,
+            borderColor: t.controlActiveBorder,
         },
         semPillText: {
             fontSize: 12,
             fontWeight: "600",
-            color: t.text,
+            color: t.controlText,
         },
         semPillTextActive: {
-            color: "#FFFFFF",
+            color: t.controlActiveText,
             fontWeight: "700",
         },
         centerCard: {

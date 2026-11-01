@@ -45,9 +45,14 @@ import type { AppTheme } from "../constants/theme";
 
 if (
     Platform.OS === "android" &&
-    UIManager.setLayoutAnimationEnabledExperimental
+    UIManager.setLayoutAnimationEnabledExperimental &&
+    !(globalThis as any).nativeFabricUIManager
 ) {
-    UIManager.setLayoutAnimationEnabledExperimental(true);
+    try {
+        UIManager.setLayoutAnimationEnabledExperimental(true);
+    } catch {
+        // no-op on Fabric / New Architecture
+    }
 }
 
 /* ==========================================

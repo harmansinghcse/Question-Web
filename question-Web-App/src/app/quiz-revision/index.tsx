@@ -1054,8 +1054,8 @@ function makeStyles(t: AppTheme) {
             borderColor: t.border,
         },
         pillActive: {
-            backgroundColor: t.accent,
-            borderColor: t.accent,
+            backgroundColor: t.controlActiveBg,
+            borderColor: t.controlActiveBorder,
         },
         pillText: {
             color: t.textSecondary,
@@ -1064,7 +1064,7 @@ function makeStyles(t: AppTheme) {
             maxWidth: 240,
         },
         pillTextActive: {
-            color: "#FFF",
+            color: t.controlActiveText,
             fontWeight: "700",
         },
         chipsWrap: {
@@ -1085,8 +1085,8 @@ function makeStyles(t: AppTheme) {
             maxWidth: "100%",
         },
         chipActive: {
-            backgroundColor: t.accentSoft,
-            borderColor: t.accent,
+            backgroundColor: t.controlSoftActiveBg,
+            borderColor: t.controlSoftActiveBorder,
         },
         chipText: {
             color: t.textSecondary,
@@ -1095,7 +1095,7 @@ function makeStyles(t: AppTheme) {
             flexShrink: 1,
         },
         chipTextActive: {
-            color: t.accent,
+            color: t.controlSoftActiveText,
             fontWeight: "700",
         },
         buttonGroup: {
@@ -1118,8 +1118,8 @@ function makeStyles(t: AppTheme) {
             gap: 8,
         },
         typeCardActive: {
-            borderColor: t.accent,
-            backgroundColor: t.accentSoft,
+            borderColor: t.controlSoftActiveBorder,
+            backgroundColor: t.controlSoftActiveBg,
         },
         typeCardText: {
             flex: 1,
@@ -1128,7 +1128,7 @@ function makeStyles(t: AppTheme) {
             fontWeight: "600",
         },
         typeCardTextActive: {
-            color: t.accent,
+            color: t.controlSoftActiveText,
             fontWeight: "700",
         },
         typeCount: {
@@ -1159,7 +1159,7 @@ function makeStyles(t: AppTheme) {
             justifyContent: "center",
         },
         segBtnActive: {
-            backgroundColor: t.accent,
+            backgroundColor: t.controlActiveBg,
         },
         segText: {
             color: t.textSecondary,
@@ -1167,7 +1167,7 @@ function makeStyles(t: AppTheme) {
             fontWeight: "600",
         },
         segTextActive: {
-            color: "#FFF",
+            color: t.controlActiveText,
             fontWeight: "700",
         },
         startCard: {

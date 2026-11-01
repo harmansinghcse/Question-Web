@@ -1241,11 +1241,11 @@ function makeStyles(t: AppTheme) {
         tabButtonText: {
             fontSize: 12,
             fontWeight: "700",
-            color: t.muted,
+            color: t.textSecondary,
             flexShrink: 1,
         },
         tabButtonTextActive: {
-            color: "#FFFFFF",
+            color: t.onAccent,
         },
 
         tabContent: {
@@ -1293,11 +1293,11 @@ function makeStyles(t: AppTheme) {
             borderRadius: 10,
         },
         pillActive: {
-            backgroundColor: t.accent,
-            borderColor: t.accent,
+            backgroundColor: t.controlActiveBg,
+            borderColor: t.controlActiveBorder,
         },
-        pillText: { color: t.text, fontSize: 12, fontWeight: "600" },
-        pillTextActive: { color: "#FFFFFF" },
+        pillText: { color: t.controlText, fontSize: 12, fontWeight: "600" },
+        pillTextActive: { color: t.controlActiveText, fontWeight: "700" },
 
         typeRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
         typePill: {
@@ -1309,11 +1309,11 @@ function makeStyles(t: AppTheme) {
             borderRadius: 8,
         },
         typePillActive: {
-            backgroundColor: t.surface,
-            borderColor: t.accent,
+            backgroundColor: t.controlSoftActiveBg,
+            borderColor: t.controlSoftActiveBorder,
         },
-        typePillText: { color: t.muted, fontSize: 11, fontWeight: "600" },
-        typePillTextActive: { color: t.accent, fontWeight: "700" },
+        typePillText: { color: t.textSecondary, fontSize: 11, fontWeight: "600" },
+        typePillTextActive: { color: t.controlSoftActiveText, fontWeight: "700" },
 
         actionBar: {
             flexDirection: "row",
@@ -1539,11 +1539,11 @@ function makeStyles(t: AppTheme) {
             borderRadius: 10,
         },
         styleBtnActive: {
-            borderColor: t.accent,
-            backgroundColor: t.surfaceAlt,
+            borderColor: t.controlSoftActiveBorder,
+            backgroundColor: t.controlSoftActiveBg,
         },
-        styleBtnText: { color: t.muted, fontSize: 12, fontWeight: "700" },
-        styleBtnTextActive: { color: t.accent },
+        styleBtnText: { color: t.textSecondary, fontSize: 12, fontWeight: "700" },
+        styleBtnTextActive: { color: t.controlSoftActiveText, fontWeight: "800" },
 
         optionalText: { color: t.muted, fontSize: 12, fontWeight: "400" },
         instructionInput: {

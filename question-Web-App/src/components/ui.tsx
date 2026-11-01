@@ -18,6 +18,11 @@ import { useRouter } from "expo-router";
 import Markdown from "react-native-markdown-display";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppTheme } from "../providers/ThemeProvider";
+import {
+    getContrastText,
+    getLuminance,
+    getReadableTintColor,
+} from "../constants/theme";
 import type { Question, QuestionType } from "../services/api";
 
 type IconName = React.ComponentProps<typeof Ionicons>["name"];
@@ -64,7 +69,7 @@ export function Badge({
     onPress?: () => void;
 }) {
     const { theme } = useAppTheme();
-    const fg = color ?? theme.textSecondary;
+    const fg = color ? getReadableTintColor(color, theme.mode) : theme.textSecondary;
     const content = (
         <View
             style={{
@@ -75,8 +80,10 @@ export function Badge({
                 paddingVertical: 4,
                 borderRadius: 7,
                 borderWidth: 1,
-                borderColor: color ? color + "33" : theme.border,
-                backgroundColor: color ? color + "14" : theme.surfaceAlt,
+                borderColor: color ? color + "40" : theme.border,
+                backgroundColor: color
+                    ? color + (theme.mode === "dark" ? "22" : "15")
+                    : theme.surfaceAlt,
                 maxWidth: "100%",
                 flexShrink: 1,
             }}
@@ -86,7 +93,7 @@ export function Badge({
                 style={{
                     color: fg,
                     fontSize: 11,
-                    fontWeight: "600",
+                    fontWeight: "700",
                     flexShrink: 1,
                 }}
                 numberOfLines={1}
@@ -121,22 +128,45 @@ export function Pill({
     icon,
     count,
     compact = false,
+    disabled = false,
 }: {
     label: string;
     active?: boolean;
-    onPress: () => void;
+    onPress?: () => void;
     color?: string;
     icon?: IconName;
     count?: number;
     compact?: boolean;
+    disabled?: boolean;
 }) {
     const { theme } = useAppTheme();
-    const activeBg = color ?? theme.accent;
+    const activeBg = color ?? theme.controlActiveBg;
+    const activeFg = getContrastText(activeBg, theme.controlActiveText, "#0F172A");
+    const inactiveFg = color ? getReadableTintColor(color, theme.mode) : theme.controlText;
+    const isBrightBg = getLuminance(activeBg) > 0.38;
+
+    const bg = disabled
+        ? theme.disabledBg
+        : active
+          ? activeBg
+          : theme.controlBg;
+    const border = disabled
+        ? theme.disabledBorder
+        : active
+          ? (color ?? theme.controlActiveBorder)
+          : theme.controlBorder;
+    const fg = disabled
+        ? theme.disabledText
+        : active
+          ? activeFg
+          : inactiveFg;
+
     return (
         <Pressable
-            onPress={onPress}
+            onPress={disabled ? undefined : onPress}
+            disabled={disabled}
             accessibilityRole="button"
-            accessibilityState={{ selected: !!active }}
+            accessibilityState={{ selected: !!active, disabled: !!disabled }}
             style={({ pressed }) => ({
                 flexDirection: "row",
                 alignItems: "center",
@@ -145,27 +175,27 @@ export function Pill({
                 height: compact ? 34 : 38,
                 borderRadius: 10,
                 borderWidth: 1,
-                borderColor: active ? activeBg : theme.border,
-                backgroundColor: active ? activeBg : theme.surface,
-                opacity: pressed ? 0.85 : 1,
-                shadowColor: active ? activeBg : "transparent",
+                borderColor: border,
+                backgroundColor: bg,
+                opacity: disabled ? 0.55 : pressed ? 0.85 : 1,
+                shadowColor: active && !disabled ? activeBg : "transparent",
                 shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: active ? 0.2 : 0,
+                shadowOpacity: active && !disabled ? 0.2 : 0,
                 shadowRadius: 3,
-                elevation: active ? 2 : 0,
+                elevation: active && !disabled ? 2 : 0,
             })}
         >
             {icon ? (
                 <Ionicons
                     name={icon}
                     size={compact ? 13 : 14}
-                    color={active ? "#FFFFFF" : color ?? theme.textSecondary}
+                    color={fg}
                 />
             ) : null}
             <Text
                 numberOfLines={1}
                 style={{
-                    color: active ? "#FFFFFF" : theme.textSecondary,
+                    color: fg,
                     fontSize: compact ? 12 : 13,
                     fontWeight: active ? "700" : "600",
                     maxWidth: 220,
@@ -180,13 +210,15 @@ export function Pill({
                         paddingVertical: 1.5,
                         borderRadius: 5,
                         backgroundColor: active
-                            ? "rgba(255,255,255,0.25)"
+                            ? isBrightBg
+                                ? "rgba(0,0,0,0.12)"
+                                : "rgba(255,255,255,0.25)"
                             : theme.surfaceAlt,
                     }}
                 >
                     <Text
                         style={{
-                            color: active ? "#FFFFFF" : theme.muted,
+                            color: fg,
                             fontSize: 11,
                             fontWeight: "700",
                         }}
@@ -374,6 +406,9 @@ export function PrimaryButton({
     style?: StyleProp<ViewStyle>;
 }) {
     const { theme } = useAppTheme();
+    const fg = disabled
+        ? theme.disabledText
+        : getContrastText(theme.accent, theme.onAccent);
     return (
         <Pressable
             onPress={onPress}
@@ -388,7 +423,9 @@ export function PrimaryButton({
                     paddingHorizontal: 18,
                     minHeight: 44,
                     borderRadius: 11,
-                    backgroundColor: disabled ? theme.border : theme.accent,
+                    backgroundColor: disabled ? theme.disabledBg : theme.accent,
+                    borderWidth: 1,
+                    borderColor: disabled ? theme.disabledBorder : theme.accentDeep,
                     opacity: pressed && !disabled ? 0.88 : 1,
                     shadowColor: disabled ? "transparent" : theme.accent,
                     shadowOffset: { width: 0, height: 3 },
@@ -400,13 +437,13 @@ export function PrimaryButton({
             ]}
         >
             {loading ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
+                <ActivityIndicator size="small" color={fg} />
             ) : icon ? (
-                <Ionicons name={icon} size={17} color="#FFFFFF" />
+                <Ionicons name={icon} size={17} color={fg} />
             ) : null}
             <Text
                 style={{
-                    color: disabled ? theme.muted : "#FFFFFF",
+                    color: fg,
                     fontSize: 14,
                     fontWeight: "700",
                 }}

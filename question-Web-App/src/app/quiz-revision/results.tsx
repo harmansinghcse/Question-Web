@@ -1039,21 +1039,21 @@ function makeStyles(t: AppTheme) {
             paddingHorizontal: 9,
             paddingVertical: 5,
             borderRadius: 7,
-            backgroundColor: t.surfaceAlt,
+            backgroundColor: t.controlBg,
             borderWidth: 1,
-            borderColor: t.border,
+            borderColor: t.controlBorder,
         },
         filterPillActive: {
-            backgroundColor: t.accent,
-            borderColor: t.accent,
+            backgroundColor: t.controlActiveBg,
+            borderColor: t.controlActiveBorder,
         },
         filterPillText: {
             fontSize: 11,
             fontWeight: "600",
-            color: t.textSecondary,
+            color: t.controlText,
         },
         filterPillTextActive: {
-            color: "#FFF",
+            color: t.controlActiveText,
             fontWeight: "700",
         },
         questionsList: {

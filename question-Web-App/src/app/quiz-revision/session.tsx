@@ -683,8 +683,8 @@ function makeStyles(t: AppTheme) {
             minHeight: 52,
         },
         optionItemSelected: {
-            borderColor: t.accent,
-            backgroundColor: t.accentSoft,
+            borderColor: t.controlSoftActiveBorder,
+            backgroundColor: t.controlSoftActiveBg,
         },
         optionKeyBox: {
             width: 32,
@@ -697,8 +697,8 @@ function makeStyles(t: AppTheme) {
             borderColor: t.border,
         },
         optionKeyBoxSelected: {
-            backgroundColor: t.accent,
-            borderColor: t.accent,
+            backgroundColor: t.controlActiveBg,
+            borderColor: t.controlActiveBorder,
         },
         optionKeyText: {
             fontSize: 13,
@@ -706,7 +706,7 @@ function makeStyles(t: AppTheme) {
             color: t.textSecondary,
         },
         optionKeyTextSelected: {
-            color: "#FFF",
+            color: t.controlActiveText,
         },
         optionItemText: {
             flex: 1,
@@ -716,7 +716,7 @@ function makeStyles(t: AppTheme) {
         },
         optionItemTextSelected: {
             color: t.text,
-            fontWeight: "600",
+            fontWeight: "700",
         },
         fillupsContainer: {
             gap: 10,

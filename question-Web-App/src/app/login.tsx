@@ -274,7 +274,7 @@ export default function LoginScreen() {
                     {/* Register */}
                     <View style={s.footerRow}>
                         <Text style={s.footerText}>
-                            Don't have an account?{" "}
+                            {"Don't have an account? "}
                         </Text>
 
                         <Pressable

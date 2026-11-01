@@ -1,6 +1,7 @@
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL?.replace(/\/+$/, '');
 
-const TIMEOUT_MS = 20000;
+/** Max time to wait for the backend before giving up (60s accommodates Render free-tier cold starts). */
+const TIMEOUT_MS = 60000;
 
 if (!API_BASE_URL) {
   console.warn('[auth-api] EXPO_PUBLIC_API_URL is not configured');

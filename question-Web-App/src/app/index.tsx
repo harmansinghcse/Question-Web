@@ -43,7 +43,7 @@ export default function HomeScreen() {
             : true;
 
     const { user, isAuthenticated, isRestoring } = useAuth();
-    const { isWide, isCompact } = useLayout();
+    const { isWide } = useLayout();
     const s = useMemo(() => makeStyles(theme), [theme]);
 
     // ── Local Storage Data ───────────────────────────────────────────────────

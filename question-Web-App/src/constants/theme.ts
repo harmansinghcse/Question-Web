@@ -22,6 +22,20 @@ export type AppTheme = {
   accentMuted: string;
   primaryLight: string;
   secondaryAccent: string;
+  onAccent: string;
+  // Selectable / interactive control tokens
+  controlBg: string;
+  controlBorder: string;
+  controlText: string;
+  controlActiveBg: string;
+  controlActiveBorder: string;
+  controlActiveText: string;
+  controlSoftActiveBg: string;
+  controlSoftActiveBorder: string;
+  controlSoftActiveText: string;
+  disabledBg: string;
+  disabledText: string;
+  disabledBorder: string;
   // Sidebar
   sidebarBg: string;
   sidebarText: string;
@@ -116,6 +130,19 @@ export const themes: Record<ThemeMode, AppTheme> = {
     accentMuted: 'rgba(146, 117, 245, 0.28)',
     primaryLight: '#C4B5FD',
     secondaryAccent: '#60A5FA',
+    onAccent: '#FFFFFF',
+    controlBg: '#191F35',
+    controlBorder: '#303951',
+    controlText: '#E2E8F0',
+    controlActiveBg: '#7457D9',
+    controlActiveBorder: '#9275F5',
+    controlActiveText: '#FFFFFF',
+    controlSoftActiveBg: 'rgba(146, 117, 245, 0.22)',
+    controlSoftActiveBorder: '#9275F5',
+    controlSoftActiveText: '#EDE9FE',
+    disabledBg: '#212946',
+    disabledText: '#76809E',
+    disabledBorder: '#303951',
     sidebarBg: '#13182E',
     sidebarText: '#F5F5FA',
     sidebarMuted: '#848EAA',
@@ -151,6 +178,19 @@ export const themes: Record<ThemeMode, AppTheme> = {
     accentMuted: 'rgba(116, 87, 217, 0.20)',
     primaryLight: '#EDE9FE',
     secondaryAccent: '#3B82F6',
+    onAccent: '#FFFFFF',
+    controlBg: '#FFFFFF',
+    controlBorder: '#CBD5E1',
+    controlText: '#334155',
+    controlActiveBg: '#6D4CD4',
+    controlActiveBorder: '#5F44C2',
+    controlActiveText: '#FFFFFF',
+    controlSoftActiveBg: 'rgba(116, 87, 217, 0.14)',
+    controlSoftActiveBorder: '#7457D9',
+    controlSoftActiveText: '#4C2FA6',
+    disabledBg: '#E2E8F0',
+    disabledText: '#64748B',
+    disabledBorder: '#CBD5E1',
     sidebarBg: '#FFFFFF',
     sidebarText: '#101426',
     sidebarMuted: '#64748B',
@@ -168,3 +208,71 @@ export const themes: Record<ThemeMode, AppTheme> = {
     ...SHARED_SCALE,
   },
 };
+
+/**
+ * Calculates WCAG relative luminance for a given hex or rgb color string.
+ * Returns a value in [0, 1] where 0 is pitch black and 1 is pure white.
+ */
+export function getLuminance(colorStr: string): number {
+  if (!colorStr) return 0.5;
+  const str = colorStr.trim();
+  if (str.startsWith('rgb')) {
+    const nums = str.match(/\d+(\.\d+)?/g);
+    if (nums && nums.length >= 3) {
+      const [r, g, b] = nums.map((v) => Number(v) / 255);
+      const toLinear = (c: number) =>
+        c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+      return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
+    }
+  }
+
+  let hex = str.replace('#', '');
+  if (hex.length === 3) {
+    hex = hex.split('').map((ch) => ch + ch).join('');
+  }
+  if (hex.length >= 6) {
+    const r = parseInt(hex.slice(0, 2), 16) / 255;
+    const g = parseInt(hex.slice(2, 4), 16) / 255;
+    const b = parseInt(hex.slice(4, 6), 16) / 255;
+    const toLinear = (c: number) =>
+      c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
+  }
+  return 0.5;
+}
+
+/**
+ * Returns a high-contrast text color ('#FFFFFF' or '#0F172A') for any background color.
+ */
+export function getContrastText(
+  bg: string,
+  lightColor = '#FFFFFF',
+  darkColor = '#0F172A',
+): string {
+  const lum = getLuminance(bg);
+  return lum > 0.38 ? darkColor : lightColor;
+}
+
+/**
+ * Ensures a vibrant color remains clearly readable as text against light or dark surfaces.
+ */
+export function getReadableTintColor(color: string, mode: ThemeMode): string {
+  if (!color) return mode === 'dark' ? '#F5F5FA' : '#101426';
+  const lum = getLuminance(color);
+  if (mode === 'light' && lum > 0.4) {
+    // For pastel or light colors on light theme, map to deeper readable tones
+    const map: Record<string, string> = {
+      '#34D399': '#059669', // emerald
+      '#38BDF8': '#0284C7', // sky
+      '#A78BFA': '#6D28D9', // purple
+      '#F59E0B': '#B45309', // amber
+      '#818CF8': '#4338CA', // indigo
+      '#60A5FA': '#1D4ED8', // blue
+    };
+    return map[color.toUpperCase()] || map[color] || '#4C1D95';
+  }
+  if (mode === 'dark' && lum < 0.2) {
+    return '#E0E7FF';
+  }
+  return color;
+}
