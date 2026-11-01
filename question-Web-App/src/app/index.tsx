@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 import AppShell, { useLayout } from "../components/AppShell";
 import AcademicBannerIllustration from "../components/AcademicBannerIllustration";
+import QuestionWebSplash from "../components/QuestionWebSplash";
 import {
     EmptyBlock,
     ErrorBlock,
@@ -22,10 +23,7 @@ import {
 } from "../services/syllabus-tracker-api";
 import { useApiData } from "../hooks/use-api-data";
 import { useStudentSchedule } from "../hooks/use-student-schedule";
-import {
-    subjectCode,
-    subjectDisplayName,
-} from "../constants/subjects";
+import { subjectCode, subjectDisplayName } from "../constants/subjects";
 import {
     studyStorage,
     type StudyGoal,
@@ -37,7 +35,13 @@ const DAY_KEYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
 export default function HomeScreen() {
     const router = useRouter();
-    const { theme } = useAppTheme();
+    const appTheme = useAppTheme();
+    const { theme } = appTheme;
+    const isThemeReady =
+        "ready" in appTheme
+            ? Boolean((appTheme as { ready?: boolean }).ready)
+            : true;
+
     const { user, isAuthenticated, isRestoring } = useAuth();
     const { isWide, isCompact } = useLayout();
     const s = useMemo(() => makeStyles(theme), [theme]);
@@ -161,10 +165,13 @@ export default function HomeScreen() {
             countdownTone = "soon";
         }
 
-        const formattedDate = new Date(next.examDate).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-        });
+        const formattedDate = new Date(next.examDate).toLocaleDateString(
+            "en-US",
+            {
+                month: "short",
+                day: "numeric",
+            },
+        );
 
         return {
             exam: next,
@@ -181,7 +188,11 @@ export default function HomeScreen() {
 
     // ── Syllabus Progress Preview (at most 3 subject rows from real backend records) ───
     const syllabusPreview = useMemo(() => {
-        if (!canFetchTracker || trackerState.status !== "success" || !trackerState.data) {
+        if (
+            !canFetchTracker ||
+            trackerState.status !== "success" ||
+            !trackerState.data
+        ) {
             return [];
         }
         const ctx = trackerState.data;
@@ -235,6 +246,11 @@ export default function HomeScreen() {
         [goals, studyStats],
     );
 
+    // ── Show Animated Launch Screen while Auth / Theme Initializes ───────────
+    if (isRestoring || !isThemeReady) {
+        return <QuestionWebSplash />;
+    }
+
     return (
         <AppShell active="home">
             <View style={s.container}>
@@ -243,8 +259,15 @@ export default function HomeScreen() {
                     <View style={s.bannerContent}>
                         <View style={s.bannerTextCol}>
                             <View style={s.greetingBadge}>
-                                <Ionicons name="sparkles" size={12} color={theme.accent} />
-                                <Text style={s.bannerGreeting} numberOfLines={1}>
+                                <Ionicons
+                                    name="sparkles"
+                                    size={12}
+                                    color={theme.accent}
+                                />
+                                <Text
+                                    style={s.bannerGreeting}
+                                    numberOfLines={1}
+                                >
                                     {greeting}, {displayName}
                                 </Text>
                             </View>
@@ -252,46 +275,9 @@ export default function HomeScreen() {
                                 Make Today Count.
                             </Text>
                             <Text style={s.bannerSubtitle}>
-                                Stay consistent, master your coursework, and keep tracking your progress.
+                                Stay consistent, master your coursework, and
+                                keep tracking your progress.
                             </Text>
-                            <View style={s.bannerActionsRow}>
-                                <Pressable
-                                    onPress={() => setActiveModal("daily-planner")}
-                                    accessibilityRole="button"
-                                    accessibilityLabel="Go to Daily Plan"
-                                    style={({ pressed }) => [
-                                        s.bannerButton,
-                                        pressed && { opacity: 0.85 },
-                                    ]}
-                                >
-                                    <Text style={s.bannerButtonText}>
-                                        Open Daily Plan
-                                    </Text>
-                                    <Ionicons
-                                        name="arrow-forward"
-                                        size={14}
-                                        color="#FFFFFF"
-                                    />
-                                </Pressable>
-                                <Pressable
-                                    onPress={() => router.push("/learn" as never)}
-                                    accessibilityRole="button"
-                                    accessibilityLabel="Browse Question Bank"
-                                    style={({ pressed }) => [
-                                        s.bannerSecondaryButton,
-                                        pressed && { opacity: 0.85 },
-                                    ]}
-                                >
-                                    <Ionicons
-                                        name="book-outline"
-                                        size={14}
-                                        color={theme.text}
-                                    />
-                                    <Text style={s.bannerSecondaryButtonText}>
-                                        Question Bank
-                                    </Text>
-                                </Pressable>
-                            </View>
                         </View>
                         {isWide && (
                             <View style={s.bannerIllustrationWrapper}>
@@ -303,109 +289,138 @@ export default function HomeScreen() {
 
                 {/* 2. UPCOMING EXAMS AND TESTS */}
                 <View style={s.section}>
-                    <View style={s.sectionHeader}>
-                        <View style={s.sectionHeaderLeft}>
-                            <View style={s.sectionAccentBar} />
-                            <Text style={s.sectionTitle}>
-                                Upcoming Exams
-                            </Text>
-                        </View>
-                        <Pressable
-                            onPress={() => setActiveModal("upcoming-exams")}
-                            accessibilityRole="button"
-                            accessibilityLabel="View all exams"
-                            style={s.actionLink}
-                        >
-                            <Text style={s.actionLinkText}>View All</Text>
-                            <Ionicons
-                                name="chevron-forward"
-                                size={14}
-                                color={theme.accent}
-                            />
-                        </Pressable>
-                    </View>
-
-                    {schedule.exams.status === "unauthenticated" ? (
-                        <EmptyBlock
-                            icon="log-in-outline"
-                            title="Sign in to view exams"
-                            text="Upcoming examinations and schedules will show here once you sign in."
-                            actionLabel="Sign in"
-                            onAction={() => router.push("/login" as never)}
-                        />
-                    ) : schedule.exams.status === "loading" ? (
-                        <LoadingBlock label="Loading upcoming exams..." />
-                    ) : schedule.exams.status === "error" ? (
-                        <ErrorBlock
-                            title="Couldn't load upcoming exams"
-                            message={schedule.exams.message ?? undefined}
-                            onRetry={schedule.exams.refresh}
-                        />
-                    ) : nearestExamInfo ? (
-                        <Pressable
-                            onPress={() => setActiveModal("upcoming-exams")}
-                            style={({ pressed }) => [
-                                s.examCard,
-                                pressed && { opacity: 0.9 },
-                            ]}
-                        >
-                            <View style={s.examRow}>
-                                <View style={{ flex: 1, minWidth: 0, gap: 6 }}>
-                                    <View style={s.examTagRow}>
-                                        <View style={[s.subjectPill, { flexShrink: 1 }]}>
-                                            <Text
-                                                style={s.subjectPillText}
-                                                numberOfLines={1}
-                                            >
-                                                {nearestExamInfo.subjectLabel}
-                                            </Text>
-                                        </View>
-                                        <Text style={s.examDateText}>
-                                            {nearestExamInfo.formattedDate}
-                                        </Text>
-                                    </View>
-                                    <Text style={s.examTitle} numberOfLines={2}>
-                                        {nearestExamInfo.exam.title}
-                                    </Text>
-                                </View>
-                                <View
-                                    style={[
-                                        s.countdownPill,
-                                        nearestExamInfo.countdownTone === "urgent" && s.countdownUrgent,
-                                        nearestExamInfo.countdownTone === "soon" && s.countdownSoon,
-                                    ]}
-                                >
-                                    <Text
-                                        style={[
-                                            s.countdownText,
-                                            nearestExamInfo.countdownTone === "urgent" && s.countdownTextUrgent,
-                                            nearestExamInfo.countdownTone === "soon" && s.countdownTextSoon,
-                                        ]}
-                                    >
-                                        {nearestExamInfo.countdownLabel}
-                                    </Text>
-                                </View>
+                    <View style={[s.examCard, { padding: 16, gap: 16 }]}>
+                        {/* Header */}
+                        <View style={s.sectionHeader}>
+                            <View style={s.sectionHeaderLeft}>
+                                <View style={s.sectionAccentBar} />
+                                <Text style={s.sectionTitle}>
+                                    Upcoming Exams
+                                </Text>
                             </View>
-                        </Pressable>
-                    ) : (
-                        <View style={s.emptyCard}>
-                            <View style={s.emptyIconCircle}>
+
+                            <Pressable
+                                onPress={() => setActiveModal("upcoming-exams")}
+                                accessibilityRole="button"
+                                accessibilityLabel="View all exams"
+                                style={s.actionLink}
+                            >
+                                <Text style={s.actionLinkText}>View All</Text>
                                 <Ionicons
-                                    name="calendar-outline"
-                                    size={18}
+                                    name="chevron-forward"
+                                    size={14}
                                     color={theme.accent}
                                 />
-                            </View>
-                            <View style={s.emptyCardBody}>
-                                <Text style={s.emptyCardTitle}>
-                                    No upcoming exams scheduled
-                                </Text>
-                                <Text style={s.emptyCardSub}>
-                                    Exams scheduled for your department will appear here.
-                                </Text>
-                            </View>
+                            </Pressable>
                         </View>
-                    )}
+
+                        {/* Content */}
+                        {schedule.exams.status === "unauthenticated" ? (
+                            <EmptyBlock
+                                icon="log-in-outline"
+                                title="Sign in to view exams"
+                                text="Upcoming examinations and schedules will show here once you sign in."
+                                actionLabel="Sign in"
+                                onAction={() => router.push("/login" as never)}
+                            />
+                        ) : schedule.exams.status === "loading" ? (
+                            <LoadingBlock label="Loading upcoming exams..." />
+                        ) : schedule.exams.status === "error" ? (
+                            <ErrorBlock
+                                title="Couldn't load upcoming exams"
+                                message={schedule.exams.message ?? undefined}
+                                onRetry={schedule.exams.refresh}
+                            />
+                        ) : nearestExamInfo ? (
+                            <Pressable
+                                onPress={() => setActiveModal("upcoming-exams")}
+                                style={({ pressed }) => [
+                                    s.emptyCard,
+                                    { padding: 14 },
+                                    pressed && { opacity: 0.85 },
+                                ]}
+                            >
+                                <View style={s.examRow}>
+                                    <View
+                                        style={{ flex: 1, minWidth: 0, gap: 8 }}
+                                    >
+                                        <View style={s.examTagRow}>
+                                            <View
+                                                style={[
+                                                    s.subjectPill,
+                                                    { flexShrink: 1 },
+                                                ]}
+                                            >
+                                                <Text
+                                                    style={s.subjectPillText}
+                                                    numberOfLines={1}
+                                                >
+                                                    {
+                                                        nearestExamInfo.subjectLabel
+                                                    }
+                                                </Text>
+                                            </View>
+                                            <Text style={s.examDateText}>
+                                                {nearestExamInfo.formattedDate}
+                                            </Text>
+                                        </View>
+
+                                        <Text
+                                            style={s.examTitle}
+                                            numberOfLines={2}
+                                        >
+                                            {nearestExamInfo.exam.title}
+                                        </Text>
+                                    </View>
+
+                                    <View
+                                        style={[
+                                            s.countdownPill,
+                                            nearestExamInfo.countdownTone ===
+                                                "urgent" && s.countdownUrgent,
+                                            nearestExamInfo.countdownTone ===
+                                                "soon" && s.countdownSoon,
+                                        ]}
+                                    >
+                                        <Text
+                                            style={[
+                                                s.countdownText,
+                                                nearestExamInfo.countdownTone ===
+                                                    "urgent" &&
+                                                    s.countdownTextUrgent,
+                                                nearestExamInfo.countdownTone ===
+                                                    "soon" &&
+                                                    s.countdownTextSoon,
+                                            ]}
+                                        >
+                                            {nearestExamInfo.countdownLabel}
+                                        </Text>
+                                    </View>
+                                </View>
+                            </Pressable>
+                        ) : (
+                            <View
+                                style={[s.emptyCard, { padding: 14, gap: 12 }]}
+                            >
+                                <View style={s.emptyIconCircle}>
+                                    <Ionicons
+                                        name="calendar-outline"
+                                        size={18}
+                                        color={theme.accent}
+                                    />
+                                </View>
+                                <View style={[s.emptyCardBody, { gap: 5 }]}>
+                                    <Text style={s.emptyCardTitle}>
+                                        No upcoming exams scheduled
+                                    </Text>
+                                    <Text style={s.emptyCardSub}>
+                                        Exams scheduled for your department will
+                                        appear here.
+                                    </Text>
+                                </View>
+                            </View>
+                        )}
+                    </View>
                 </View>
 
                 {/* 3. TODAY'S TIMETABLE */}
@@ -455,7 +470,8 @@ export default function HomeScreen() {
                                     key={item.entryId}
                                     style={[
                                         s.scheduleRow,
-                                        idx < todaySchedule.length - 1 && s.scheduleDivider,
+                                        idx < todaySchedule.length - 1 &&
+                                            s.scheduleDivider,
                                     ]}
                                 >
                                     <View style={s.timeBlock}>
@@ -466,15 +482,25 @@ export default function HomeScreen() {
                                             {item.endTime}
                                         </Text>
                                     </View>
-                                    <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-                                        <Text style={s.scheduleTitle} numberOfLines={1}>
+                                    <View
+                                        style={{ flex: 1, minWidth: 0, gap: 2 }}
+                                    >
+                                        <Text
+                                            style={s.scheduleTitle}
+                                            numberOfLines={1}
+                                        >
                                             {item.subject?.subjectName ||
                                                 item.subject?.subjectId ||
                                                 `Subject #${item.subjectKey}`}
                                         </Text>
-                                        <Text style={s.scheduleLocation} numberOfLines={1}>
+                                        <Text
+                                            style={s.scheduleLocation}
+                                            numberOfLines={1}
+                                        >
                                             {[
-                                                item.classroom ? `Room: ${item.classroom}` : null,
+                                                item.classroom
+                                                    ? `Room: ${item.classroom}`
+                                                    : null,
                                                 item.teacher,
                                                 item.classType,
                                             ]
@@ -520,245 +546,386 @@ export default function HomeScreen() {
 
                 {/* 4. SYLLABUS TRACKER */}
                 <View style={s.section}>
-                    <View style={s.sectionHeader}>
-                        <View style={s.sectionHeaderLeft}>
-                            <View style={s.sectionAccentBar} />
-                            <Text style={s.sectionTitle}>Syllabus Progress</Text>
-                        </View>
-                        <Pressable
-                            onPress={() =>
-                                router.push("/syllabus-tracker" as never)
-                            }
-                            accessibilityRole="button"
-                            accessibilityLabel="Open Syllabus Tracker"
-                            style={s.actionLink}
-                        >
-                            <Text style={s.actionLinkText}>Open Tracker</Text>
-                            <Ionicons
-                                name="chevron-forward"
-                                size={14}
-                                color={theme.accent}
-                            />
-                        </Pressable>
-                    </View>
-
-                    {!isAuthenticated && !isRestoring ? (
-                        <EmptyBlock
-                            icon="git-network-outline"
-                            title="Sign in to track syllabus coverage"
-                            text="Record lecture-by-lecture topic coverage and view real-time completion analytics."
-                            actionLabel="Sign in"
-                            onAction={() => router.push("/login" as never)}
-                        />
-                    ) : isRestoring || trackerState.status === "loading" ? (
-                        <LoadingBlock label="Loading syllabus coverage..." />
-                    ) : trackerState.status === "error" ? (
-                        <ErrorBlock
-                            title="Couldn't load syllabus coverage"
-                            message={trackerState.message}
-                            onRetry={trackerState.refresh}
-                        />
-                    ) : syllabusPreview.length > 0 ? (
-                        <View style={s.card}>
-                            {syllabusPreview.map((item, idx) => (
-                                <Pressable
-                                    key={item.subjectKey}
-                                    onPress={() =>
-                                        router.push(
-                                            `/syllabus-tracker?subjectKey=${encodeURIComponent(item.subjectKey)}` as never,
-                                        )
-                                    }
-                                    style={({ pressed }) => [
-                                        s.syllabusRow,
-                                        idx < syllabusPreview.length - 1 && s.syllabusDivider,
-                                        pressed && { opacity: 0.8 },
+                    <View style={[s.card, { padding: 16, gap: 16 }]}>
+                        {/* SECTION HEADER */}
+                        <View style={s.sectionHeader}>
+                            <View style={s.sectionHeaderLeft}>
+                                <View style={s.sectionAccentBar} />
+                                <Text
+                                    style={[
+                                        s.sectionTitle,
+                                        {
+                                            fontSize: 17,
+                                            fontWeight: "800",
+                                            letterSpacing: 0.2,
+                                        },
                                     ]}
                                 >
-                                    <View style={s.syllabusHeaderRow}>
-                                        <View style={s.syllabusCodeRow}>
-                                            <View style={s.subjectPill}>
-                                                <Text
-                                                    style={s.subjectPillText}
-                                                    numberOfLines={1}
-                                                >
-                                                    {item.code}
-                                                </Text>
-                                            </View>
-                                            <Text
-                                                style={s.syllabusName}
-                                                numberOfLines={1}
-                                            >
-                                                {item.name}
-                                            </Text>
-                                        </View>
-                                        <View style={s.syllabusPctBadge}>
-                                            <Text style={s.syllabusPctText}>
-                                                {item.percentage}%
-                                            </Text>
-                                        </View>
-                                    </View>
+                                    Syllabus Progress
+                                </Text>
+                            </View>
 
-                                    <View style={s.progressBarWrapper}>
-                                        <ProgressBar
-                                            progress={item.percentage}
-                                            color={theme.accent}
-                                            height={6}
-                                        />
-                                    </View>
-
-                                    <View style={s.syllabusFooterRow}>
-                                        <View style={s.syllabusTopicsCountCol}>
-                                            <Ionicons
-                                                name="checkmark-circle"
-                                                size={13}
-                                                color={theme.success}
-                                            />
-                                            <Text style={s.syllabusTopicsCount}>
-                                                {item.completedCount} of {item.totalCount} topics covered
-                                            </Text>
-                                        </View>
-                                        <Ionicons
-                                            name="chevron-forward"
-                                            size={13}
-                                            color={theme.textSecondary}
-                                        />
-                                    </View>
-                                </Pressable>
-                            ))}
-                        </View>
-                    ) : (
-                        <View style={s.emptyCard}>
-                            <View style={s.emptyIconCircle}>
+                            <Pressable
+                                onPress={() =>
+                                    router.push("/syllabus-tracker" as never)
+                                }
+                                accessibilityRole="button"
+                                accessibilityLabel="Open Syllabus Tracker"
+                                style={s.actionLink}
+                            >
+                                <Text style={s.actionLinkText}>
+                                    Open Tracker
+                                </Text>
                                 <Ionicons
-                                    name="book-outline"
-                                    size={18}
+                                    name="chevron-forward"
+                                    size={14}
                                     color={theme.accent}
                                 />
-                            </View>
-                            <View style={s.emptyCardBody}>
-                                <Text style={s.emptyCardTitle}>
-                                    No subjects available
-                                </Text>
-                                <Text style={s.emptyCardSub}>
-                                    Subjects will appear here when connected to the curriculum.
-                                </Text>
-                            </View>
+                            </Pressable>
                         </View>
-                    )}
+
+                        {/* NOT AUTHENTICATED */}
+                        {!isAuthenticated && !isRestoring ? (
+                            <EmptyBlock
+                                icon="git-network-outline"
+                                title="Sign in to track syllabus coverage"
+                                text="Record lecture-by-lecture topic coverage and view real-time completion analytics."
+                                actionLabel="Sign in"
+                                onAction={() => router.push("/login" as never)}
+                            />
+                        ) : isRestoring || trackerState.status === "loading" ? (
+                            /* LOADING */
+                            <LoadingBlock label="Loading syllabus coverage..." />
+                        ) : trackerState.status === "error" ? (
+                            /* ERROR */
+                            <ErrorBlock
+                                title="Couldn't load syllabus coverage"
+                                message={trackerState.message}
+                                onRetry={trackerState.refresh}
+                            />
+                        ) : syllabusPreview.length > 0 ? (
+                            /* SUBJECT CARDS */
+                            <View style={{ gap: 12 }}>
+                                {syllabusPreview.map((item) => (
+                                    <Pressable
+                                        key={item.subjectKey}
+                                        onPress={() =>
+                                            router.push(
+                                                `/syllabus-tracker?subjectKey=${encodeURIComponent(item.subjectKey)}` as never,
+                                            )
+                                        }
+                                        style={({ pressed }) => [
+                                            {
+                                                padding: 15,
+                                                borderRadius: 14,
+                                                backgroundColor: theme.surface,
+                                                borderWidth: 1,
+                                                borderColor: theme.border,
+                                                opacity: pressed ? 0.8 : 1,
+                                            },
+                                        ]}
+                                    >
+                                        {/* SUBJECT NAME + PERCENTAGE */}
+                                        <View
+                                            style={{
+                                                flexDirection: "row",
+                                                alignItems: "center",
+                                                justifyContent: "space-between",
+                                                gap: 12,
+                                                marginBottom: 16,
+                                            }}
+                                        >
+                                            <View
+                                                style={{
+                                                    flex: 1,
+                                                    minWidth: 0,
+                                                    gap: 8,
+                                                }}
+                                            >
+                                                {/* SUBJECT CODE */}
+                                                <View
+                                                    style={{
+                                                        alignSelf: "flex-start",
+                                                        backgroundColor:
+                                                            theme.accent + "20",
+                                                        paddingHorizontal: 9,
+                                                        paddingVertical: 4,
+                                                        borderRadius: 7,
+                                                    }}
+                                                >
+                                                    <Text
+                                                        style={{
+                                                            color: theme.accent,
+                                                            fontSize: 11,
+                                                            fontWeight: "800",
+                                                            letterSpacing: 0.6,
+                                                        }}
+                                                    >
+                                                        {item.code}
+                                                    </Text>
+                                                </View>
+
+                                                {/* SUBJECT NAME */}
+                                                <Text
+                                                    style={{
+                                                        color: theme.text,
+                                                        fontSize: 15,
+                                                        fontWeight: "700",
+                                                        lineHeight: 21,
+                                                    }}
+                                                    numberOfLines={2}
+                                                >
+                                                    {item.name}
+                                                </Text>
+                                            </View>
+
+                                            {/* COMPLETION PERCENTAGE */}
+                                            <View
+                                                style={{
+                                                    backgroundColor:
+                                                        theme.accent + "18",
+                                                    borderWidth: 1,
+                                                    borderColor:
+                                                        theme.accent + "45",
+                                                    borderRadius: 12,
+                                                    minWidth: 66,
+                                                    paddingHorizontal: 10,
+                                                    paddingVertical: 9,
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                }}
+                                            >
+                                                <Text
+                                                    style={{
+                                                        color: theme.accent,
+                                                        fontSize: 19,
+                                                        fontWeight: "800",
+                                                    }}
+                                                >
+                                                    {item.percentage}%
+                                                </Text>
+
+                                                <Text
+                                                    style={{
+                                                        color: theme.textSecondary,
+                                                        fontSize: 9,
+                                                        fontWeight: "700",
+                                                        letterSpacing: 0.5,
+                                                    }}
+                                                >
+                                                    COMPLETE
+                                                </Text>
+                                            </View>
+                                        </View>
+
+                                        {/* PROGRESS BAR */}
+                                        <View style={{ gap: 10 }}>
+                                            <ProgressBar
+                                                progress={item.percentage}
+                                                color={theme.accent}
+                                                height={8}
+                                            />
+
+                                            {/* FOOTER */}
+                                            <View
+                                                style={{
+                                                    flexDirection: "row",
+                                                    justifyContent:
+                                                        "space-between",
+                                                    alignItems: "center",
+                                                    gap: 8,
+                                                }}
+                                            >
+                                                <View
+                                                    style={{
+                                                        flexDirection: "row",
+                                                        alignItems: "center",
+                                                        gap: 6,
+                                                        flex: 1,
+                                                        minWidth: 0,
+                                                    }}
+                                                >
+                                                    <Ionicons
+                                                        name="checkmark-circle"
+                                                        size={14}
+                                                        color={theme.success}
+                                                    />
+
+                                                    <Text
+                                                        style={{
+                                                            color: theme.textSecondary,
+                                                            fontSize: 11,
+                                                            fontWeight: "600",
+                                                            flex: 1,
+                                                        }}
+                                                        numberOfLines={1}
+                                                    >
+                                                        {item.completedCount} of{" "}
+                                                        {item.totalCount} topics
+                                                        covered
+                                                    </Text>
+                                                </View>
+
+                                                <Ionicons
+                                                    name="chevron-forward"
+                                                    size={15}
+                                                    color={theme.textSecondary}
+                                                />
+                                            </View>
+                                        </View>
+                                    </Pressable>
+                                ))}
+                            </View>
+                        ) : (
+                            /* EMPTY STATE */
+                            <View
+                                style={[
+                                    s.emptyCard,
+                                    {
+                                        padding: 15,
+                                        gap: 12,
+                                    },
+                                ]}
+                            >
+                                <View style={s.emptyIconCircle}>
+                                    <Ionicons
+                                        name="book-outline"
+                                        size={18}
+                                        color={theme.accent}
+                                    />
+                                </View>
+
+                                <View
+                                    style={[
+                                        s.emptyCardBody,
+                                        {
+                                            flex: 1,
+                                            gap: 5,
+                                        },
+                                    ]}
+                                >
+                                    <Text
+                                        style={[
+                                            s.emptyCardTitle,
+                                            { fontSize: 14, fontWeight: "700" },
+                                        ]}
+                                    >
+                                        No subjects available
+                                    </Text>
+
+                                    <Text
+                                        style={[
+                                            s.emptyCardSub,
+                                            { fontSize: 12, lineHeight: 18 },
+                                        ]}
+                                    >
+                                        Subjects will appear here when connected
+                                        to the curriculum.
+                                    </Text>
+                                </View>
+                            </View>
+                        )}
+                    </View>
                 </View>
 
-                {/* 5. FOUR STUDY TOOLS CARDS (Balanced 2x2 grid) */}
-                <View style={s.section}>
-                    <View style={s.sectionHeader}>
-                        <View style={s.sectionHeaderLeft}>
-                            <View style={s.sectionAccentBar} />
-                            <Text style={s.sectionTitle}>Study Tools</Text>
-                        </View>
+                {/* 2x2 GRID */}
+                <View
+                    style={{
+                        flexDirection: "row",
+                        flexWrap: "wrap",
+                        justifyContent: "space-between",
+                        rowGap: 12,
+                        width: "100%",
+                        paddingHorizontal: 8,
+                    }}
+                >
+                    {homeStudyTools.slice(0, 4).map((tool) => (
                         <Pressable
-                            onPress={() => router.push("/study-tools" as never)}
+                            key={tool.id}
+                            onPress={tool.onPress}
                             accessibilityRole="button"
-                            accessibilityLabel="Open all study tools"
-                            style={s.actionLink}
+                            accessibilityLabel={tool.title}
+                            style={({ pressed }) => [
+                                s.toolCard,
+                                {
+                                    width: "48.5%",
+                                    minHeight: 136,
+                                    padding: 16,
+                                    borderRadius: 18,
+                                    justifyContent: "space-between",
+                                    opacity: pressed ? 0.85 : 1,
+                                    transform: [{ scale: pressed ? 0.98 : 1 }],
+                                },
+                            ]}
                         >
-                            <Text style={s.actionLinkText}>All Tools</Text>
-                            <Ionicons
-                                name="chevron-forward"
-                                size={14}
-                                color={theme.accent}
-                            />
-                        </Pressable>
-                    </View>
+                            {/* ICON + CHEVRON */}
+                            <View
+                                style={{
+                                    flexDirection: "row",
+                                    alignItems: "center",
+                                    justifyContent: "space-between",
+                                }}
+                            >
+                                <View
+                                    style={[
+                                        s.toolIconWrapper,
+                                        {
+                                            width: 42,
+                                            height: 42,
+                                            borderRadius: 13,
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                        },
+                                    ]}
+                                >
+                                    <Ionicons
+                                        name={tool.icon}
+                                        size={21}
+                                        color={theme.accent}
+                                    />
+                                </View>
 
-                    <View style={s.toolsGrid}>
-                        <View
-                            style={[
-                                s.toolsRow,
-                                isCompact && { flexDirection: "column" },
-                            ]}
-                        >
-                            {homeStudyTools.slice(0, 2).map((tool) => (
-                                <Pressable
-                                    key={tool.id}
-                                    onPress={tool.onPress}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={tool.title}
-                                    style={({ pressed }) => [
-                                        s.toolCard,
-                                        pressed && { opacity: 0.85 },
+                                <View style={s.toolChevronWrapper}>
+                                    <Ionicons
+                                        name="chevron-forward"
+                                        size={14}
+                                        color={theme.textSecondary}
+                                    />
+                                </View>
+                            </View>
+
+                            {/* TITLE + DESCRIPTION */}
+                            <View style={{ gap: 4, marginTop: 16 }}>
+                                <Text
+                                    style={[
+                                        s.toolTitle,
+                                        {
+                                            fontSize: 15,
+                                            fontWeight: "700",
+                                            color: theme.text,
+                                        },
                                     ]}
+                                    numberOfLines={1}
                                 >
-                                    <View style={s.toolCardTop}>
-                                        <View style={s.toolIconWrapper}>
-                                            <Ionicons
-                                                name={tool.icon}
-                                                size={18}
-                                                color={theme.accent}
-                                            />
-                                        </View>
-                                        <View style={s.toolChevronWrapper}>
-                                            <Ionicons
-                                                name="chevron-forward"
-                                                size={13}
-                                                color={theme.textSecondary}
-                                            />
-                                        </View>
-                                    </View>
-                                    <View style={s.toolCardBottom}>
-                                        <Text style={s.toolTitle} numberOfLines={1}>
-                                            {tool.title}
-                                        </Text>
-                                        <Text style={s.toolSub} numberOfLines={2}>
-                                            {tool.subtitle}
-                                        </Text>
-                                    </View>
-                                </Pressable>
-                            ))}
-                        </View>
-                        <View
-                            style={[
-                                s.toolsRow,
-                                isCompact && { flexDirection: "column" },
-                            ]}
-                        >
-                            {homeStudyTools.slice(2, 4).map((tool) => (
-                                <Pressable
-                                    key={tool.id}
-                                    onPress={tool.onPress}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={tool.title}
-                                    style={({ pressed }) => [
-                                        s.toolCard,
-                                        pressed && { opacity: 0.85 },
+                                    {tool.title}
+                                </Text>
+
+                                <Text
+                                    style={[
+                                        s.toolSub,
+                                        {
+                                            fontSize: 12,
+                                            lineHeight: 17,
+                                            color: theme.textSecondary,
+                                        },
                                     ]}
+                                    numberOfLines={2}
                                 >
-                                    <View style={s.toolCardTop}>
-                                        <View style={s.toolIconWrapper}>
-                                            <Ionicons
-                                                name={tool.icon}
-                                                size={18}
-                                                color={theme.accent}
-                                            />
-                                        </View>
-                                        <View style={s.toolChevronWrapper}>
-                                            <Ionicons
-                                                name="chevron-forward"
-                                                size={13}
-                                                color={theme.textSecondary}
-                                            />
-                                        </View>
-                                    </View>
-                                    <View style={s.toolCardBottom}>
-                                        <Text style={s.toolTitle} numberOfLines={1}>
-                                            {tool.title}
-                                        </Text>
-                                        <Text style={s.toolSub} numberOfLines={2}>
-                                            {tool.subtitle}
-                                        </Text>
-                                    </View>
-                                </Pressable>
-                            ))}
-                        </View>
-                    </View>
+                                    {tool.subtitle}
+                                </Text>
+                            </View>
+                        </Pressable>
+                    ))}
                 </View>
             </View>
 

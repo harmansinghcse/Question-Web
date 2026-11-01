@@ -38,7 +38,9 @@ export default function AccountScreen() {
         };
 
         if (Platform.OS === "web") {
-            const confirmed = window.confirm("Are you sure you want to log out?");
+            const confirmed = window.confirm(
+                "Are you sure you want to log out?",
+            );
             if (confirmed) {
                 void performLogout();
             }
@@ -219,12 +221,14 @@ export default function AccountScreen() {
                         <ActivityIndicator color={theme.danger} size="small" />
                     ) : (
                         <>
-                            <Ionicons
-                                name="log-out-outline"
-                                size={18}
-                                color={theme.danger}
-                            />
-                            <Text style={s.logoutText}>Log Out</Text>
+                            <View style={s.logoutButton}>
+                                <Ionicons
+                                    name="log-out-outline"
+                                    size={18}
+                                    color={theme.danger}
+                                />
+                                <Text style={s.logoutText}>Log Out</Text>
+                            </View>
                         </>
                     )}
                 </Pressable>
