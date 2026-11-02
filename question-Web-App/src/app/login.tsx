@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useRouter } from "expo-router";
 import {
     View,
@@ -11,7 +11,6 @@ import {
     Platform,
     ScrollView,
     Keyboard,
-    TouchableWithoutFeedback,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -24,6 +23,7 @@ export default function LoginScreen() {
     const { theme } = useAppTheme();
     const insets = useSafeAreaInsets();
     const { login } = useAuth();
+    const passwordInputRef = useRef<TextInput>(null);
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -71,27 +71,23 @@ export default function LoginScreen() {
     return (
         <KeyboardAvoidingView
             style={s.container}
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
             keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}
         >
-            <TouchableWithoutFeedback
-                onPress={Keyboard.dismiss}
-                accessible={false}
+            <ScrollView
+                contentContainerStyle={[
+                    s.scrollContent,
+                    {
+                        paddingTop: Math.max(insets.top, 24),
+                        paddingBottom: Math.max(insets.bottom, 24),
+                    },
+                ]}
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="on-drag"
+                automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
+                showsVerticalScrollIndicator={false}
+                contentInsetAdjustmentBehavior="never"
             >
-                <ScrollView
-                    contentContainerStyle={[
-                        s.scrollContent,
-                        {
-                            paddingTop: Math.max(insets.top, 24),
-                            paddingBottom: Math.max(insets.bottom, 24),
-                        },
-                    ]}
-                    keyboardShouldPersistTaps="handled"
-                    keyboardDismissMode="on-drag"
-                    automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
-                    showsVerticalScrollIndicator={false}
-                    contentInsetAdjustmentBehavior="never"
-                >
                     {/* Brand */}
                     <View style={s.headerContainer}>
                         <View style={s.logo}>
@@ -168,7 +164,7 @@ export default function LoginScreen() {
                                     returnKeyType="next"
                                     editable={!isSubmitting}
                                     blurOnSubmit={false}
-                                    onSubmitEditing={() => Keyboard.dismiss()}
+                                    onSubmitEditing={() => passwordInputRef.current?.focus()}
                                     accessibilityLabel="Email address"
                                 />
                             </View>
@@ -186,6 +182,7 @@ export default function LoginScreen() {
                                 />
 
                                 <TextInput
+                                    ref={passwordInputRef}
                                     style={s.input}
                                     placeholder="Enter your password"
                                     placeholderTextColor={theme.muted}
@@ -305,7 +302,6 @@ export default function LoginScreen() {
                         />
                     </Pressable>
                 </ScrollView>
-            </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
     );
 }
